@@ -65,6 +65,7 @@ void Report(const char* status, const std::string& detail) {
         @"status": @(status),
         @"detail": @(detail.c_str()),
         @"backend": @"libultraship Metal",
+        @"depth_clip_mode": @"clip (simulator fallback)",
         @"libultraship_revision": @"da6daf1a50a5e46d6641408d52227e31e85e46df",
         @"metal_device": @(deviceName.c_str()),
         @"completed_frames": @(completedFrames),
@@ -172,6 +173,7 @@ void SDLCALL Tick(void*) {
             height = currentHeight;
             if (!frame) pixels.assign(size_t(width) * height, 0xA5A5);
 
+            Report("running", "Starting triangle frame for cycle " + std::to_string(cycle + 1));
             renderer->StartFrame();
             renderer->NewFrame();
             renderer->StartDrawToFramebuffer(0, 1.0f);
