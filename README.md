@@ -55,6 +55,7 @@ These are design directions, not implemented capabilities.
 | [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
 | [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
 | [Runtime audit](docs/RUNTIME_AUDIT.md) | Pinned upstream dependencies, porting blockers, and isolated core builds |
+| [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) | tvOS backend adapter, link checks, and upstream shader conversion |
 | [Compatibility](COMPATIBILITY.md) | ROM validation, runtime eligibility, and support status |
 | [Decisions and risks](DECISIONS_AND_RISKS.md) | Agreed direction, proposals, unresolved choices, and sources |
 

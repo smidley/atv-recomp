@@ -44,6 +44,10 @@ project's own license is still unselected.
 The source audit supports a **staged porting experiment**, not a drop-in import
 of the upstream desktop target. The full runtime and renderer remain unported.
 
+The core-services experiment subsequently passed its host callback tests and both
+simulator architecture builds in [CI at `94aa928`](https://github.com/smidley/atv-recomp/actions/runs/40743318116).
+The next source adaptation is tracked in the [RT64 Metal experiment](RT64_METAL_EXPERIMENT.md).
+
 ## ROM identity is a later gate
 
 The pinned build guide identifies the normal US ROM by SHA-1
@@ -93,9 +97,9 @@ does not test the event scheduler, the full runtime link, game boot, or renderin
 
 ## Next simulator work
 
-1. Resolve any core compile failures and retain exact build evidence.
-2. Separate RT64's Cocoa host/window code and macOS shader target assumptions;
-   try a ROM-free renderer build for the tvOS Simulator.
+1. Core compile/link checks and host callback tests passed; retain these regressions.
+2. Continue the isolated RT64 Metal backend and shader experiment, then validate
+   GPU execution and presentation in a simulator app.
 3. Design a static-only `librecomp` build without LiveRecomp, executable patching,
    or native-mod loading; verify the resulting binary's dependencies and symbols.
 4. Connect a minimal app host, then add private ROM validation and a real game

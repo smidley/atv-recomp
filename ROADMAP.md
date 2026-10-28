@@ -20,6 +20,11 @@ Validate native execution before investing in the full launcher. If the runtime 
 
 **Active simulator track:** compile the core services for both simulator architectures, test their callback boundaries on the host, then adapt the renderer and a static-only runtime build. No physical device or ROM is required for the current core experiment.
 
+The core service builds and callback tests passed in PR #2. The
+[RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) now isolates the renderer's
+Metal backend, replaces Cocoa window metrics, and adds simulator shader build
+checks. Actual RT64 GPU execution and the full static-only runtime remain open.
+
 **Deliverables**
 
 - Minimal native tvOS application with SwiftUI.

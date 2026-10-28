@@ -1,0 +1,145 @@
+--- a/src/metal/rt64_metal.h
++++ b/src/metal/rt64_metal.h
+@@ -4,7 +4,7 @@
+ #include <unordered_set>
+ 
+ #include "rhi/rt64_render_interface.h"
+-#include "apple/rt64_apple.h"
++#include "TVWindow.hpp"
+ 
+ #include <simd/simd.h>
+ #include <Metal/Metal.hpp>
+@@ -201,7 +201,7 @@
+         uint32_t currentAvailableDrawableIndex = 0;
+ 
+         RenderWindow renderWindow = {};
+-        std::unique_ptr<CocoaWindow> windowWrapper;
++        std::unique_ptr<TVWindow> windowWrapper;
+ 
+         MetalSwapChain(MetalCommandQueue *commandQueue, RenderWindow renderWindow, uint32_t textureCount, RenderFormat format);
+         ~MetalSwapChain() override;
+--- a/src/rhi/rt64_render_interface_types.h
++++ b/src/rhi/rt64_render_interface_types.h
+@@ -27,7 +27,10 @@
+ #undef Success
+ #undef Always
+ #elif defined(__APPLE__)
++#include <TargetConditionals.h>
++#if !TARGET_OS_TV
+ #include <SDL.h>
++#endif
+ #endif
+ 
+ #ifdef RT64_SDL_WINDOW_VULKAN
+--- a/src/metal/rt64_metal.cpp
++++ b/src/metal/rt64_metal.cpp
+@@ -1019,6 +1019,7 @@
+     }
+ 
+     void MetalBuffer::unmap(uint32_t subresource, const RenderRange* writtenRange) {
++#if RT64_MACOS
+         if (mtl->storageMode() == MTL::StorageModeManaged) {
+             if (writtenRange == nullptr) {
+                 mtl->didModifyRange(NS::Range(0, desc.size));
+@@ -1026,6 +1027,7 @@
+                 mtl->didModifyRange(NS::Range(writtenRange->begin, writtenRange->end - writtenRange->begin));
+             }
+         }
++#endif
+     }
+ 
+     std::unique_ptr<RenderBufferFormattedView> MetalBuffer::createBufferFormattedView(RenderFormat format) {
+@@ -1571,9 +1573,11 @@
+             }
+         }
+         
++#if RT64_MACOS
+         if (argumentBuffer.mtl->storageMode() == MTL::StorageModeManaged) {
+             argumentBuffer.mtl->didModifyRange(NS::Range(argumentBuffer.offset, argumentBuffer.mtl->length() - argumentBuffer.offset));
+         }
++#endif
+ 
+         resourceEntries[descriptorIndex].resource = nativeResource;
+         resourceEntries[descriptorIndex].type = descriptorType;
+@@ -1614,7 +1618,7 @@
+         this->drawables.resize(MAX_DRAWABLES);
+ 
+         this->renderWindow = renderWindow;
+-        this->windowWrapper = std::make_unique<CocoaWindow>(renderWindow.window);
++        this->windowWrapper = std::make_unique<TVWindow>(renderWindow.window);
+         getWindowSize(width, height);
+ 
+         // set each of the drawable to have desc.flags = RenderTextureFlag::RENDER_TARGET;
+@@ -1699,11 +1703,20 @@
+     }
+ 
+     void MetalSwapChain::setVsyncEnabled(const bool vsyncEnabled) {
++#if RT64_MACOS
+         layer->setDisplaySyncEnabled(vsyncEnabled);
++#else
++        // tvOS presentation remains synchronized by the system.
++        (void)vsyncEnabled;
++#endif
+     }
+ 
+     bool MetalSwapChain::isVsyncEnabled() const {
++#if RT64_MACOS
+         return layer->displaySyncEnabled();
++#else
++        return true;
++#endif
+     }
+ 
+     uint32_t MetalSwapChain::getWidth() const {
+@@ -1771,7 +1784,7 @@
+     }
+ 
+     void MetalSwapChain::getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const {
+-        CocoaWindowAttributes attributes;
++        TVWindowAttributes attributes;
+         windowWrapper->getWindowAttributes(&attributes);
+         dstWidth = attributes.width;
+         dstHeight = attributes.height;
+@@ -2961,14 +2974,15 @@
+         // capabilities.raytracing = [this->renderInterface->device supportsFamily:MTLGPUFamilyApple9];
+         capabilities.maxTextureSize = mtl->supportsFamily(MTL::GPUFamilyApple3) ? 16384 : 8192;
+         capabilities.sampleLocations = mtl->programmableSamplePositionsSupported();
+-#if RT64_IOS
+-        capabilities.descriptorIndexing = mtl->supportsFamily(MTL::GPUFamilyApple3);
+-#else
+-        capabilities.descriptorIndexing = true;
+-#endif
++        capabilities.descriptorIndexing = mtl->argumentBuffersSupport() == MTL::ArgumentBuffersTier2;
+         capabilities.scalarBlockLayout = true;
+         capabilities.presentWait = false;
++#if RT64_MACOS
+         capabilities.preferHDR = mtl->recommendedMaxWorkingSetSize() > (512 * 1024 * 1024);
++#else
++        // Start with SDR; a memory-size heuristic does not establish HDR support.
++        capabilities.preferHDR = false;
++#endif
+         description.name = "Metal";
+     }
+ 
+@@ -3131,7 +3145,8 @@
+ 
+     bool MetalInterface::isValid() const {
+         // check if Metal is available and we support bindless textures: GPUFamilyMac2 or GPUFamilyApple6
+-        return MTL::CopyAllDevices()->count() > 0 && (device->supportsFamily(MTL::GPUFamilyMac2) || device->supportsFamily(MTL::GPUFamilyApple6));
++        return device != nullptr && device->argumentBuffersSupport() == MTL::ArgumentBuffersTier2 &&
++            (device->supportsFamily(MTL::GPUFamilyMac2) || device->supportsFamily(MTL::GPUFamilyApple6));
+     }
+ 
+     void MetalInterface::createResolvePipelineState() {
+--- a/src/tools/spirv_cross_msl/spirv_cross_msl.cpp
++++ b/src/tools/spirv_cross_msl/spirv_cross_msl.cpp
+@@ -127,7 +127,9 @@
+         // Configure MSL options
+         spirv_cross::CompilerMSL::Options msl_options;
+         msl_options.msl_version = spirv_cross::CompilerMSL::Options::make_msl_version(2, 1);
++        msl_options.platform = spirv_cross::CompilerMSL::Options::iOS;
+         msl_options.argument_buffers = true;
++        msl_options.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
+         msl_options.texture_buffer_native = true;
+         msl_options.enable_decoration_binding = true;
+         msl.set_msl_options(msl_options);
