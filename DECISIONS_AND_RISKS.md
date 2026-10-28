@@ -19,11 +19,13 @@ The first source harness uses a C ABI backed by C++17, Swift 6 complete concurre
 | D07 | Users supply game data; the project does not distribute commercial ROMs/assets | Keep game data out of source and public artifacts |
 | D08 | Exact ROM identity determines compatibility | Discovery and metadata are insufficient for launch |
 | D09 | Acquire/cache selected games as needed | No requirement to mirror an entire collection |
-| D10 | Validate native recompilation before the full launcher | Runtime/renderer feasibility drives the roadmap |
-| D11 | Majora's Mask is the first POC candidate | It is not a confirmed supported title |
+| D10 | Validate native game execution before the full launcher | Runtime/renderer feasibility drives the roadmap |
+| D11 | Shipwright/Ocarina of Time is the first POC target, clarified 2026-10-28 | Supersedes the earlier Majora's Mask candidate; neither is a confirmed supported title |
 | D12 | Preserve modular providers and runtimes | Other games/consoles remain possible future work |
 | D13 | Optional save synchronization and expanded compatibility come later | The initial project must still address safe save handling |
 | D14 | Continue development on the tvOS Simulator for now, confirmed 2026-10-28 | Hardware testing is deferred; simulator and host evidence must not be recorded as physical-device support |
+| D15 | Start with Shipwright, then expand N64 coverage toward the full library, then add other platforms | Each game still needs a compatible native runtime and testing; a ROM alone does not create one |
+| D16 | Support native source ports as well as static recompilation projects | Per-runtime adapters own graphics and asset preparation; RT64 is not a universal dependency |
 
 ## Runtime audit baseline — 2026-10-28
 
@@ -32,8 +34,10 @@ renderer, and recompiler revisions for investigation. This is an experiment
 baseline, not an adopted application dependency set. The upstream core can be
 built separately; the full `librecomp` target currently includes LiveRecomp and
 executable patching, and RT64's Apple host/shader build paths assume macOS.
-The next work is isolated simulator compilation and adaptation at these
-boundaries. The app does not yet import any upstream runtime code.
+The core and RT64 build experiments passed and remain isolated research. The
+app does not yet import any upstream runtime code. The current first-game work
+is [Shipwright](docs/SHIPWRIGHT_PORT.md), with its separate libultraship and Torch
+baseline and a host ROM-identification prototype.
 
 ## Proposed implementation choices
 
@@ -85,6 +89,8 @@ These choices make the plan actionable but are not yet adopted or proven.
 
 Sources below were checked on 2026-10-28. Recheck them when selecting versions or preparing a release.
 
+- [Shipwright 9.3.1](https://github.com/HarbourMasters/Shipwright/blob/f0599f96f8d442f26d0fa1c5cedafddacd56633f/README.md) describes the Ocarina of Time decompilation-based native port, libultraship, user-ROM asset extraction, and macOS Metal support. This is the selected first target; it has no RecompTV game execution result yet.
+
 - [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp) describes static recompilation of Majora's Mask, use of RT64, desktop platforms including macOS, and a requirement for user game data. Its repository identifies GPL-3.0 licensing. These observations establish a candidate starting point, not tvOS compatibility. Consult its [contribution policy](https://github.com/Zelda64Recomp/Zelda64Recomp/blob/dev/CONTRIBUTING.md) before considering any upstream contribution.
 - [RomM's API reference](https://docs.romm.app/latest/developers/api-reference/) points developers to the API specification served by each instance. Its [client API token documentation](https://docs.romm.app/latest/developers/client-api-tokens/) describes scoped tokens and pairing. RecompTV still needs to select and test an integration baseline.
 - Apple's [archived tvOS programming guide](https://developer.apple.com/library/archive/documentation/General/Conceptual/AppleTV_PG/index.html) describes purgeable local app data. It is historical guidance; confirm current SDK/device behavior rather than copying its numeric limits into requirements.
@@ -94,4 +100,4 @@ Sources below were checked on 2026-10-28. Recheck them when selecting versions o
 
 When resolving an open question, record the date, chosen option, rejected alternatives that materially affected the choice, and supporting build/test/source evidence. Update the requirements, architecture, roadmap, and compatibility matrix together when the choice changes scope.
 
-Document a blocker concretely instead of turning an assumption into a product promise. The immediate work is the simulator dependency experiment in [Runtime audit](docs/RUNTIME_AUDIT.md); the physical-device gates in [POC.md](POC.md) remain deferred.
+Document a blocker concretely instead of turning an assumption into a product promise. The immediate work follows the [Shipwright integration path](docs/SHIPWRIGHT_PORT.md); the physical-device gates in [POC.md](POC.md) remain deferred.

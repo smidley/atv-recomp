@@ -1,0 +1,30 @@
+{
+  "recorded_on": "2026-10-28",
+  "purpose": "Shipwright source investigation and offline ROM identification; no tvOS game support established",
+  "requested_catalog_entry": "https://recomplauncher.com/game/shipwright",
+  "release": "9.3.1",
+  "sources": {
+    "shipwright": {
+      "repository": "HarbourMasters/Shipwright",
+      "revision": "f0599f96f8d442f26d0fa1c5cedafddacd56633f"
+    },
+    "libultraship": {
+      "repository": "kenix3/libultraship",
+      "revision": "da6daf1a50a5e46d6641408d52227e31e85e46df",
+      "gitlink": "libultraship"
+    },
+    "torch": {
+      "repository": "HarbourMasters/Torch",
+      "revision": "2ab12fe9660aec04e02ee89fe81baed304a1a1d6",
+      "gitlink": "torch"
+    }
+  },
+  "rom_reference": {
+    "source": "https://github.com/HarbourMasters/Shipwright/blob/f0599f96f8d442f26d0fa1c5cedafddacd56633f/docs/supportedHashes.json",
+    "local_path": "upstream/shipwright-supported-roms.json",
+    "file_sha256": "e76e156f8642deaf822bcb2171dde340f5d7eba11387dc94fc003ed88e99554b",
+    "identity_algorithm": "sha1",
+    "upstream_entry_count": 19,
+    "note": "Upstream reference hashes only; no real ROM was used to validate this host tool or a tvOS runtime."
+  }
+}

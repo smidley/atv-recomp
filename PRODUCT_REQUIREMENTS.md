@@ -6,13 +6,15 @@
 
 Let an Apple TV user browse games already stored on a network share or in RomM, identify which titles this app can run, and launch a supported game locally with a controller.
 
+The intended experience is one library and one supply-ROM-and-play flow. Coverage grows in this order: Shipwright/Ocarina of Time, more N64 games toward full-library coverage, then other platforms. Native execution requires an integrated runtime for each supported game; full N64 coverage is a goal, not an existing capability or guaranteed outcome.
+
 The user should not need a new server application, a custom Docker container, or a second computer rendering gameplay. An existing SMB server is sufficient; an existing RomM installation is an optional alternative or additional source.
 
 ## Intended users
 
 - A player with ROM files on a NAS or Unraid SMB share.
 - A RomM user who wants an Apple TV client for their existing catalog.
-- A developer validating whether a specific recompilation project can run on tvOS.
+- A developer validating whether a native source port or static recompilation project can run on tvOS.
 
 The development proof of concept is smaller than the player-facing MVP. Its local ROM provisioning is a development step, not the final library-import experience.
 
@@ -30,7 +32,7 @@ The development proof of concept is smaller than the player-facing MVP. Its loca
 | Input and lifecycle | Navigate the launcher, control the game, and return to the library |
 | Saves | Support the runtime's game saves and define a recovery policy for tvOS storage |
 
-Majora's Mask is the first feasibility target, subject to [POC.md](POC.md). The MVP must not promise support before that experiment passes.
+Ship of Harkinian (Shipwright), the native Ocarina of Time port, is the first feasibility target, subject to [POC.md](POC.md). The MVP must not promise support before that experiment passes.
 
 ## User flows
 
@@ -58,8 +60,9 @@ Client-token or pairing authentication is a candidate, not a requirement that ev
 2. Confirm that a runtime exists in this app build and is eligible for the device.
 3. Download/read the required ROM into app-managed staging storage, or select an intact cached copy.
 4. Validate the format, size, and authoritative hash against the runtime's accepted revisions.
-5. Start the bundled native runtime using the validated local data.
-6. Play with a controller, save through the runtime, and return to the launcher.
+5. Prepare the runtime's game assets from the validated ROM when required, showing progress without modifying the source file.
+6. Start the bundled native runtime using the completed local data.
+7. Play with a controller, save through the runtime, and return to the launcher.
 
 Show meaningful progress while fetching and validating. A filename, extension, or RomM title match must not bypass byte-level validation.
 
@@ -85,7 +88,8 @@ Show meaningful progress while fetching and validating. A filename, extension, o
 
 ## Later work
 
-- Additional bundled game runtimes and, potentially, other consoles.
+- Expand N64 coverage through additional bundled native runtimes and per-game testing.
+- Add other platforms after the N64 expansion phase, through the same launcher boundary.
 - Optional RomM save synchronization after format and conflict behavior are validated.
 - Per-game settings, performance enhancements, and richer library features.
 - Additional providers through the same library boundary.

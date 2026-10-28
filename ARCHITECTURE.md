@@ -2,7 +2,7 @@
 
 **Status:** proposed product architecture, 2026-10-28. A [foundation harness](docs/FOUNDATION_HARNESS.md) now implements a minimal SwiftUI shell, C/C++ probe, and Metal presentation check. The product components below remain proposals; no game runtime, provider, or physical-device behavior is validated.
 
-The maintainer has confirmed the foundation checks in the simulator. Current work uses an [isolated runtime-core experiment](docs/RUNTIME_AUDIT.md) outside the app target. It compiles the pinned upstream C++20 service library without the desktop host, RT64, `librecomp`, or LiveRecomp. The existing app bridge remains C++17; adopting C++20 for a future runtime adapter does not require changing that probe.
+The maintainer has confirmed the foundation checks in the simulator. The first game target is now [Shipwright](docs/SHIPWRIGHT_PORT.md), followed by N64 expansion and then other platforms. Earlier [runtime-core](docs/RUNTIME_AUDIT.md) and [RT64](docs/RT64_METAL_EXPERIMENT.md) experiments remain isolated research. They do not select Shipwright's runtime or renderer. The existing app bridge remains C++17.
 
 ## System boundary
 
@@ -18,7 +18,8 @@ flowchart TD
     Providers --> Cache["ROM staging and local cache"]
     Cache --> Validation["ROM validation"]
     Registry["Bundled runtime registry"] --> Validation
-    Validation --> Launch
+    Validation --> Assets["Runtime-specific asset preparation"]
+    Assets --> Launch
     Launch --> Runtime["Bundled native game runtime"]
     Input["Controller input"] --> Runtime
     Runtime --> Graphics["Metal presentation and audio"]
@@ -36,6 +37,7 @@ The diagram describes responsibilities rather than a finalized module layout.
 | Catalog | Retain source identity and locations; combine entries without confusing discovery with support |
 | Runtime registry | Describe the runtimes compiled into this app and their ROM/device requirements |
 | ROM validator | Identify the actual bytes and select an accepted revision or reject the launch |
+| Asset preparation | Produce and validate the data format required by the selected runtime, without changing the source ROM |
 | Cache manager | Stage transfers, verify completion, manage space, and recover from missing cached files |
 | Launch coordinator | Order validation, save loading, runtime startup, shutdown, and return to the launcher |
 | Runtime adapter | Connect each game's native code to graphics, audio, input, filesystem, and lifecycle services |
@@ -57,6 +59,8 @@ RomM's [client API token documentation](https://docs.romm.app/latest/developers/
 
 The intended build pipeline produces native ARM64 game code ahead of time and packages it with the tvOS app. The device obtains user game data, not new native executable modules. A new runtime requires a new app build.
 
+Adapters can wrap source ports such as Shipwright or static recompilation projects. They do not share one mandatory renderer or assume the ROM is their direct runtime input. Shipwright uses libultraship and extracts ROM assets into an O2R archive. Zelda64Recomp uses a different runtime and RT64. Neither integration establishes support for arbitrary N64 games.
+
 Use a narrow Swift-to-C/C++ boundary, potentially a C interface with an Objective-C++ adapter where needed. This is a proposal pending the first integration spike. It should expose:
 
 - Runtime identity, version, accepted ROM revisions, and required device capabilities.
@@ -77,9 +81,10 @@ The renderer must ultimately present through Metal on tvOS. Existing desktop Met
 3. Acquire or reopen the selected ROM and establish sufficient local space.
 4. Validate the format and exact revision under the policy in [COMPATIBILITY.md](COMPATIBILITY.md).
 5. Promote a completed, validated transfer into the cache.
-6. Load the applicable save and initialize the runtime.
-7. Present gameplay and route controller/audio/lifecycle events.
-8. Flush saves and release runtime resources before returning to the library.
+6. Prepare runtime-specific assets; bind derived caches to the ROM digest, extractor version, and runtime version. Publish only complete outputs.
+7. Load the applicable save and initialize the runtime.
+8. Present gameplay and route controller/audio/lifecycle events.
+9. Flush saves and release runtime resources before returning to the library.
 
 Treat interrupted staging data as incomplete. If a source changes or cached content no longer matches its validated identity, invalidate eligibility and validate again. Never launch while a transfer is still mutating the file.
 

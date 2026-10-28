@@ -1,5 +1,11 @@
 # RT64 Metal backend experiment
 
+**Scope note:** [PR #3](https://github.com/smidley/atv-recomp/pull/3) merged after
+[all RT64 checks passed at `a5e5525`](https://github.com/smidley/atv-recomp/actions/runs/40749764962).
+The first game target is now [Shipwright](SHIPWRIGHT_PORT.md), which uses a
+different renderer. Further RT64 integration is deferred; this experiment is
+retained independently and is not linked into the app.
+
 This continues the [runtime audit](RUNTIME_AUDIT.md) on the tvOS Simulator.
 It builds RT64's actual Metal backend separately from its full renderer and the
 Zelda runtime. The main RecompTV app remains the foundation harness.

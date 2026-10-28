@@ -1,8 +1,8 @@
 # RecompTV
 
-RecompTV is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported, statically recompiled games locally on tvOS.
+RecompTV is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported native ports and statically recompiled games locally on tvOS.
 
-**Status: foundation checks confirmed in the simulator; runtime porting experiments underway.** The maintainer confirmed the C++ result and visible Metal color checks on 2026-10-28. Development continues with the simulator for now; physical Apple TV validation is deferred. No game runtime is integrated. See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [pinned runtime audit](docs/RUNTIME_AUDIT.md).
+**Status: foundation checks confirmed in the simulator; Shipwright selected as the first game.** Development continues with the simulator for now; physical Apple TV validation is deferred. No game runtime is integrated. See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [Shipwright baseline and ROM identification tool](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
 
 ## Run the foundation harness
 
@@ -26,7 +26,9 @@ A discovered game is not automatically playable. Each supported title needs a co
 
 ## First milestone
 
-Prove that a native tvOS app can run a C++ module, display a Metal frame, and host the dependencies needed for an N64 recompilation runtime. Then attempt to boot **The Legend of Zelda: Majora's Mask** using the existing Zelda 64: Recompiled project and a user-supplied ROM.
+The first game is **The Legend of Zelda: Ocarina of Time**, using **Ship of Harkinian (Shipwright)** and a user-supplied ROM. Shipwright compiles decompiled game source and uses libultraship's renderer; it is a different integration from Zelda64Recomp and RT64. The ROM supplies game assets to the native port.
+
+The agreed order is Shipwright first, then expanding N64 coverage toward the full library, then other platforms. Each added title needs a compatible native runtime and its own validation. A shared launcher does not automatically make every N64 ROM executable.
 
 The proof of concept comes before the full launcher and network integrations. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
@@ -54,8 +56,9 @@ These are design directions, not implemented capabilities.
 | [Proof of concept](POC.md) | First native tvOS experiment and go/no-go evidence |
 | [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
 | [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
-| [Runtime audit](docs/RUNTIME_AUDIT.md) | Pinned upstream dependencies, porting blockers, and isolated core builds |
-| [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) | tvOS backend adapter, link checks, and upstream shader conversion |
+| [Shipwright first game](docs/SHIPWRIGHT_PORT.md) | Pinned native port, local ROM identification, and next tvOS integration steps |
+| [Earlier runtime audit](docs/RUNTIME_AUDIT.md) | Zelda64Recomp dependencies, porting blockers, and isolated core builds |
+| [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) | Separate renderer build research; not Shipwright's renderer |
 | [Compatibility](COMPATIBILITY.md) | ROM validation, runtime eligibility, and support status |
 | [Decisions and risks](DECISIONS_AND_RISKS.md) | Agreed direction, proposals, unresolved choices, and sources |
 

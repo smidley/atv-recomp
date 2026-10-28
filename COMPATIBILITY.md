@@ -6,9 +6,12 @@
 
 | Game | Platform | Candidate runtime | ROM revision/hash | tvOS result |
 | --- | --- | --- | --- | --- |
-| The Legend of Zelda: Majora's Mask | N64 | Zelda 64: Recompiled | Not selected or verified for RecompTV | POC candidate; untested |
+| The Legend of Zelda: Ocarina of Time | N64 | Shipwright / Ship of Harkinian 9.3.1 | [19 upstream SHA-1 references](upstream/shipwright-supported-roms.json); no real ROM tested here | First target; host identification prototype only; no tvOS game build/run |
+| The Legend of Zelda: Majora's Mask | N64 | Zelda 64: Recompiled | Earlier audit only | Deferred candidate; isolated core/RT64 builds do not establish gameplay |
 
 Do not interpret upstream desktop support as RecompTV support. Add other titles only with their own runtime integration and test evidence.
+
+After Shipwright, grow N64 coverage toward the full library before adding other platforms. One N64 port working does not make all other titles compatible.
 
 ## What makes a game launchable
 
@@ -53,6 +56,8 @@ Choose an authoritative revision allowlist when pinning a runtime. Record region
 Proposed baseline: calculate SHA-256 over a documented canonical byte representation, while retaining any additional identity checks required by upstream. If normalization is necessary, define and test it before accepting alternate representations.
 
 N64 file extensions such as .z64, .v64, and .n64 are discovery hints only. Byte order, headers, archives, and modified ROMs need explicit handling. The POC may initially accept only the exact uncompressed representation selected for testing. Other formats must not be advertised until implemented and verified.
+
+The [Shipwright host prototype](docs/SHIPWRIGHT_PORT.md) recognizes byte order from the header, hashes a canonical big-endian stream, and compares the pinned upstream SHA-1 values. Synthetic tests cover all three byte orders. This is not yet the app's validator, real-ROM validation, asset extraction, or permission to label a game Ready.
 
 Do not use placeholder hashes, accept a filename as identity, or treat a server-reported checksum as a substitute for validating downloaded bytes. ROM hacks, translations, and other modifications are unsupported unless explicitly integrated and validated.
 

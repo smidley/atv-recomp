@@ -2,6 +2,8 @@
 
 **Planning baseline:** 2026-10-28. This is a sequence of evidence-based milestones, not a dated delivery commitment. The maintainer confirmed the foundation checks in the simulator and requested simulator-only development for now. Physical-device validation is deferred; it remains a compatibility/release gate, not a prerequisite for continuing simulator engineering.
 
+**Confirmed order:** Shipwright/Ocarina of Time first, then N64 coverage toward the full library, then other platforms. Every title needs a compatible native integration; full-library coverage is a goal to investigate, not an automatic result of a shared launcher.
+
 Validate native execution before investing in the full launcher. If the runtime or renderer is infeasible, revisit the scope before building provider integrations around it.
 
 ## M0 — Establish the project baseline
@@ -18,12 +20,13 @@ Validate native execution before investing in the full launcher. If the runtime 
 
 **Progress:** the [foundation harness](docs/FOUNDATION_HARNESS.md) provides a SwiftUI tvOS target, C/C++ bridge probe, on-demand Metal surface, visual confirmation checks, and an unsigned build workflow. The maintainer [confirmed its simulator checks](docs/SIMULATOR_PROGRESS.md). A [first source audit](docs/RUNTIME_AUDIT.md) pins the candidate runtime and identifies desktop rendering and live-recompiler boundaries. The isolated core experiment compiles the upstream service library separately from the game, renderer, and mod loader. M1's physical-device exit criteria remain open.
 
-**Active simulator track:** compile the core services for both simulator architectures, test their callback boundaries on the host, then adapt the renderer and a static-only runtime build. No physical device or ROM is required for the current core experiment.
+**Active simulator track:** adapt [Shipwright and libultraship](docs/SHIPWRIGHT_PORT.md). Its local ROM-identification prototype uses the pinned upstream hash list and synthetic tests. Next, isolate the relevant platform services and Metal backend for tvOS Simulator builds.
 
 The core service builds and callback tests passed in PR #2. The
 [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) now isolates the renderer's
 Metal backend, replaces Cocoa window metrics, and adds simulator shader build
-checks. Actual RT64 GPU execution and the full static-only runtime remain open.
+checks, which passed before PR #3 merged. These are separate research results;
+RT64 is not Shipwright's renderer and its execution work is deferred.
 
 **Deliverables**
 
@@ -39,7 +42,7 @@ checks. Actual RT64 GPU execution and the full static-only runtime remain open.
 **Deliverables**
 
 - A pinned upstream revision and dependency/license inventory.
-- The Majora's Mask candidate runtime integrated into the tvOS harness.
+- Shipwright's Ocarina of Time runtime integrated into the tvOS harness using libultraship.
 - Development-only local ROM provisioning, exact revision validation, and graphics output.
 - Basic controller input, audio investigation, lifecycle handling, and diagnostics.
 - Measured frame timing and memory behavior on physical hardware.
@@ -84,11 +87,13 @@ checks. Actual RT64 GPU execution and the full static-only runtime remain open.
 
 **Exit:** meet [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md), resolve release-blocking risks, and attach evidence to every advertised support claim. App Store acceptance is a separate outcome, not implied by passing technical tests.
 
-## M6 — Expand after the MVP
+## M6 — Expand N64 coverage
 
-Evaluate additional precompiled runtimes, optional RomM save synchronization, game-specific settings, and performance improvements. Each added title must pass its own ROM, device, gameplay, and save validation.
+Add N64 native ports and static recompilation runtimes, working toward the full library. Track each title's source/runtime availability, ROM revisions, build and rendering blockers, and actual gameplay results. Reuse launcher and host services where appropriate; each added title must pass its own ROM, device, gameplay, and save validation.
 
-Additional consoles, providers, and emulator fallback require separate scope decisions. The initial architecture leaves room for them without promising delivery.
+## M7 — Add more platforms
+
+After the N64 expansion phase, evaluate native runtimes for other platforms through the same launcher boundary. Platform-specific graphics, input, assets, and saves still require their own work. Optional synchronization and enhancements can be scheduled separately; emulator fallback is outside the native-runtime plan.
 
 ## Working method
 
