@@ -5,6 +5,7 @@ import RecompSources
 struct LibraryView: View {
     @State private var library = LibraryModel()
     @State private var editing: LibrarySource?
+    @State private var showingNotices = false
 
     var body: some View {
         NavigationStack {
@@ -40,12 +41,19 @@ struct LibraryView: View {
                     }
                     Text("ROM import is available. Native gameplay and game asset preparation are still being integrated.")
                         .font(.callout).foregroundStyle(.secondary)
-                    Text("SMB client: AMSMB2 4.0.3 / libsmb2 · LGPL 2.1. Source and license details are in the repository's network sources guide.")
-                        .font(.caption2).foregroundStyle(.secondary)
+                    Button("Third-party notices") { showingNotices = true }
                 }
                 .padding(48)
             }
             .sheet(item: $editing) { source in SourceEditorView(source: source, library: library) }
+            .sheet(isPresented: $showingNotices) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        Button("Done") { showingNotices = false }
+                        Text(SourceNotices.license).font(.caption)
+                    }.padding(64)
+                }
+            }
             .task { await library.restoreCache() }
             .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
                 Button("OK") { library.error = nil }

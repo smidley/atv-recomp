@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** proposed product architecture, 2026-10-28. A [foundation harness](docs/FOUNDATION_HARNESS.md) now implements a minimal SwiftUI shell, C/C++ probe, and Metal presentation check. The product components below remain proposals; no game runtime, provider, or physical-device behavior is validated.
+**Status:** proposed product architecture, 2026-10-28. A [foundation harness](docs/FOUNDATION_HARNESS.md) now implements a minimal SwiftUI shell, C/C++ probe, and Metal presentation check. The [network source package](docs/NETWORK_SOURCES.md) now implements RomM/SMB browsing, credential storage, staging, and ROM validation. Game runtime and physical-device behavior remain unvalidated.
 
 The maintainer has confirmed the foundation checks in the simulator. The first game target is now [Shipwright](docs/SHIPWRIGHT_PORT.md), followed by N64 expansion and then other platforms. Earlier [runtime-core](docs/RUNTIME_AUDIT.md) and [RT64](docs/RT64_METAL_EXPERIMENT.md) experiments remain isolated research. They do not select Shipwright's runtime or renderer. The existing app bridge remains C++17.
 
@@ -49,9 +49,9 @@ Provider and runtime interfaces should stay separate: adding a source must not r
 
 A proposed provider contract includes connection testing, paginated or incremental discovery, metadata lookup, source change detection, and cancellable transfer to a local staging file.
 
-**SMB:** browse a user-selected share/folder and find candidate files. Choose a client library only after checking tvOS support, licensing, authentication, and reconnect behavior. Do not assume an app can mount a share like a desktop filesystem. ROM access is read-only in the initial design.
+**SMB:** the initial implementation uses pinned AMSMB2 4.0.3 to browse a user-selected share/folder and stream candidate files. See the network guide for the checked APIs, license, and remaining live-server validation. Do not assume an app can mount a share like a desktop filesystem. ROM access is read-only in the initial design.
 
-**RomM:** consume the selected server's documented API for catalog data, artwork, and authenticated downloads. Use the instance's OpenAPI specification to pin the integration rather than inventing endpoints. RomM documents an instance API explorer at /api/docs and a specification at /openapi.json. See the [RomM API reference](https://docs.romm.app/latest/developers/api-reference/).
+**RomM:** the initial implementation uses the 5.4.1 catalog/file API contract and a Client API token with `roms.read`. Artwork and additional authentication flows remain planned. Use the instance's OpenAPI specification to pin the integration rather than inventing endpoints. RomM documents an instance API explorer at /api/docs and a specification at /openapi.json. See the [RomM API reference](https://docs.romm.app/latest/developers/api-reference/).
 
 RomM's [client API token documentation](https://docs.romm.app/latest/developers/client-api-tokens/) describes scoped tokens and pairing options. Select a supported flow during integration; keep credentials in a platform credential store, outside catalog metadata. Save synchronization is a later adapter capability.
 
