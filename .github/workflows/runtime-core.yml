@@ -1,0 +1,64 @@
+name: Runtime core experiment
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-callbacks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: N64Recomp/N64ModernRuntime
+          ref: df7e820d8c55e4fcb4616c210cbb2c01b25cd48c
+          path: build/upstream/N64ModernRuntime
+          submodules: false
+          persist-credentials: false
+      - name: Compile core and exercise synthetic input/audio callbacks on Linux
+        id: runtime
+        run: bash scripts/check-runtime-core.sh host build/upstream/N64ModernRuntime
+      - name: "${{ steps.runtime.outputs.diagnostic }}"
+        if: failure() && steps.runtime.outcome == 'failure'
+        run: echo 'See the runtime build step for complete output.'
+
+  simulator-core:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: N64Recomp/N64ModernRuntime
+          ref: df7e820d8c55e4fcb4616c210cbb2c01b25cd48c
+          path: build/upstream/N64ModernRuntime
+          submodules: false
+          persist-credentials: false
+      - name: Record toolchain
+        run: |
+          xcodebuild -version
+          cmake --version
+      - name: Compile and link runtime core for arm64 tvOS Simulator
+        id: arm64
+        run: bash scripts/check-runtime-core.sh simulator build/upstream/N64ModernRuntime arm64
+      - name: "${{ steps.arm64.outputs.diagnostic }}"
+        if: failure() && steps.arm64.outcome == 'failure'
+        run: echo 'See the arm64 build step for complete output.'
+      - name: Compile and link runtime core for x86_64 tvOS Simulator
+        id: intel
+        run: bash scripts/check-runtime-core.sh simulator build/upstream/N64ModernRuntime x86_64
+      - name: "${{ steps.intel.outputs.diagnostic }}"
+        if: failure() && steps.intel.outcome == 'failure'
+        run: echo 'See the x86_64 build step for complete output.'

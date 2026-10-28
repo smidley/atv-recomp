@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-28",
+  "purpose": "Source-audit baseline; only the runtime core is compiled by the isolated experiment. No game code or ROM is included.",
+  "sources": {
+    "zelda64": {
+      "repository": "Zelda64Recomp/Zelda64Recomp",
+      "revision": "b65c482ed672258eb684ab94a4e8c8aa662615ee",
+      "license_text": "GPL-3.0 license text",
+      "license_file": "COPYING"
+    },
+    "runtime": {
+      "repository": "N64Recomp/N64ModernRuntime",
+      "revision": "df7e820d8c55e4fcb4616c210cbb2c01b25cd48c",
+      "license_text": "GPL-3.0 license text",
+      "license_file": "COPYING"
+    },
+    "rt64": {
+      "repository": "rt64/rt64",
+      "revision": "23cab603c4f9f4a8b369b38e036f1aa484603878",
+      "license_text": "MIT",
+      "license_file": "LICENSE"
+    },
+    "recompiler": {
+      "repository": "N64Recomp/N64Recomp",
+      "revision": "c1a6dc93bfa5977de0ea256562058be4f1b73353",
+      "license_text": "MIT",
+      "license_file": "LICENSE"
+    }
+  },
+  "gitlinks": [
+    {
+      "parent": "zelda64",
+      "path": "Zelda64RecompSyms",
+      "revision": "a325f8fa5c48c925616bd43685ef14bbabc29537",
+      "url": "https://github.com/Zelda64Recomp/Zelda64RecompSyms"
+    },
+    {
+      "parent": "zelda64",
+      "path": "lib/N64ModernRuntime",
+      "revision": "df7e820d8c55e4fcb4616c210cbb2c01b25cd48c",
+      "url": "https://github.com/N64Recomp/N64ModernRuntime.git"
+    },
+    {
+      "parent": "zelda64",
+      "path": "lib/RmlUi",
+      "revision": "7a06f27db04fe5d13a5dacc19b2b4544673a4eca",
+      "url": "https://github.com/mikke89/RmlUi/"
+    },
+    {
+      "parent": "zelda64",
+      "path": "lib/freetype-windows-binaries",
+      "revision": "d6fb49d11a9d0011bf4ecfe7e570beaaa189838a",
+      "url": "https://github.com/ubawurinna/freetype-windows-binaries"
+    },
+    {
+      "parent": "zelda64",
+      "path": "lib/lunasvg",
+      "revision": "4166d0cccfc059b39d5ecfc372524375e59448f9",
+      "url": "https://github.com/sammycage/lunasvg"
+    },
+    {
+      "parent": "zelda64",
+      "path": "lib/mm-decomp",
+      "revision": "5607eec18bae68e4cd38ef6d1fa69d7f1d84bfc8",
+      "url": "https://github.com/zeldaret/mm"
+    },
+    {
+      "parent": "zelda64",
+      "path": "lib/rt64",
+      "revision": "23cab603c4f9f4a8b369b38e036f1aa484603878",
+      "url": "https://github.com/rt64/rt64"
+    },
+    {
+      "parent": "runtime",
+      "path": "N64Recomp",
+      "revision": "c1a6dc93bfa5977de0ea256562058be4f1b73353",
+      "url": "https://github.com/N64Recomp/N64Recomp"
+    },
+    {
+      "parent": "runtime",
+      "path": "thirdparty/miniz",
+      "revision": "8573fd7cd6f49b262a0ccc447f3c6acfc415e556",
+      "url": "https://github.com/richgel999/miniz"
+    },
+    {
+      "parent": "runtime",
+      "path": "thirdparty/o1heap",
+      "revision": "a124b850791db2a33f7354d2b0aa7da821cef6f5",
+      "url": "https://github.com/N64Recomp/o1heap"
+    },
+    {
+      "parent": "runtime",
+      "path": "thirdparty/xxHash",
+      "revision": "ac3a25da3d957d9ef3e4114d9f8332d34ce83a46",
+      "url": "https://github.com/Cyan4973/xxHash.git"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/D3D12MemoryAllocator",
+      "revision": "55ad7acfdd69d33fa58150cbc79862fd17e98c0d",
+      "url": "https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/Vulkan-Headers",
+      "revision": "fc6c06ac529e4b4b6e34c17cc650a8f62dee2eb0",
+      "url": "https://github.com/KhronosGroup/Vulkan-Headers"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/VulkanMemoryAllocator",
+      "revision": "98c4f3414b015432c6b040bdb53b5ba0c5d6c680",
+      "url": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/ddspp",
+      "revision": "2bdf73882b9169ca9d7a307b24d65d6c4e196084",
+      "url": "https://github.com/redorav/ddspp.git"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/dxc",
+      "revision": "cc15e715ee378a4f675b335bd1071ff105873fc8",
+      "url": "https://github.com/rt64/dxc-bin"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/hlslpp",
+      "revision": "6f5274c66132e8f951c400103d897582b8f21491",
+      "url": "https://github.com/redorav/hlslpp"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/im3d",
+      "revision": "d03941725fd0bd08c78c46e3e5b0265526e9d060",
+      "url": "https://github.com/john-chapman/im3d"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/imgui",
+      "revision": "277ae93c41314ba5f4c7444f37c4319cdf07e8cf",
+      "url": "https://github.com/ocornut/imgui"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/implot",
+      "revision": "f156599faefe316f7dd20fe6c783bf87c8bb6fd9",
+      "url": "https://github.com/epezent/implot"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/mupen64plus-core",
+      "revision": "860fac3fbae94194a392c1d9857e185eda6d083e",
+      "url": "https://github.com/mupen64plus/mupen64plus-core"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/mupen64plus-win32-deps",
+      "revision": "de8111fdcb89144abc16c85650ce4e21e028bfb5",
+      "url": "https://github.com/mupen64plus/mupen64plus-win32-deps"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/nativefiledialog-extended",
+      "revision": "17b6e8ce219c0677f94b63636abb9296b28841ca",
+      "url": "https://github.com/btzy/nativefiledialog-extended"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/re-spirv",
+      "revision": "5d6b756ee62760f71b65d37e41a0b5a3dab90507",
+      "url": "https://github.com/rt64/re-spirv"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/spirv-cross",
+      "revision": "6173e24b31f09a0c3217103a130e74c4ddec14a6",
+      "url": "https://github.com/KhronosGroup/SPIRV-Cross.git"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/stb",
+      "revision": "ae721c50eaf761660b4f90cc590453cdb0c2acd0",
+      "url": "https://github.com/nothings/stb"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/volk",
+      "revision": "466085407d5d2f50583fd663c1d65f93a7709d3e",
+      "url": "https://github.com/zeux/volk"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/xxHash",
+      "revision": "1864a50c9b5cf8500d8e9e61ed92aa0dd3772750",
+      "url": "https://github.com/Cyan4973/xxHash"
+    },
+    {
+      "parent": "rt64",
+      "path": "src/contrib/zstd",
+      "revision": "0ff651dd876823b99fa5c5f53292be28381aee9b",
+      "url": "https://github.com/facebook/zstd"
+    },
+    {
+      "parent": "recompiler",
+      "path": "lib/ELFIO",
+      "revision": "ad8b641f9682b6091ba8b9f7c8152255c1a2c803",
+      "url": "https://github.com/serge1/ELFIO"
+    },
+    {
+      "parent": "recompiler",
+      "path": "lib/fmt",
+      "revision": "8e728044f673774160f43b44a07c6b185352310f",
+      "url": "https://github.com/fmtlib/fmt"
+    },
+    {
+      "parent": "recompiler",
+      "path": "lib/rabbitizer",
+      "revision": "e0d8003047938e2ec3697eaf8d61a84d11d17b43",
+      "url": "https://github.com/Decompollaborate/rabbitizer"
+    },
+    {
+      "parent": "recompiler",
+      "path": "lib/sljit",
+      "revision": "f6326087b3404efb07c6d3deed97b3c3b8098c0c",
+      "url": "https://github.com/zherczeg/sljit"
+    },
+    {
+      "parent": "recompiler",
+      "path": "lib/tomlplusplus",
+      "revision": "1f7884e59165e517462f922e7b6de131bd9844f3",
+      "url": "https://github.com/marzer/tomlplusplus"
+    }
+  ]
+}

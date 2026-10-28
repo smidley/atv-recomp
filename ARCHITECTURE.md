@@ -2,6 +2,8 @@
 
 **Status:** proposed product architecture, 2026-10-28. A [foundation harness](docs/FOUNDATION_HARNESS.md) now implements a minimal SwiftUI shell, C/C++ probe, and Metal presentation check. The product components below remain proposals; no game runtime, provider, or physical-device behavior is validated.
 
+The maintainer has confirmed the foundation checks in the simulator. Current work uses an [isolated runtime-core experiment](docs/RUNTIME_AUDIT.md) outside the app target. It compiles the pinned upstream C++20 service library without the desktop host, RT64, `librecomp`, or LiveRecomp. The existing app bridge remains C++17; adopting C++20 for a future runtime adapter does not require changing that probe.
+
 ## System boundary
 
 RecompTV is one native tvOS app. Existing SMB storage and optional RomM provide data; game execution and rendering happen on Apple TV. No RecompTV server component is required.
