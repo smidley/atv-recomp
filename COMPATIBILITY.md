@@ -13,6 +13,20 @@ Do not interpret upstream desktop support as RecompTV support. Add other titles 
 
 After Shipwright, grow N64 coverage toward the full library before adding other platforms. One N64 port working does not make all other titles compatible.
 
+## Finding candidate projects
+
+Use the maintainer-supplied [recomp.fyi](https://recomp.fyi/) index to discover
+N64 recompilation, native source-port, and decompilation projects. Follow each
+row to its public upstream repository and verify the actual project type,
+release state, toolchain, renderer, accepted game data, and platform support.
+The index warns that automatically collected rows can be misclassified.
+
+Record upstream progress separately from RecompTV progress. A decompilation
+can supply groundwork without supplying a playable native port; a released
+desktop port still needs a tvOS integration. No index row should automatically
+become a bundled runtime or a Ready library entry. Shipwright remains first;
+other N64 projects form the subsequent investigation queue.
+
 ## What makes a game launchable
 
 All of the following must hold:
