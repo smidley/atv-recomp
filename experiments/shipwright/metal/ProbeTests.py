@@ -29,6 +29,9 @@ class EvidenceTests(unittest.TestCase):
 
     def test_complete_evidence(self):
         self.assertEqual(runner.validate_report(self.report, "fresh"), "passed")
+        for samples in self.report["rgba5551_samples"]:
+            samples[5:] = [1] * 4
+        self.assertEqual(runner.validate_report(self.report, "fresh"), "passed")
 
     def test_old_process_is_rejected(self):
         with self.assertRaises(ValueError):

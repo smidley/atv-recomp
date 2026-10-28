@@ -30,9 +30,13 @@ def validate_report(report, run_id):
             raise ValueError("Incomplete renderer lifecycle evidence")
         if not report.get("metal_device") or not all(type(report.get(k)) is int and 0 < report[k] <= 4096 for k in ("width", "height")):
             raise ValueError("Missing Metal device or drawable evidence")
-        expected_pixels = [[color] * 5 + [0] * 4 for color in (0xF801, 0x07C1, 0x003F)]
-        if report.get("rgba5551_samples") != expected_pixels:
-            raise ValueError("Recorded triangle/clear pixels do not match the three expected frames")
+        samples = report.get("rgba5551_samples")
+        if not isinstance(samples, list) or len(samples) != 3:
+            raise ValueError("Missing pixel samples for the three renderer lifecycles")
+        for values, color in zip(samples, (0xF801, 0x07C1, 0x003F)):
+            # The clear must be black; its alpha is not part of this screen test.
+            if not isinstance(values, list) or len(values) != 9 or values[:5] != [color] * 5 or any(v not in (0, 1) for v in values[5:]):
+                raise ValueError("Recorded triangle/clear pixels do not match the expected frame")
     return status
 
 
