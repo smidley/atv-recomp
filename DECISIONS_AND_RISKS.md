@@ -1,6 +1,6 @@
 # Decisions and Risks
 
-**Baseline:** 2026-10-28. This register separates agreed project direction from implementation proposals and unanswered feasibility questions. No runtime, renderer, or provider integration has been demonstrated in this repository.
+**Baseline:** 2026-10-28. This register separates agreed project direction from implementation proposals and unanswered feasibility questions. A minimal SwiftUI/C++/Metal foundation now exists; no game-runtime or provider integration has been demonstrated. See [POC.md](POC.md) for the foundation's measured verification status.
 
 ## Agreed decisions
 
@@ -26,7 +26,7 @@ These choices make the plan actionable but are not yet adopted or proven.
 
 | ID | Proposal | Evidence needed |
 | --- | --- | --- |
-| P01 | A narrow Swift/C/C++ runtime boundary with explicit host services | A working device bridge and lifecycle experiment |
+| P01 | Initial spike uses a C ABI and C++17 static library; full host services remain proposed | Simulator bridge test; physical-device and game-lifecycle validation still required |
 | P02 | Staged ROM transfers, content validation, then cache promotion | Interruption, changed-file, and low-space behavior |
 | P03 | SHA-256 identification with a documented canonical representation | Pinned upstream revision and normalization tests |
 | P04 | Read-only SMB ROM access | Library compatibility and independent-source tests |

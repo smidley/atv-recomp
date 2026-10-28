@@ -1,0 +1,64 @@
+name: RecompTV
+options:
+  minimumXcodeGenVersion: 2.45.0
+  deploymentTarget:
+    tvOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CLANG_CXX_LANGUAGE_STANDARD: c++17
+    CLANG_CXX_LIBRARY: libc++
+    CODE_SIGN_STYLE: Automatic
+targets:
+  RecompCore:
+    type: library.static
+    platform: tvOS
+    sources:
+      - RecompCore
+    settings:
+      base:
+        PRODUCT_NAME: RecompCore
+        SKIP_INSTALL: YES
+  RecompTV:
+    type: application
+    platform: tvOS
+    sources:
+      - RecompTV
+    dependencies:
+      - target: RecompCore
+      - sdk: MetalKit.framework
+      - sdk: libc++.tbd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.smidley.RecompTV
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: RecompTV
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SWIFT_OBJC_BRIDGING_HEADER: RecompTV/RecompTV-Bridging-Header.h
+        HEADER_SEARCH_PATHS: $(SRCROOT)/RecompCore
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+  RecompTVUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    sources:
+      - RecompTVUITests
+    dependencies:
+      - target: RecompTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.smidley.RecompTV.UITests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  RecompTV:
+    build:
+      targets:
+        RecompTV: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - RecompTVUITests
+    archive:
+      config: Release

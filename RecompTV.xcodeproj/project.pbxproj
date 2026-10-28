@@ -1,0 +1,558 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		17FB86B6074BFB1248E812FD /* RecompCore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 47A5D42D4C96944C987CFCC7 /* RecompCore.cpp */; };
+		1AB60CFC388B6DF946264257 /* RecompTVUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C310C3ED31E608AC1935C9 /* RecompTVUITests.swift */; };
+		519490B86F8A7F59CC575741 /* MetalSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B0C1DC18F69E2F882C1B68 /* MetalSurface.swift */; };
+		524322B5E977BF7154CEE9D5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861A5E00ABA12FE4319712CF /* ContentView.swift */; };
+		557975721F713E6688E1BEF5 /* RecompTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87CE7D47CB58251EC1AB1FD7 /* RecompTVApp.swift */; };
+		BE740A430121876DEA2CB2C4 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E6DF1B2D17365C544EAEB08 /* libc++.tbd */; };
+		D2D6F3D003840E47113615BF /* libRecompCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AE18FEEB277827E352D2916A /* libRecompCore.a */; };
+		DCE81D8A0E5E9EE8DE06B56B /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1B4B84A642E2EA60D13CA64 /* MetalKit.framework */; };
+		FF260063485A41E360A5FD72 /* RecompCore.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6C52CC3FD35992ABFEBB973F /* RecompCore.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		01B20C9AB8C99B30B5F3A4CA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2D226A658FC74E785E5CF6E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7F3755E831282232DC1D495F;
+			remoteInfo = RecompTV;
+		};
+		E10CBBA780E838B91B64C314 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2D226A658FC74E785E5CF6E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE300F6D9EB0781674B26B55;
+			remoteInfo = RecompCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3237FDA2822CC40313E4F063 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+				FF260063485A41E360A5FD72 /* RecompCore.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		16BECD9F58268DD7F21AF754 /* RecompTVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = RecompTVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		47A5D42D4C96944C987CFCC7 /* RecompCore.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RecompCore.cpp; sourceTree = "<group>"; };
+		4FC49F40ED0B282C2BFD57B7 /* RecompTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = RecompTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6C52CC3FD35992ABFEBB973F /* RecompCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecompCore.h; sourceTree = "<group>"; };
+		6E6DF1B2D17365C544EAEB08 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+		861A5E00ABA12FE4319712CF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		87CE7D47CB58251EC1AB1FD7 /* RecompTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecompTVApp.swift; sourceTree = "<group>"; };
+		A3B0C1DC18F69E2F882C1B68 /* MetalSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalSurface.swift; sourceTree = "<group>"; };
+		AE18FEEB277827E352D2916A /* libRecompCore.a */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRecompCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1B4B84A642E2EA60D13CA64 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		C5C310C3ED31E608AC1935C9 /* RecompTVUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecompTVUITests.swift; sourceTree = "<group>"; };
+		F58BB45A739CEB6DD97997A8 /* RecompTV-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RecompTV-Bridging-Header.h"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A3B66F14D3C4402A9E54E386 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2D6F3D003840E47113615BF /* libRecompCore.a in Frameworks */,
+				DCE81D8A0E5E9EE8DE06B56B /* MetalKit.framework in Frameworks */,
+				BE740A430121876DEA2CB2C4 /* libc++.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		059FE8E10B56E2DB1F822FD0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6E6DF1B2D17365C544EAEB08 /* libc++.tbd */,
+				B1B4B84A642E2EA60D13CA64 /* MetalKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		313CA9A859CBD5081701FC8E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AE18FEEB277827E352D2916A /* libRecompCore.a */,
+				4FC49F40ED0B282C2BFD57B7 /* RecompTV.app */,
+				16BECD9F58268DD7F21AF754 /* RecompTVUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		78B0CEC28FCED5A2994890C8 = {
+			isa = PBXGroup;
+			children = (
+				D0ECDDD71104D95048955905 /* RecompCore */,
+				D0D9AADF153190F65CC54269 /* RecompTV */,
+				7E8A79C4B355ACB1E9409B96 /* RecompTVUITests */,
+				059FE8E10B56E2DB1F822FD0 /* Frameworks */,
+				313CA9A859CBD5081701FC8E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7E8A79C4B355ACB1E9409B96 /* RecompTVUITests */ = {
+			isa = PBXGroup;
+			children = (
+				C5C310C3ED31E608AC1935C9 /* RecompTVUITests.swift */,
+			);
+			path = RecompTVUITests;
+			sourceTree = "<group>";
+		};
+		D0D9AADF153190F65CC54269 /* RecompTV */ = {
+			isa = PBXGroup;
+			children = (
+				861A5E00ABA12FE4319712CF /* ContentView.swift */,
+				A3B0C1DC18F69E2F882C1B68 /* MetalSurface.swift */,
+				F58BB45A739CEB6DD97997A8 /* RecompTV-Bridging-Header.h */,
+				87CE7D47CB58251EC1AB1FD7 /* RecompTVApp.swift */,
+			);
+			path = RecompTV;
+			sourceTree = "<group>";
+		};
+		D0ECDDD71104D95048955905 /* RecompCore */ = {
+			isa = PBXGroup;
+			children = (
+				47A5D42D4C96944C987CFCC7 /* RecompCore.cpp */,
+				6C52CC3FD35992ABFEBB973F /* RecompCore.h */,
+			);
+			path = RecompCore;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		65EBE1EA3C206EE4A055DEF8 /* RecompTVUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1FDEDA49960867F5715FC292 /* Build configuration list for PBXNativeTarget "RecompTVUITests" */;
+			buildPhases = (
+				9CE5C0FE89E114696D96CFA4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F3E6942EC96CE0870FDF16B6 /* PBXTargetDependency */,
+			);
+			name = RecompTVUITests;
+			packageProductDependencies = (
+			);
+			productName = RecompTVUITests;
+			productReference = 16BECD9F58268DD7F21AF754 /* RecompTVUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		7F3755E831282232DC1D495F /* RecompTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 018FDDB06CE05F3D37018DF6 /* Build configuration list for PBXNativeTarget "RecompTV" */;
+			buildPhases = (
+				1EE881A911B46AB5A7FDEB9B /* Sources */,
+				A3B66F14D3C4402A9E54E386 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7BDA38FED2F656162E3AF6BF /* PBXTargetDependency */,
+			);
+			name = RecompTV;
+			packageProductDependencies = (
+			);
+			productName = RecompTV;
+			productReference = 4FC49F40ED0B282C2BFD57B7 /* RecompTV.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CE300F6D9EB0781674B26B55 /* RecompCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 591B00C03C44202E8C56EECB /* Build configuration list for PBXNativeTarget "RecompCore" */;
+			buildPhases = (
+				3237FDA2822CC40313E4F063 /* CopyFiles */,
+				076E10C11B445D9FFA070F2E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RecompCore;
+			packageProductDependencies = (
+			);
+			productName = RecompCore;
+			productReference = AE18FEEB277827E352D2916A /* libRecompCore.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2D226A658FC74E785E5CF6E8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					65EBE1EA3C206EE4A055DEF8 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 7F3755E831282232DC1D495F;
+					};
+					7F3755E831282232DC1D495F = {
+						ProvisioningStyle = Automatic;
+					};
+					CE300F6D9EB0781674B26B55 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = B8666A24E310840E6112426C /* Build configuration list for PBXProject "RecompTV" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 78B0CEC28FCED5A2994890C8;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 313CA9A859CBD5081701FC8E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CE300F6D9EB0781674B26B55 /* RecompCore */,
+				7F3755E831282232DC1D495F /* RecompTV */,
+				65EBE1EA3C206EE4A055DEF8 /* RecompTVUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		076E10C11B445D9FFA070F2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				17FB86B6074BFB1248E812FD /* RecompCore.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1EE881A911B46AB5A7FDEB9B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				524322B5E977BF7154CEE9D5 /* ContentView.swift in Sources */,
+				519490B86F8A7F59CC575741 /* MetalSurface.swift in Sources */,
+				557975721F713E6688E1BEF5 /* RecompTVApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9CE5C0FE89E114696D96CFA4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1AB60CFC388B6DF946264257 /* RecompTVUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7BDA38FED2F656162E3AF6BF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE300F6D9EB0781674B26B55 /* RecompCore */;
+			targetProxy = E10CBBA780E838B91B64C314 /* PBXContainerItemProxy */;
+		};
+		F3E6942EC96CE0870FDF16B6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7F3755E831282232DC1D495F /* RecompTV */;
+			targetProxy = 01B20C9AB8C99B30B5F3A4CA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		197DC41EF24B907F3CCDA230 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Release;
+		};
+		3BDFAEFFF5F0C4D19790E306 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = RecompCore;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		40E7889C76586F274FFAB458 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.smidley.RecompTV.UITests;
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = RecompTV;
+			};
+			name = Debug;
+		};
+		763878AE34CE64D30DA96DD2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+		7C954CFA6023EC29B4D3AE6F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/RecompCore";
+				INFOPLIST_KEY_CFBundleDisplayName = RecompTV;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.smidley.RecompTV;
+				SDKROOT = appletvos;
+				SWIFT_OBJC_BRIDGING_HEADER = "RecompTV/RecompTV-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+		894AF6E74CBB64AA61AB27CC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.smidley.RecompTV.UITests;
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = RecompTV;
+			};
+			name = Release;
+		};
+		E6955EB558A2FB89D49B292B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = RecompCore;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+		EE37E95B0119CF62EE50665E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/RecompCore";
+				INFOPLIST_KEY_CFBundleDisplayName = RecompTV;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.smidley.RecompTV;
+				SDKROOT = appletvos;
+				SWIFT_OBJC_BRIDGING_HEADER = "RecompTV/RecompTV-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		018FDDB06CE05F3D37018DF6 /* Build configuration list for PBXNativeTarget "RecompTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE37E95B0119CF62EE50665E /* Debug */,
+				7C954CFA6023EC29B4D3AE6F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1FDEDA49960867F5715FC292 /* Build configuration list for PBXNativeTarget "RecompTVUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40E7889C76586F274FFAB458 /* Debug */,
+				894AF6E74CBB64AA61AB27CC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		591B00C03C44202E8C56EECB /* Build configuration list for PBXNativeTarget "RecompCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BDFAEFFF5F0C4D19790E306 /* Debug */,
+				E6955EB558A2FB89D49B292B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B8666A24E310840E6112426C /* Build configuration list for PBXProject "RecompTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				763878AE34CE64D30DA96DD2 /* Debug */,
+				197DC41EF24B907F3CCDA230 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2D226A658FC74E785E5CF6E8 /* Project object */;
+}

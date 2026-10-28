@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** proposed implementation architecture for the agreed product direction, 2026-10-28. No components below have been implemented or validated in this repository.
+**Status:** proposed product architecture, 2026-10-28. The initial foundation now implements a SwiftUI harness, a C ABI into a C++ static library, and a Metal clear/present surface. Providers, a game runtime, ROM validation, caching, and saves remain unimplemented. See [BUILDING.md](BUILDING.md) for the current source layout.
 
 ## System boundary
 

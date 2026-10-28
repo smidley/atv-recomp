@@ -1,0 +1,14 @@
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcresult
+*.trace
+
+# User-supplied game data must never enter the repository.
+*.z64
+*.v64
+*.n64
+*.rom
+

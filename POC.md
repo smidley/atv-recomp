@@ -1,6 +1,24 @@
 # Native tvOS Recompilation Proof of Concept
 
-**Status:** planned; no experiment has been run in this repository as of 2026-10-28.
+**Status:** the first SwiftUI/C++/Metal foundation is implemented and verified in the tvOS simulator as of 2026-10-28. An unsigned ARM64 device build also passes. Physical Apple TV execution and game-runtime integration remain untested. See [BUILDING.md](BUILDING.md) for reproducible commands and device setup.
+
+## Foundation results — 2026-10-28
+
+| Check | Observed result |
+| --- | --- |
+| Toolchain | Xcode 27.1 (27A9275), tvOS SDK 27.0, Swift 6 language mode, C++17 |
+| Simulator | Apple TV 4K (3rd generation), 1080p configuration, tvOS 27.0 (24J360), ARM64 simulator |
+| Swift-to-C++ bridge | Swift calls the C ABI of the RecompCore static library; the on-screen probe returns 42 |
+| Metal presentation | MTKView submits a clear/present render pass using the color returned by C++; command completion reports success |
+| Remote interaction | Select on Change test color produces a second color and another successful GPU completion |
+| Automated check | testNativeBridgeAndMetalFrame passed: 1 UI test, 0 failures; screenshot attached to the result bundle |
+| Device compilation | Release build for generic tvOS/ARM64 succeeds with signing disabled |
+| Physical Apple TV | Not tested; no Apple TV was available through the development tools |
+| Game runtime/dependencies | Not integrated or audited in this checkpoint |
+
+The checked-in project is generated from project.yml using XcodeGen 2.45.3 and includes a shared RecompTV scheme. The provisional tvOS 17.0 deployment target is not a compatibility claim. Builds emitted only the toolchain's App Intents metadata-skipped notice, with no source-code warnings in the final runs.
+
+**Decision:** proceed to physical-device bridge/presentation checks and the game dependency audit. A simulator frame and a device compile do not satisfy the physical-device or game-renderer checkpoints below. No ROM was needed or used for this foundation.
 
 ## Question to answer
 
@@ -84,7 +102,7 @@ Passing these checkpoints justifies the next engineering phase. It does not cert
 
 ## Result record
 
-Complete this record after the experiment; all fields are currently untested.
+Complete this record for the subsequent game-runtime experiment; those fields remain untested. Foundation results are recorded above.
 
 - Date and developer:
 - App commit:

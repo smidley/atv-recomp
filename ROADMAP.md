@@ -1,6 +1,6 @@
 # Roadmap
 
-**Planning baseline:** 2026-10-28. This is a sequence of evidence-based milestones, not a dated delivery commitment. Documentation is the only initial repository deliverable; application milestones remain unstarted.
+**Planning baseline:** 2026-10-28. This is a sequence of evidence-based milestones, not a dated delivery commitment. The native SwiftUI/C++/Metal foundation is now implemented and M1 is in progress. Physical-device and game-dependency validation remain required; see [POC.md](POC.md).
 
 Validate native execution before investing in the full launcher. If the runtime or renderer is infeasible, revisit the scope before building provider integrations around it.
 
