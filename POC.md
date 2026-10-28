@@ -1,6 +1,6 @@
 # Native tvOS Recompilation Proof of Concept
 
-**Status:** the [foundation harness](docs/FOUNDATION_HARNESS.md) is implemented for checkpoints 1–2. The physical Apple TV experiment has not been run, the upstream dependency audit is open, and no game runtime is integrated as of 2026-10-28.
+**Status:** the maintainer confirmed the [foundation harness](docs/FOUNDATION_HARNESS.md) bridge and visible Metal checks in the simulator on 2026-10-28. Work now proceeds on the simulator by request. The [source dependency audit and isolated core experiment](docs/RUNTIME_AUDIT.md) address checkpoint 3. Physical Apple TV validation is deferred, and no game runtime is integrated.
 
 ## Question to answer
 
@@ -17,6 +17,8 @@ The POC does not need SMB, RomM, artwork, a polished library, multiple games, sa
 ## Prerequisites
 
 The foundation harness uses no game data or upstream runtime. The ROM and pinned dependency prerequisites below apply before the dependency/game integration checkpoints.
+
+For the current simulator work, use the requirements and commands in the runtime audit. Hardware and ROM prerequisites below apply to the later physical/game experiment, not to the isolated core build. The source snapshot has been pinned; full transitive license and platform validation remains open.
 
 - Mac with a working Xcode/tvOS SDK installation and device signing setup.
 - Physical Apple TV with its model, chipset, and tvOS version recorded.

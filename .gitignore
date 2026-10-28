@@ -5,6 +5,7 @@ build/
 xcuserdata/
 .swiftpm/
 .build/
+__pycache__/
 
 # User game data and private development inputs never belong in Git.
 LocalData/

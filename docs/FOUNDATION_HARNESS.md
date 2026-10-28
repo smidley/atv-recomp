@@ -5,6 +5,11 @@ native tvOS application, a C ABI implemented in C++, and an on-demand Metal
 clear pass. It does not contain Zelda 64: Recompiled, RT64, ROM loading, game
 assets, audio, or library providers.
 
+The maintainer [confirmed the simulator bridge and visible color checks](SIMULATOR_PROGRESS.md)
+on 2026-10-28. Development continues on the simulator for now. See the
+[runtime audit](RUNTIME_AUDIT.md) for the next dependency experiment; physical
+Apple TV validation is deferred.
+
 ## Open and run
 
 1. On a Mac with Xcode 16 or newer and a tvOS SDK installed, open
@@ -91,7 +96,7 @@ Use the result record in [POC.md](../POC.md), including:
 | Native bridge | Visible result; unexpected values or errors |
 | Metal | GPU name, drawable size, GPU completion, user-confirmed blue/green/red |
 | Lifecycle | Rerun and suspend/resume outcomes, reproduction steps for failures |
-| Next gate | Upstream dependency/renderer audit remains open |
+| Next gate | Core/renderer adaptation from the pinned runtime audit; hardware validation remains deferred |
 
 No game or device is marked supported by this harness. Passing it does not
 complete M1's dependency audit or M2's game boot/gameplay criteria.

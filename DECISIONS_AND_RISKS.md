@@ -23,6 +23,17 @@ The first source harness uses a C ABI backed by C++17, Swift 6 complete concurre
 | D11 | Majora's Mask is the first POC candidate | It is not a confirmed supported title |
 | D12 | Preserve modular providers and runtimes | Other games/consoles remain possible future work |
 | D13 | Optional save synchronization and expanded compatibility come later | The initial project must still address safe save handling |
+| D14 | Continue development on the tvOS Simulator for now, confirmed 2026-10-28 | Hardware testing is deferred; simulator and host evidence must not be recorded as physical-device support |
+
+## Runtime audit baseline — 2026-10-28
+
+The [runtime audit](docs/RUNTIME_AUDIT.md) pins Zelda64Recomp and its runtime,
+renderer, and recompiler revisions for investigation. This is an experiment
+baseline, not an adopted application dependency set. The upstream core can be
+built separately; the full `librecomp` target currently includes LiveRecomp and
+executable patching, and RT64's Apple host/shader build paths assume macOS.
+The next work is isolated simulator compilation and adaptation at these
+boundaries. The app does not yet import any upstream runtime code.
 
 ## Proposed implementation choices
 
@@ -83,4 +94,4 @@ Sources below were checked on 2026-10-28. Recheck them when selecting versions o
 
 When resolving an open question, record the date, chosen option, rejected alternatives that materially affected the choice, and supporting build/test/source evidence. Update the requirements, architecture, roadmap, and compatibility matrix together when the choice changes scope.
 
-Document a blocker concretely instead of turning an assumption into a product promise. The immediate next action is the device-based experiment in [POC.md](POC.md).
+Document a blocker concretely instead of turning an assumption into a product promise. The immediate work is the simulator dependency experiment in [Runtime audit](docs/RUNTIME_AUDIT.md); the physical-device gates in [POC.md](POC.md) remain deferred.

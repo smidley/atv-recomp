@@ -2,7 +2,7 @@
 
 RecompTV is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported, statically recompiled games locally on tvOS.
 
-**Status: foundation harness implemented; device feasibility unverified.** The repository includes a minimal SwiftUI tvOS app that calls C++ through a C bridge and requests a deterministic Metal frame. No game runtime is integrated, and no Apple TV or game support is validated yet.
+**Status: foundation checks confirmed in the simulator; runtime porting experiments underway.** The maintainer confirmed the C++ result and visible Metal color checks on 2026-10-28. Development continues with the simulator for now; physical Apple TV validation is deferred. No game runtime is integrated. See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [pinned runtime audit](docs/RUNTIME_AUDIT.md).
 
 ## Run the foundation harness
 
@@ -53,6 +53,8 @@ These are design directions, not implemented capabilities.
 | [Roadmap](ROADMAP.md) | Milestones ordered around technical feasibility |
 | [Proof of concept](POC.md) | First native tvOS experiment and go/no-go evidence |
 | [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
+| [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
+| [Runtime audit](docs/RUNTIME_AUDIT.md) | Pinned upstream dependencies, porting blockers, and isolated core builds |
 | [Compatibility](COMPATIBILITY.md) | ROM validation, runtime eligibility, and support status |
 | [Decisions and risks](DECISIONS_AND_RISKS.md) | Agreed direction, proposals, unresolved choices, and sources |
 
