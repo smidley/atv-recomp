@@ -17,7 +17,11 @@ log = re.sub(r"\x1b\[[0-9;]*m", "", Path(sys.argv[1]).read_text(errors="replace"
 lines = log.splitlines()
 errors = []
 for index, line in enumerate(lines):
-    if re.search(r"error:|cmake error(?:\s|$)|^FAILED:", line, re.IGNORECASE):
+    if re.search(r"undefined symbols for architecture|^duplicate symbol", line, re.IGNORECASE):
+        errors.append(" ".join(part.strip() for part in lines[index:index + 12] if part.strip())[:650])
+    elif line.startswith("ld:") and "warning:" not in line:
+        errors.append(line.strip())
+    elif re.search(r"error:|cmake error(?:\s|$)|^FAILED:", line, re.IGNORECASE):
         # CMake puts the explanation on the following lines. Its ordinary
         # negative capability probes ('-- ... - Failed') are not build errors.
         context = lines[index:index + 4] if "cmake error" in line.lower() else [line]
