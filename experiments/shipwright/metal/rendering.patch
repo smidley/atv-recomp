@@ -103,7 +103,7 @@
  
  #ifndef _LANGUAGE_C
  #define _LANGUAGE_C
-@@ -62,6 +63,82 @@
+@@ -62,6 +63,92 @@
  
  // MARK: - ImGui & SDL Wrappers
  
@@ -113,6 +113,16 @@
 +        object->release();
 +        object = nullptr;
 +    }
++}
++
++void ConfigureDepthClipMode(MTL::RenderCommandEncoder* encoder) {
++#if TARGET_OS_TV && TARGET_OS_SIMULATOR
++    // The simulator rejects depth clamping. Keep Metal's default clipping;
++    // game near/far-plane fidelity requires a separate validation step.
++    (void)encoder;
++#else
++    encoder->setDepthClipMode(MTL::DepthClipModeClamp);
++#endif
 +}
 +}
 +
@@ -186,7 +196,7 @@
  bool GfxRenderingAPIMetal::NonUniformThreadGroupSupported() {
  #ifdef __IOS__
      // iOS devices with A11 or later support dispatch threads
-@@ -77,6 +154,10 @@
+@@ -77,6 +164,10 @@
      NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
  
      mLayer = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
@@ -197,7 +207,7 @@
      mLayer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
  
      mDevice = mLayer->device();
-@@ -186,9 +267,12 @@
+@@ -186,9 +277,12 @@
      MTL::Library* library =
          mDevice->newLibrary(NS::String::string(depth_shader, NS::UTF8StringEncoding), nullptr, &error);
  
@@ -213,7 +223,7 @@
  
      mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
      mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
-@@ -229,9 +313,12 @@
+@@ -229,9 +323,12 @@
      MTL::Library* library =
          mDevice->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
  
@@ -229,7 +239,7 @@
  
      MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
      MTL::Function* vertexFunc = library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding));
-@@ -466,6 +553,7 @@
+@@ -466,6 +563,7 @@
  
          MTL::DepthStencilState* depth_stencil_state = mDevice->newDepthStencilState(depth_descriptor);
          current_framebuffer.mCommandEncoder->setDepthStencilState(depth_stencil_state);
@@ -237,7 +247,7 @@
  
          depth_descriptor->release();
      }
-@@ -622,6 +710,8 @@
+@@ -622,6 +720,8 @@
  
      screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
      mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
@@ -246,7 +256,7 @@
      screen_framebuffer.mCommandBuffer->commit();
  
      // Now that commit has been called, retain the command buffer for GPU sync
-@@ -662,7 +752,8 @@
+@@ -662,7 +762,8 @@
          fb.mLastZmodeDecal = -1;
      }
  
@@ -256,7 +266,7 @@
  }
  
  void GfxRenderingAPIMetal::FinishRender() {
-@@ -691,6 +782,9 @@
+@@ -691,6 +792,9 @@
  void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
      mCurrentDrawable = nullptr;
      mCurrentDrawable = mLayer->nextDrawable();
@@ -266,7 +276,34 @@
  
      bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
  
-@@ -1192,6 +1286,12 @@
+@@ -904,7 +1008,7 @@
+         fb.mCommandEncoder = fb.mCommandBuffer->renderCommandEncoder(fb.mRenderPassDescriptor);
+         std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
+         fb.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-        fb.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
++        ConfigureDepthClipMode(fb.mCommandEncoder);
+     }
+ 
+     if (noise_scale != 0.0f) {
+@@ -944,7 +1048,7 @@
+ 
+     std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Clear", mCurrentFramebuffer);
+     framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-    framebuffer.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    ConfigureDepthClipMode(framebuffer.mCommandEncoder);
+     framebuffer.mCommandEncoder->setViewport(*framebuffer.mViewport);
+     framebuffer.mCommandEncoder->setScissorRect(*framebuffer.mScissorRect);
+ 
+@@ -1155,7 +1259,7 @@
+ 
+     std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
+     source_framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-    source_framebuffer.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    ConfigureDepthClipMode(source_framebuffer.mCommandEncoder);
+     source_framebuffer.mCommandEncoder->setViewport(*source_framebuffer.mViewport);
+     source_framebuffer.mCommandEncoder->setScissorRect(*source_framebuffer.mScissorRect);
+ 
+@@ -1192,6 +1296,12 @@
          // to guarantee the GPU blit has finished before reading the shared buffer.
          if (mScreenReadbackDataReady && mScreenReadbackBuffer && mScreenReadbackCmdBuf) {
              mScreenReadbackCmdBuf->waitUntilCompleted();

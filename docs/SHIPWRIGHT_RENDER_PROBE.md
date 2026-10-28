@@ -34,6 +34,14 @@ rendering should keep it enabled when readback is unnecessary. Presentation
 uses the existing command-buffer `presentDrawable`/`commit` path; it does not
 use tvOS-unavailable presentation callbacks or mix in Metal 4 queue APIs.
 
+The first execution attempt reached Metal but API validation rejected upstream's
+depth-clamp request (`Depth Clip Mode is not supported on this device`). tvOS
+Simulator therefore retains Metal's [default depth clipping](https://developer.apple.com/documentation/metal/mtlrendercommandencoder/setdepthclipmode(_:)).
+The fixture's vertices have depth 0.5, inside the clip range. This fallback does
+not establish equivalent game rendering near the near/far planes; that needs a
+separate fidelity test and GPU trace review when the game is integrated. The
+non-simulator upstream clamp path remains unchanged and untested here.
+
 GPU completion and pixel readback are automated evidence. Screenshots are
 saved for visual review, not treated as proof of a presentation timestamp.
 This does not exercise the game loop, display-list interpretation, textures,
