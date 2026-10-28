@@ -1,0 +1,60 @@
+name: Shipwright Metal simulator build
+
+on:
+  pull_request:
+    branches: [main, feature/shipwright-rom-identification]
+    paths:
+      - .github/workflows/shipwright-metal.yml
+      - experiments/shipwright/metal/**
+      - scripts/check-shipwright-metal.sh
+      - scripts/prepare-shipwright-metal.py
+      - scripts/verify-shipwright-metal-build.py
+      - scripts/ci-run-experiment.sh
+      - upstream/shipwright-baseline.json
+      - upstream/libultraship-simulator.json
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/shipwright-metal.yml
+      - experiments/shipwright/metal/**
+      - scripts/check-shipwright-metal.sh
+      - scripts/prepare-shipwright-metal.py
+      - scripts/verify-shipwright-metal-build.py
+      - scripts/ci-run-experiment.sh
+      - upstream/shipwright-baseline.json
+      - upstream/libultraship-simulator.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-build:
+    runs-on: macos-15
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [arm64, x86_64]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: kenix3/libultraship
+          ref: da6daf1a50a5e46d6641408d52227e31e85e46df
+          path: build/upstream/libultraship
+          submodules: false
+          persist-credentials: false
+      - name: Record Xcode and SDK
+        run: |
+          xcodebuild -version
+          xcrun --sdk appletvsimulator --show-sdk-version
+          cmake --version
+      - name: Compile and link libultraship services and Metal backend
+        id: build
+        run: bash scripts/ci-run-experiment.sh bash scripts/check-shipwright-metal.sh ${{ matrix.architecture }} build/upstream/libultraship
+      - name: "${{ steps.build.outputs.diagnostic }}"
+        if: failure() && steps.build.outcome == 'failure'
+        run: echo 'See the build step for the complete error.'

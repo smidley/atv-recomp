@@ -1,0 +1,71 @@
+{
+  "recorded_on": "2026-10-28",
+  "libultraship_revision": "da6daf1a50a5e46d6641408d52227e31e85e46df",
+  "dependencies": [
+    {
+      "name": "imgui",
+      "repository": "ocornut/imgui",
+      "upstream_ref": "v1.91.9b-docking",
+      "revision": "4806a1924ff6181180bf5e4b8b79ab4394118875"
+    },
+    {
+      "name": "sdl2",
+      "repository": "libsdl-org/SDL",
+      "upstream_ref": "release-2.32.10",
+      "revision": "5d249570393f7a37e037abf22cd6012a4cc56a71"
+    },
+    {
+      "name": "nlohmann_json",
+      "repository": "nlohmann/json",
+      "upstream_ref": "v3.12.0",
+      "revision": "55f93686c01528224f448c19128836e7df245f72"
+    },
+    {
+      "name": "tinyxml2",
+      "repository": "leethomason/tinyxml2",
+      "upstream_ref": "11.0.0",
+      "revision": "9148bdf719e997d1f474be6bcc7943881046dba1"
+    },
+    {
+      "name": "spdlog",
+      "repository": "gabime/spdlog",
+      "upstream_ref": "v1.16.0",
+      "revision": "486b55554f11c9cccc913e11a87085b2a91f706f"
+    },
+    {
+      "name": "libzip",
+      "repository": "nih-at/libzip",
+      "upstream_ref": "v1.11.4",
+      "revision": "6f8a0cdd24a0dc6cce9dac4a7679da784ab124ea"
+    },
+    {
+      "name": "metalcpp",
+      "repository": "briaguya0/single-header-metal-cpp",
+      "upstream_ref": "macOS13_iOS16",
+      "revision": "7bf710a725b386f6db869f8a2b48a56be29b6233"
+    },
+    {
+      "name": "threadpool",
+      "repository": "bshoshany/thread-pool",
+      "upstream_ref": "v4.1.0",
+      "revision": "097aa718f25d44315cadb80b407144ad455ee4f9"
+    },
+    {
+      "name": "prism",
+      "repository": "KiritoDv/prism-processor",
+      "upstream_ref": "1de054450e7b3c5f777d2e3dfcb228ad120c329d",
+      "revision": "1de054450e7b3c5f777d2e3dfcb228ad120c329d"
+    },
+    {
+      "name": "monocypher",
+      "repository": "LoupVaillant/Monocypher",
+      "upstream_ref": "0d85f98c9d9b0227e42cf795cb527dff372b40a4",
+      "revision": "0d85f98c9d9b0227e42cf795cb527dff372b40a4"
+    }
+  ],
+  "stb_image": {
+    "revision": "0bc88af4de5fb022db643c2d8e549a0927749354",
+    "sha256": "c54b15a689e6a1f32c75e2ec23afa442e3e0e37e894b73c1974d08679b20dd5c"
+  },
+  "scope": "Dependencies selected for the simulator services/Metal build. Scripting, MPQ and graphics disassembler disabled; this is not a complete Shipwright/Torch lockfile."
+}
