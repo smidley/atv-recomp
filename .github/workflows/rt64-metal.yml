@@ -1,0 +1,34 @@
+name: RT64 Metal experiment
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  window-adapter:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test window metrics and concurrent snapshots
+        run: bash scripts/test-rt64-window.sh
+
+  simulator-metal:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Read tvOS SDK availability declarations
+        id: sdk
+        run: python3 scripts/inspect-tvos-sdk.py
+      - name: "${{ steps.sdk.outputs.declarations }}"
+        run: echo 'Native SDK declarations are recorded in the preceding step.'
