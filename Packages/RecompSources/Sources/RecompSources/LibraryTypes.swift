@@ -35,6 +35,7 @@ public struct LibrarySource: Identifiable, Codable, Hashable, Sendable {
 
 public enum LibraryLocation: Hashable, Sendable {
     case root
+    case platform(Int)
     case directory(String)
     case rom(Int)
 }
@@ -79,11 +80,34 @@ public protocol LibraryProvider: Sendable {
                   progress: @escaping ProgressHandler) async throws
 }
 
-public enum LibraryError: Error, LocalizedError, Equatable {
+public enum LibraryError: Error, LocalizedError, Equatable, Sendable {
     case message(String)
+    case httpStatus(Int)
     public var errorDescription: String? {
-        switch self { case .message(let text): text }
+        switch self {
+        case .message(let text): text
+        case .httpStatus(401), .httpStatus(403):
+            "RomM denied access. Check the API token and its roms.read permission."
+        case .httpStatus(404):
+            "RomM could not find this item. Refresh the library or check the instance URL."
+        case .httpStatus(let code): "RomM returned HTTP \(code). Try again after checking the server."
+        }
     }
+}
+
+/// Provider diagnostics may contain private server addresses; keep them out of UI reports.
+public func userFacingNetworkError(_ error: any Error) -> String {
+    if let error = error as? LibraryError { return error.localizedDescription }
+    if let error = error as? URLError {
+        switch error.code {
+        case .notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .timedOut:
+            return "The server could not be reached. Check its address, network access and local-network permission, then retry."
+        case .serverCertificateUntrusted, .serverCertificateHasBadDate, .secureConnectionFailed:
+            return "The server's TLS connection could not be verified. Check its HTTPS certificate."
+        default: return "The network transfer failed. Check the server and retry."
+        }
+    }
+    return "The operation failed. Check the server, share name, account permissions and available storage, then retry."
 }
 
 public enum TransferLimits {

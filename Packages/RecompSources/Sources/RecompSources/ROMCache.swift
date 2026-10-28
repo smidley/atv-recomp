@@ -47,17 +47,32 @@ public actor ROMCache {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
 
-    public func current() throws -> ImportedROM? {
-        let index = root.appendingPathComponent("current.json")
-        guard FileManager.default.fileExists(atPath: index.path) else { return nil }
-        let record = try JSONDecoder().decode(ImportedROM.self, from: Data(contentsOf: index))
-        guard record.sha256.count == 64, record.sha256.allSatisfy({ $0.isHexDigit }) else { return nil }
+    /// Read the new multi-ROM index, falling back to the original single-ROM record.
+    /// The original files are retained during migration; the new index is written atomically.
+    private func records() throws -> [ImportedROM] {
+        let index = root.appendingPathComponent("library.json")
+        if FileManager.default.fileExists(atPath: index.path) {
+            return try JSONDecoder().decode([ImportedROM].self, from: Data(contentsOf: index))
+        }
+        let legacy = root.appendingPathComponent("current.json")
+        guard FileManager.default.fileExists(atPath: legacy.path) else { return [] }
+        return [try JSONDecoder().decode(ImportedROM.self, from: Data(contentsOf: legacy))]
+    }
+
+    private func isValid(_ record: ImportedROM) -> Bool {
+        guard record.sha256.count == 64, record.sha256.allSatisfy({ $0.isHexDigit }) else { return false }
         let file = root.appendingPathComponent(record.sha256 + ".romdata")
-        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
-        let identity = try ROMIdentity.read(file)
-        guard identity.sha256 == record.sha256, revisions[identity.sha1] == record.revision,
-              record.revision != nil else { return nil }
-        return record
+        guard let identity = try? ROMIdentity.read(file) else { return false }
+        return identity.sha256 == record.sha256 && identity.sha1 == record.sha1 && identity.size == record.size &&
+            revisions[identity.sha1] == record.revision && record.recognized
+    }
+
+    public func current() throws -> ImportedROM? {
+        try records().last(where: isValid)
+    }
+
+    public func all() throws -> [ImportedROM] {
+        try records().filter(isValid)
     }
 
     public func acquire(_ entry: LibraryEntry, sourceID: UUID, provider: any LibraryProvider,
@@ -84,12 +99,11 @@ public actor ROMCache {
             // Replace a possibly purged/corrupt old copy only after a complete fresh verification.
             _ = try FileManager.default.replaceItemAt(destination, withItemAt: canonical)
         } else { try FileManager.default.moveItem(at: canonical, to: destination) }
-        try JSONEncoder().encode(result).write(to: root.appendingPathComponent("current.json"), options: .atomic)
-        // This first-game milestone retains one verified ROM. Source files are never modified.
-        for file in try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
-            where file.pathExtension == "romdata" && file.lastPathComponent != destination.lastPathComponent {
-            try? FileManager.default.removeItem(at: file)
-        }
+        var retained = try records().filter { $0.id != result.id }
+        retained.append(result)
+        try JSONEncoder().encode(retained).write(to: root.appendingPathComponent("library.json"), options: .atomic)
+        // Every accepted identity is retained. Re-importing identical bytes deduplicates
+        // storage; an unsupported, failed or cancelled transfer never evicts another ROM.
         return result
     }
 

@@ -10,10 +10,15 @@ struct NetworkTests {
 
     @Test func rommBrowsePaginationAndIndividualFileDownload() async throws {
         let provider = try romm()
-        let first = try await provider.list(.root, search: "Ocarina & Zelda", offset: 0)
+        let platforms = try await provider.list(.root, search: "", offset: 0)
+        #expect(platforms.entries.map(\.name) == ["Nintendo 64", "SNES"])
+        #expect(platforms.entries.first?.folder == .platform(1))
+        let filtered = try await provider.list(.root, search: "snes", offset: 0)
+        #expect(filtered.entries.map(\.folder) == [.platform(2)])
+        let first = try await provider.list(.platform(1), search: "Ocarina & Zelda", offset: 0)
         #expect(first.entries.count == 1)
         #expect(first.nextOffset == 1)
-        let next = try await provider.list(.root, search: "", offset: 1)
+        let next = try await provider.list(.platform(1), search: "", offset: 1)
         #expect(next.nextOffset == nil)
         let files = try await provider.list(.rom(3), search: "", offset: 0)
         let rom = try #require(files.entries.first { $0.isROM })
@@ -25,6 +30,26 @@ struct NetworkTests {
         #expect(try Data(contentsOf: downloaded) == syntheticROM())
         let archive = try #require(files.entries.first { !$0.isROM })
         await #expect(throws: (any Error).self) { try await provider.download(archive, to: downloaded, progress: { _ in }) }
+    }
+
+    @Test func romsReadOnlyTokenStillGroupsEveryPlatformPage() async throws {
+        let provider = try romm("/roms-only")
+        let page = try await provider.list(.root, search: "", offset: 0)
+        #expect(page.entries.map(\.name) == ["Nintendo 64", "SNES"])
+        #expect(page.entries.map(\.detail) == ["2 ROMs", "1 ROM"])
+    }
+
+    @Test func platformBatchVisitsEveryCatalogPageAndSkipsArchives() async throws {
+        let folder = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let report = await ROMBatchImporter.run(location: .platform(1), sourceID: UUID(),
+            provider: try romm(), cache: try ROMCache(root: folder), progress: { _ in })
+        #expect(report.failure == nil)
+        #expect(report.discoveryComplete)
+        #expect(report.total == 3)
+        #expect(report.count(.unsupported) == 2)
+        #expect(report.count(.skipped) == 1)
+        #expect(!report.results.contains { $0.name == "Other.sfc" })
     }
 
     @Test func deniedAccessAndRedirectsFailWithoutForwardingToken() async throws {

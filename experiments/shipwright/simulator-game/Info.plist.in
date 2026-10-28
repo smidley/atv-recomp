@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>CFBundleIdentifier</key><string>com.smidley.RecompTVShipwrightExperiment</string>
+    <key>CFBundleExecutable</key><string>RecompTVShipwright</string>
+    <key>CFBundleName</key><string>Shipwright Test</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>0.1</string>
+    <key>CFBundleSupportedPlatforms</key><array><string>AppleTVSimulator</string></array>
+    <key>UIDeviceFamily</key><array><integer>3</integer></array>
+    <key>MinimumOSVersion</key><string>17.0</string>
+    <key>UILaunchScreen</key><dict/>
+    <key>UIApplicationSupportsIndirectInputEvents</key><true/>
+    <key>UIApplicationSceneManifest</key><dict>
+        <key>UIApplicationSupportsMultipleScenes</key><false/>
+        <key>UISceneConfigurations</key><dict>
+            <key>UIWindowSceneSessionRoleApplication</key><array><dict>
+                <key>UISceneConfigurationName</key><string>Game</string>
+                <key>UISceneDelegateClassName</key><string>RecompTVGameSceneDelegate</string>
+            </dict></array>
+        </dict>
+    </dict>
+</dict></plist>

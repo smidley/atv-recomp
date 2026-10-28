@@ -14,11 +14,13 @@ struct LibraryView: View {
                     Text("Your games, on Apple TV").font(.largeTitle.bold())
                     Text("Connect a server and import Ocarina of Time for Shipwright.")
                         .foregroundStyle(.secondary)
-                    if let imported = library.imported { ROMResultView(rom: imported) }
+                    if !library.importedROMs.isEmpty {
+                        Text(library.importedROMs.count == 1 ? "1 verified ROM saved locally" : "\(library.importedROMs.count) verified ROMs saved locally").font(.headline)
+                    }
                     HStack(spacing: 24) {
                         Button("Add SMB share") { editing = LibrarySource(kind: .smb) }
                         Button("Add RomM") { editing = LibrarySource(kind: .romm) }
-                        if library.imported != nil {
+                        if !library.importedROMs.isEmpty {
                             Button("Clear ROM cache") { Task { await library.clearCache() } }
                         }
                     }
@@ -41,6 +43,7 @@ struct LibraryView: View {
                     }
                     Text("ROM import is available. Native gameplay and game asset preparation are still being integrated.")
                         .font(.callout).foregroundStyle(.secondary)
+                    ForEach(library.importedROMs) { ROMResultView(rom: $0) }
                     Button("Third-party notices") { showingNotices = true }
                 }
                 .padding(48)
@@ -141,6 +144,7 @@ private struct SourceEditorView: View {
 private struct SourceBrowserView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var browser: SourceBrowserModel
+    @State private var showingBatchResults = false
     let library: LibraryModel
 
     init(source: LibrarySource, library: LibraryModel) {
@@ -149,28 +153,54 @@ private struct SourceBrowserView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            LazyVStack(alignment: .leading, spacing: 24) {
                 Text(browser.title).font(.title.bold())
+                if browser.isPlatformList {
+                    Text("Choose a platform").font(.headline).foregroundStyle(.secondary)
+                } else if browser.source.kind == .smb && browser.history.isEmpty {
+                    Text("Open a platform folder, or import all ROMs from this folder.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
                 HStack(spacing: 24) {
                     if !browser.history.isEmpty { Button("Up one level") { browser.back() } }
-                    TextField(browser.source.kind == .romm ? "Search RomM" : "Filter this folder", text: $browser.search)
+                    TextField(browser.searchPrompt, text: $browser.search)
                         .onSubmit { browser.refresh() }
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                     Button("Search") { browser.refresh() }
                     Button("Refresh") { browser.refresh() }
                 }
                 .disabled(library.isImporting)
+                if let location = browser.batchLocation {
+                    HStack(spacing: 24) {
+                        Button("Verify and import all ROMs") {
+                            library.acquireAll(in: location, title: browser.title, source: browser.source)
+                        }
+                        .disabled(library.isImporting || browser.loading)
+                        Text("Includes every page and subfolder, even when search is active.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Text("Supported Ocarina of Time revisions are saved. Other games and compressed files appear in the results.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if library.isImporting {
                     HStack(spacing: 24) {
                         ProgressView(value: library.importFraction)
                             .frame(width: 300)
-                        Text(library.importStatus)
+                        Text(library.importStatus).font(.callout)
                         Button("Cancel import") { library.cancelImport() }
                     }
                 } else if !library.importStatus.isEmpty {
                     Text(library.importStatus).font(.callout)
                 }
-                if let imported = library.imported { ROMResultView(rom: imported) }
+                if let report = library.batchReport {
+                    HStack(spacing: 24) {
+                        Text("\(report.results.count) of \(report.total) items processed").font(.callout)
+                        Button("View import results") { showingBatchResults = true }
+                    }
+                    if let failure = report.failure { Text(failure).foregroundStyle(.orange) }
+                } else if !browser.isPlatformList, !library.importStatus.isEmpty, let imported = library.imported {
+                    ROMResultView(rom: imported)
+                }
                 if browser.loading { ProgressView("Loading library…") }
                 ForEach(browser.entries) { entry in
                     Button {
@@ -191,7 +221,7 @@ private struct SourceBrowserView: View {
                     .disabled(library.isImporting || browser.loading || (entry.folder == nil && !entry.isROM))
                 }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text("No matching files. Choose a folder containing uncompressed .z64, .v64 or .n64 ROMs.")
+                    Text(browser.isPlatformList ? "No matching platforms." : "No matching ROMs in this platform or folder.")
                         .foregroundStyle(.secondary)
                 }
                 if browser.nextOffset != nil {
@@ -200,8 +230,13 @@ private struct SourceBrowserView: View {
             }
             .padding(48)
         }
-        .onAppear { browser.refresh() }
-        .onDisappear { browser.cancel(); if library.isImporting { library.cancelImport() } }
+        .sheet(isPresented: $showingBatchResults) {
+            BatchResultsView(library: library)
+        }
+        .onAppear { if !library.isImporting { browser.refresh() } }
+        .onDisappear {
+            if !showingBatchResults { browser.cancel(); if library.isImporting { library.cancelImport() } }
+        }
         .onChange(of: scenePhase) {
             if scenePhase == .background { browser.cancel(); if library.isImporting { library.cancelImport() } }
         }
@@ -210,6 +245,41 @@ private struct SourceBrowserView: View {
         })) {
             Button("OK") { browser.error = nil; library.error = nil }
         } message: { Text(browser.error ?? library.error ?? "") }
+    }
+}
+
+@MainActor
+private struct BatchResultsView: View {
+    @Environment(\.dismiss) private var dismiss
+    let library: LibraryModel
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 24) {
+                Button("Done") { dismiss() }
+                Text(library.batchTitle).font(.title.bold())
+                if let report = library.batchReport {
+                    Text(library.isImporting ? library.importStatus : report.summary).font(.headline)
+                    if report.cancelled { Text("Completed imports were kept. Run the batch again to check the remaining files.") }
+                    if let failure = report.failure { Text(failure).foregroundStyle(.orange) }
+                    if report.results.isEmpty { Text(library.isImporting ? "Scanning for ROM files…" : "No files were processed.") }
+                    ForEach(report.results) { result in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(result.name, systemImage: result.outcome == .imported ? "checkmark.seal" : "info.circle")
+                                .font(.headline)
+                            Text("\(result.outcome.rawValue.capitalized) · \(result.message)").font(.callout)
+                        }
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+                        .focusable()
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+            }
+            .padding(64)
+        }
+        .frame(minWidth: 1100, idealWidth: 1400, minHeight: 650, idealHeight: 850)
     }
 }
 

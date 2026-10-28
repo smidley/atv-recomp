@@ -65,12 +65,7 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
         }
         guard response.statusCode == 200 else {
             if failure == nil {
-                switch response.statusCode {
-                case 401, 403:
-                    failure = LibraryError.message("RomM denied access. Check the API token and its roms.read permission.")
-                case 404: failure = LibraryError.message("RomM could not find this item. Refresh the library or check the instance URL.")
-                default: failure = LibraryError.message("RomM returned HTTP \(response.statusCode). Try again after checking the server.")
-                }
+                failure = LibraryError.httpStatus(response.statusCode)
             }
             completionHandler(.cancel); return
         }
