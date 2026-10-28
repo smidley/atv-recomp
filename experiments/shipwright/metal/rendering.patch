@@ -1,0 +1,281 @@
+--- a/include/fast/backends/gfx_metal.h
++++ b/include/fast/backends/gfx_metal.h
+@@ -128,7 +128,8 @@
+ 
+ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
+   public:
+-    ~GfxRenderingAPIMetal() override = default;
++    ~GfxRenderingAPIMetal() override;
++    bool WaitForFrame(std::string& error);
+     const char* GetName() override;
+     int GetMaxTextureSize() override;
+     GfxClipParameters GetClipParameters() override;
+@@ -183,32 +184,32 @@
+     bool NonUniformThreadGroupSupported();
+     void SetupScreenFramebuffer(uint32_t width, uint32_t height);
+     // Elements that only need to be setup once
+-    SDL_Renderer* mRenderer;
+-    CA::MetalLayer* mLayer; // CA::MetalLayer*
+-    MTL::Device* mDevice;
+-    MTL::CommandQueue* mCommandQueue;
+-    MTL::CommandQueue* mReadbackQueue;
++    SDL_Renderer* mRenderer = nullptr;
++    CA::MetalLayer* mLayer = nullptr; // CA::MetalLayer*
++    MTL::Device* mDevice = nullptr;
++    MTL::CommandQueue* mCommandQueue = nullptr;
++    MTL::CommandQueue* mReadbackQueue = nullptr;
+ 
+     int mCurrentVertexBufferPoolIndex = 0;
+-    MTL::Buffer* mVertexBufferPool[kMaxVertexBufferPoolSize];
++    MTL::Buffer* mVertexBufferPool[kMaxVertexBufferPoolSize]{};
+     std::unordered_map<std::pair<uint64_t, uint32_t>, struct ShaderProgramMetal, hash_pair_shader_ids>
+         mShaderProgramPool;
+ 
+     std::vector<struct TextureDataMetal> mTextures;
+     std::vector<FramebufferMetal> mFramebuffers;
+-    FrameUniforms mFrameUniforms;
+-    CoordUniforms mCoordUniforms;
+-    DrawUniforms mDrawUniforms;
+-    MTL::Buffer* mFrameUniformBuffer;
+-
+-    uint32_t mMsaaNumQualityLevels[METAL_MAX_MULTISAMPLE_SAMPLE_COUNT];
++    FrameUniforms mFrameUniforms{};
++    CoordUniforms mCoordUniforms{};
++    DrawUniforms mDrawUniforms{};
++    MTL::Buffer* mFrameUniformBuffer = nullptr;
++
++    uint32_t mMsaaNumQualityLevels[METAL_MAX_MULTISAMPLE_SAMPLE_COUNT]{};
+ 
+     // Depth querying
+-    MTL::Buffer* mCoordUniformBuffer;
+-    MTL::Buffer* mDepthValueOutputBuffer;
+-    size_t mCoordBufferSize;
+-    MTL::Function* mDepthComputeFunction;
+-    MTL::Function* mConvertToRgb5a1Function;
++    MTL::Buffer* mCoordUniformBuffer = nullptr;
++    MTL::Buffer* mDepthValueOutputBuffer = nullptr;
++    size_t mCoordBufferSize = 0;
++    MTL::Function* mDepthComputeFunction = nullptr;
++    MTL::Function* mConvertToRgb5a1Function = nullptr;
+     MTL::ComputePipelineState* mConvertToRgb5a1PipelineState = nullptr;
+ 
+     // Screen FB deferred readback: blit in EndFrame, CPU conversion next frame.
+@@ -222,20 +223,21 @@
+     bool mScreenReadbackRequested = false;
+ 
+     // Current state
+-    struct ShaderProgramMetal* mShaderProgram;
+-    CA::MetalDrawable* mCurrentDrawable;
++    struct ShaderProgramMetal* mShaderProgram = nullptr;
++    CA::MetalDrawable* mCurrentDrawable = nullptr;
+     std::set<int> mDrawnFramebuffers;
+-    NS::AutoreleasePool* mFrameAutoreleasePool;
+-
+-    int mCurrentTile;
+-    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES];
+-
+-    int32_t mRenderTargetHeight;
+-    int mCurrentFramebuffer;
+-    size_t mCurrentVertexBufferOffset;
++    NS::AutoreleasePool* mFrameAutoreleasePool = nullptr;
++
++    int mCurrentTile = 0;
++    uint32_t mCurrentTextureIds[SHADER_MAX_TEXTURES]{};
++
++    int32_t mRenderTargetHeight = 0;
++    int mCurrentFramebuffer = 0;
++    size_t mCurrentVertexBufferOffset = 0;
+     FilteringMode mCurrentFilterMode = FILTER_THREE_POINT;
+ 
+-    bool mNonUniformThreadgroupSupported;
++    bool mNonUniformThreadgroupSupported = false;
++    MTL::CommandBuffer* mLastSubmittedFrame = nullptr;
+ };
+ 
+ } // namespace Fast
+--- a/src/fast/backends/gfx_metal.cpp
++++ b/src/fast/backends/gfx_metal.cpp
+@@ -17,6 +17,7 @@
+ #include <math.h>
+ #include <cmath>
+ #include <stddef.h>
++#include <stdexcept>
+ 
+ #ifndef _LANGUAGE_C
+ #define _LANGUAGE_C
+@@ -62,6 +63,82 @@
+ 
+ // MARK: - ImGui & SDL Wrappers
+ 
++namespace {
++template <typename T> void ReleaseMetal(T*& object) {
++    if (object != nullptr) {
++        object->release();
++        object = nullptr;
++    }
++}
++}
++
++GfxRenderingAPIMetal::~GfxRenderingAPIMetal() {
++    // Finish any partially encoded frame before placing queue-drain barriers.
++    // Destruction, like all rendering operations here, belongs to the render thread.
++    for (auto& fb : mFramebuffers) {
++        if (fb.mCommandBuffer && fb.mCommandBuffer->status() < MTL::CommandBufferStatusCommitted) {
++            if (fb.mCommandEncoder && !fb.mHasEndedEncoding) {
++                fb.mCommandEncoder->endEncoding();
++            }
++            fb.mCommandBuffer->commit();
++        }
++    }
++    NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
++    for (auto* queue : {mCommandQueue, mReadbackQueue}) {
++        if (queue) {
++            auto* barrier = queue->commandBuffer();
++            barrier->commit();
++            barrier->waitUntilCompleted();
++        }
++    }
++    ReleaseMetal(mLastSubmittedFrame);
++    ReleaseMetal(mScreenReadbackCmdBuf);
++    ReleaseMetal(mScreenReadbackBuffer);
++    for (auto& [key, program] : mShaderProgramPool) {
++        for (auto*& pipeline : program.pipeline_state_variants) ReleaseMetal(pipeline);
++    }
++    for (auto& fb : mFramebuffers) {
++        ReleaseMetal(fb.mRenderPassDescriptor);
++        ReleaseMetal(fb.mDepthTexture);
++        ReleaseMetal(fb.mMsaaDepthTexture);
++        delete fb.mScissorRect;
++        delete fb.mViewport;
++    }
++    for (size_t i = 0; i < mTextures.size(); ++i) {
++        // The screen texture is borrowed from CAMetalDrawable, never owned here.
++        if (i != 0) ReleaseMetal(mTextures[i].texture);
++        ReleaseMetal(mTextures[i].msaaTexture);
++        ReleaseMetal(mTextures[i].sampler);
++    }
++    for (auto*& buffer : mVertexBufferPool) ReleaseMetal(buffer);
++    ReleaseMetal(mFrameUniformBuffer);
++    ReleaseMetal(mCoordUniformBuffer);
++    ReleaseMetal(mDepthValueOutputBuffer);
++    ReleaseMetal(mDepthComputeFunction);
++    ReleaseMetal(mConvertToRgb5a1Function);
++    ReleaseMetal(mConvertToRgb5a1PipelineState);
++    ReleaseMetal(mCommandQueue);
++    ReleaseMetal(mReadbackQueue);
++    pool->release();
++    ReleaseMetal(mFrameAutoreleasePool);
++    // SDL owns the layer/device; the caller owns SDL and ImGui shutdown.
++}
++
++bool GfxRenderingAPIMetal::WaitForFrame(std::string& error) {
++    if (!mLastSubmittedFrame) {
++        error = "No Metal frame has been submitted";
++        return false;
++    }
++    mLastSubmittedFrame->waitUntilCompleted();
++    if (mLastSubmittedFrame->status() != MTL::CommandBufferStatusCompleted) {
++        auto* gpuError = mLastSubmittedFrame->error();
++        error = gpuError ? gpuError->localizedDescription()->cString(NS::UTF8StringEncoding)
++                         : "Metal command buffer did not complete";
++        return false;
++    }
++    return true;
++}
++
+ bool GfxRenderingAPIMetal::NonUniformThreadGroupSupported() {
+ #ifdef __IOS__
+     // iOS devices with A11 or later support dispatch threads
+@@ -77,6 +154,10 @@
+     NS::AutoreleasePool* autorelease_pool = NS::AutoreleasePool::alloc()->init();
+ 
+     mLayer = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
++    if (!mLayer || !mLayer->device()) {
++        autorelease_pool->release();
++        return false;
++    }
+     mLayer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
+ 
+     mDevice = mLayer->device();
+@@ -186,9 +267,12 @@
+     MTL::Library* library =
+         mDevice->newLibrary(NS::String::string(depth_shader, NS::UTF8StringEncoding), nullptr, &error);
+ 
+-    if (error != nullptr)
+-        SPDLOG_ERROR("Failed to compile shader library: {}",
+-                     error->localizedDescription()->cString(NS::UTF8StringEncoding));
++    if (!library) {
++        std::string message = error ? error->localizedDescription()->cString(NS::UTF8StringEncoding)
++                                    : "Metal depth shader compilation failed";
++        autorelease_pool->release();
++        throw std::runtime_error(message);
++    }
+ 
+     mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
+     mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
+@@ -229,9 +313,12 @@
+     MTL::Library* library =
+         mDevice->newLibrary(NS::String::string(buf.data(), NS::UTF8StringEncoding), nullptr, &error);
+ 
+-    if (error != nullptr)
+-        SPDLOG_ERROR("Failed to compile shader library, error {}",
+-                     error->localizedDescription()->cString(NS::UTF8StringEncoding));
++    if (!library) {
++        std::string message = error ? error->localizedDescription()->cString(NS::UTF8StringEncoding)
++                                    : "Metal generated shader compilation failed";
++        autorelease_pool->release();
++        throw std::runtime_error(message);
++    }
+ 
+     MTL::RenderPipelineDescriptor* pipeline_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
+     MTL::Function* vertexFunc = library->newFunction(NS::String::string("vertexShader", NS::UTF8StringEncoding));
+@@ -466,6 +553,7 @@
+ 
+         MTL::DepthStencilState* depth_stencil_state = mDevice->newDepthStencilState(depth_descriptor);
+         current_framebuffer.mCommandEncoder->setDepthStencilState(depth_stencil_state);
++        depth_stencil_state->release();
+ 
+         depth_descriptor->release();
+     }
+@@ -622,6 +710,8 @@
+ 
+     screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
+     mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
++    ReleaseMetal(mLastSubmittedFrame);
++    mLastSubmittedFrame = screen_framebuffer.mCommandBuffer->retain();
+     screen_framebuffer.mCommandBuffer->commit();
+ 
+     // Now that commit has been called, retain the command buffer for GPU sync
+@@ -662,7 +752,8 @@
+         fb.mLastZmodeDecal = -1;
+     }
+ 
+-    mFrameAutoreleasePool->release();
++    ReleaseMetal(mFrameAutoreleasePool);
++    mCurrentDrawable = nullptr;
+ }
+ 
+ void GfxRenderingAPIMetal::FinishRender() {
+@@ -691,6 +782,9 @@
+ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t height) {
+     mCurrentDrawable = nullptr;
+     mCurrentDrawable = mLayer->nextDrawable();
++    if (!mCurrentDrawable) {
++        throw std::runtime_error("Metal layer did not provide a drawable");
++    }
+ 
+     bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
+ 
+@@ -1192,6 +1286,12 @@
+         // to guarantee the GPU blit has finished before reading the shared buffer.
+         if (mScreenReadbackDataReady && mScreenReadbackBuffer && mScreenReadbackCmdBuf) {
+             mScreenReadbackCmdBuf->waitUntilCompleted();
++            if (mScreenReadbackCmdBuf->status() != MTL::CommandBufferStatusCompleted ||
++                width != mScreenReadbackWidth || height != mScreenReadbackHeight) {
++                ReleaseMetal(mScreenReadbackCmdBuf);
++                mScreenReadbackDataReady = false;
++                throw std::runtime_error("Metal screen readback failed or surface size changed");
++            }
+             mScreenReadbackCmdBuf->release();
+             mScreenReadbackCmdBuf = nullptr;
+             mScreenReadbackDataReady = false;

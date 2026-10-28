@@ -59,10 +59,11 @@ Use the [simulator workflow](../.github/workflows/shipwright-metal.yml) result
 for the tested commit. A checked-in workflow or successful archive alone does
 not establish a successful complete link.
 
-After the build passes, exercise the renderer inside a simulator application,
-verify pixels and repeated teardown, then add the game loop and the user's
-validated assets. These steps must distinguish a missing simulator GPU from a
-rendering defect. Physical Apple TV validation remains deferred.
+The separate [execution fixture](SHIPWRIGHT_RENDER_PROBE.md) installs a simulator
+application to check pixels and repeated renderer teardown. Its result must
+distinguish a missing simulator GPU from a rendering defect. The game loop and
+the user's validated assets come after this test. Physical Apple TV validation
+remains deferred.
 
 The patch retains libultraship's [MIT notice](../experiments/shipwright/metal/UPSTREAM_LICENSE.txt).
 Dependencies retain their own notices in the fetched source trees. No ROM or
