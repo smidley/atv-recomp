@@ -122,6 +122,11 @@ Keychain save/read/delete and both providers' download/hash/rejection paths, and
 saves fresh per-launch JSON plus launcher screenshots. Its opt-in code is excluded
 from device and Release builds.
 
+The runner ad-hoc signs only the disposable `AppleTVSimulator` build, with a
+test-only application identifier and default Keychain group, then verifies that
+signature before installation. Normal Xcode development signing supplies the app
+identifier automatically. This does not modify the user's team or device profile.
+
 The `Network sources` workflow runs the protocol and simulator checks. The
 `Foundation harness` workflow also builds Simulator Debug and device Release;
 device compilation is not physical-device validation. A manual simulator pass
