@@ -1,0 +1,380 @@
+// !$*UTF8*$!
+{
+	"archiveVersion" = "1";
+	"classes" = {
+	};
+	"objectVersion" = "56";
+	"objects" = {
+		"9B8FE359FA991A79FF3C2C48" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/RecompTVApp.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"F4709C3647840CA54D32F967" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9B8FE359FA991A79FF3C2C48";
+		};
+		"CC801877703A5DFBF5407A33" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/FoundationView.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"345EEB2158655CEA2A1E3271" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CC801877703A5DFBF5407A33";
+		};
+		"B5535D144E8CEDBA08083DF8" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/Diagnostics/FrameEvidence.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"9311C93244D6563B1CECA8EF" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B5535D144E8CEDBA08083DF8";
+		};
+		"F8A654A34960DFA981CCC8D5" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/Diagnostics/ProbeSession.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"8634E04A453FACA8DA877D82" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "F8A654A34960DFA981CCC8D5";
+		};
+		"F2F75DE50AFBDA92DEAE468F" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/Rendering/MetalProbeView.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"90017EA78B0FA222632655CA" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "F2F75DE50AFBDA92DEAE468F";
+		};
+		"76BB66A49F649002C18D6EDA" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.cpp.cpp";
+			"path" = "RecompTV/Native/BridgeProbe.cpp";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"A1ACFAA3759FD408E2039906" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "76BB66A49F649002C18D6EDA";
+		};
+		"7FF11B607BCD455313AD5078" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"path" = "RecompTV/Native/BridgeProbe.h";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"5465037DAF7E39881307ADAE" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"path" = "RecompTV/Native/RecompTV-Bridging-Header.h";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"C305259CD75F7D511C876F0C" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "wrapper.framework";
+			"name" = "Metal.framework";
+			"path" = "System/Library/Frameworks/Metal.framework";
+			"sourceTree" = "SDKROOT";
+		};
+		"94EC04D104C8ADA5CD0495E7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C305259CD75F7D511C876F0C";
+		};
+		"CA619A0CDF2F833D8023D7D6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "wrapper.framework";
+			"name" = "MetalKit.framework";
+			"path" = "System/Library/Frameworks/MetalKit.framework";
+			"sourceTree" = "SDKROOT";
+		};
+		"C9A551FDBAC72CE1B1BC88BF" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CA619A0CDF2F833D8023D7D6";
+		};
+		"5306F739EC528626EE420E97" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "wrapper.framework";
+			"name" = "SwiftUI.framework";
+			"path" = "System/Library/Frameworks/SwiftUI.framework";
+			"sourceTree" = "SDKROOT";
+		};
+		"8496E44D41268E4BF9E989B0" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5306F739EC528626EE420E97";
+		};
+		"9DF588A2020631290E1793B8" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "wrapper.framework";
+			"name" = "UIKit.framework";
+			"path" = "System/Library/Frameworks/UIKit.framework";
+			"sourceTree" = "SDKROOT";
+		};
+		"8ECA5D271EF0B3E2EB24EA50" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9DF588A2020631290E1793B8";
+		};
+		"A8792157CB4F27FB949C035F" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"includeInIndex" = "0";
+			"path" = "RecompTV.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"F810A3947224DC074E90BB0D" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"9B8FE359FA991A79FF3C2C48",
+				"CC801877703A5DFBF5407A33",
+				"B5535D144E8CEDBA08083DF8",
+				"F8A654A34960DFA981CCC8D5",
+				"F2F75DE50AFBDA92DEAE468F",
+				"76BB66A49F649002C18D6EDA",
+				"7FF11B607BCD455313AD5078",
+				"5465037DAF7E39881307ADAE",
+			);
+			"name" = "RecompTV";
+			"sourceTree" = "<group>";
+		};
+		"2BEEDD5E1A1AEEFB6129979F" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"C305259CD75F7D511C876F0C",
+				"CA619A0CDF2F833D8023D7D6",
+				"5306F739EC528626EE420E97",
+				"9DF588A2020631290E1793B8",
+			);
+			"name" = "Frameworks";
+			"sourceTree" = "<group>";
+		};
+		"1BB21EFB7C988A9DE171E099" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"A8792157CB4F27FB949C035F",
+			);
+			"name" = "Products";
+			"sourceTree" = "<group>";
+		};
+		"C8D2DC745BFC63C0D67231CE" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"F810A3947224DC074E90BB0D",
+				"2BEEDD5E1A1AEEFB6129979F",
+				"1BB21EFB7C988A9DE171E099",
+			);
+			"sourceTree" = "<group>";
+		};
+		"878A52FC5FF6A57D50B7B870" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"F4709C3647840CA54D32F967",
+				"345EEB2158655CEA2A1E3271",
+				"9311C93244D6563B1CECA8EF",
+				"8634E04A453FACA8DA877D82",
+				"90017EA78B0FA222632655CA",
+				"A1ACFAA3759FD408E2039906",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"E2AA269EB967A8853A258BFA" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"94EC04D104C8ADA5CD0495E7",
+				"C9A551FDBAC72CE1B1BC88BF",
+				"8496E44D41268E4BF9E989B0",
+				"8ECA5D271EF0B3E2EB24EA50",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"41D311A605520FC7B8B9A980" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"73EBF6644258C120893E685D" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CLANG_ENABLE_MODULES" = "YES";
+				"CLANG_ENABLE_OBJC_ARC" = "YES";
+				"CLANG_CXX_LANGUAGE_STANDARD" = "c++17";
+				"CLANG_CXX_LIBRARY" = "libc++";
+				"CLANG_WARN_BOOL_CONVERSION" = "YES";
+				"CLANG_WARN_CONSTANT_CONVERSION" = "YES";
+				"CLANG_WARN_INT_CONVERSION" = "YES";
+				"CLANG_WARN_UNREACHABLE_CODE" = "YES";
+				"GCC_C_LANGUAGE_STANDARD" = "c17";
+				"GCC_WARN_64_TO_32_BIT_CONVERSION" = "YES";
+				"GCC_WARN_RETURN_TYPE" = "YES_ERROR";
+				"GCC_WARN_UNINITIALIZED_AUTOS" = "YES_AGGRESSIVE";
+				"GCC_WARN_UNUSED_VARIABLE" = "YES";
+				"SDKROOT" = "appletvos";
+				"TVOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_VERSION" = "6.0";
+				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"SWIFT_DEFAULT_ACTOR_ISOLATION" = "nonisolated";
+				"SWIFT_APPROACHABLE_CONCURRENCY" = "NO";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"ENABLE_TESTABILITY" = "YES";
+				"ONLY_ACTIVE_ARCH" = "YES";
+				"GCC_PREPROCESSOR_DEFINITIONS" = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+			};
+			"name" = "Debug";
+		};
+		"0B0C687DF8B6B8DC790B519C" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CLANG_ENABLE_MODULES" = "YES";
+				"CLANG_ENABLE_OBJC_ARC" = "YES";
+				"CLANG_CXX_LANGUAGE_STANDARD" = "c++17";
+				"CLANG_CXX_LIBRARY" = "libc++";
+				"CLANG_WARN_BOOL_CONVERSION" = "YES";
+				"CLANG_WARN_CONSTANT_CONVERSION" = "YES";
+				"CLANG_WARN_INT_CONVERSION" = "YES";
+				"CLANG_WARN_UNREACHABLE_CODE" = "YES";
+				"GCC_C_LANGUAGE_STANDARD" = "c17";
+				"GCC_WARN_64_TO_32_BIT_CONVERSION" = "YES";
+				"GCC_WARN_RETURN_TYPE" = "YES_ERROR";
+				"GCC_WARN_UNINITIALIZED_AUTOS" = "YES_AGGRESSIVE";
+				"GCC_WARN_UNUSED_VARIABLE" = "YES";
+				"SDKROOT" = "appletvos";
+				"TVOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_VERSION" = "6.0";
+				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"SWIFT_DEFAULT_ACTOR_ISOLATION" = "nonisolated";
+				"SWIFT_APPROACHABLE_CONCURRENCY" = "NO";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"GCC_OPTIMIZATION_LEVEL" = "s";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"ENABLE_TESTABILITY" = "NO";
+				"ONLY_ACTIVE_ARCH" = "NO";
+			};
+			"name" = "Release";
+		};
+		"9879E227F5AD614B3D33074F" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"73EBF6644258C120893E685D",
+				"0B0C687DF8B6B8DC790B519C",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"6C7EFF6369083C8E1F2B1994" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_KEY_CFBundleDisplayName" = "RecompTV";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
+				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"MARKETING_VERSION" = "0.1.0";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.smidley.RecompTVHarness";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"SUPPORTED_PLATFORMS" = "appletvos appletvsimulator";
+				"SWIFT_OBJC_BRIDGING_HEADER" = "$(SRCROOT)/RecompTV/Native/RecompTV-Bridging-Header.h";
+				"TARGETED_DEVICE_FAMILY" = "3";
+			};
+			"name" = "Debug";
+		};
+		"DD75E2CB1C510A828AC72D96" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_KEY_CFBundleDisplayName" = "RecompTV";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
+				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"MARKETING_VERSION" = "0.1.0";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.smidley.RecompTVHarness";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"SUPPORTED_PLATFORMS" = "appletvos appletvsimulator";
+				"SWIFT_OBJC_BRIDGING_HEADER" = "$(SRCROOT)/RecompTV/Native/RecompTV-Bridging-Header.h";
+				"TARGETED_DEVICE_FAMILY" = "3";
+			};
+			"name" = "Release";
+		};
+		"C5C73E6481A31CFC647F47AB" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"6C7EFF6369083C8E1F2B1994",
+				"DD75E2CB1C510A828AC72D96",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"34A04005BCAF206EEC990BD9" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "C5C73E6481A31CFC647F47AB";
+			"buildPhases" = (
+				"878A52FC5FF6A57D50B7B870",
+				"E2AA269EB967A8853A258BFA",
+				"41D311A605520FC7B8B9A980",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"name" = "RecompTV";
+			"productName" = "RecompTV";
+			"productReference" = "A8792157CB4F27FB949C035F";
+			"productType" = "com.apple.product-type.application";
+		};
+		"244210E48437B6556980A702" = {
+			"isa" = "PBXProject";
+			"attributes" = {
+				"BuildIndependentTargetsInParallel" = "YES";
+				"LastSwiftUpdateCheck" = "1600";
+				"LastUpgradeCheck" = "1600";
+				"TargetAttributes" = {
+					"34A04005BCAF206EEC990BD9" = {
+						"CreatedOnToolsVersion" = "16.0";
+						"ProvisioningStyle" = "Automatic";
+					};
+				};
+			};
+			"buildConfigurationList" = "9879E227F5AD614B3D33074F";
+			"compatibilityVersion" = "Xcode 14.0";
+			"developmentRegion" = "en";
+			"hasScannedForEncodings" = "0";
+			"knownRegions" = (
+				"en",
+				"Base",
+			);
+			"mainGroup" = "C8D2DC745BFC63C0D67231CE";
+			"productRefGroup" = "1BB21EFB7C988A9DE171E099";
+			"projectDirPath" = "";
+			"projectRoot" = "";
+			"targets" = (
+				"34A04005BCAF206EEC990BD9",
+			);
+		};
+	};
+	"rootObject" = "244210E48437B6556980A702";
+}

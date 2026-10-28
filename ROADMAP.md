@@ -1,6 +1,6 @@
 # Roadmap
 
-**Planning baseline:** 2026-10-28. This is a sequence of evidence-based milestones, not a dated delivery commitment. Documentation is the only initial repository deliverable; application milestones remain unstarted.
+**Planning baseline:** 2026-10-28. This is a sequence of evidence-based milestones, not a dated delivery commitment. M1 now has an initial source harness; physical-device validation and dependency feasibility remain open.
 
 Validate native execution before investing in the full launcher. If the runtime or renderer is infeasible, revisit the scope before building provider integrations around it.
 
@@ -15,6 +15,8 @@ Validate native execution before investing in the full launcher. If the runtime 
 **Exit:** documentation is reviewed and the next technical step is the POC in [POC.md](POC.md).
 
 ## M1 — Prove the tvOS foundation
+
+**Progress:** the [foundation harness](docs/FOUNDATION_HARNESS.md) provides a SwiftUI tvOS target, C/C++ bridge probe, on-demand Metal surface, presentation-evidence checks, and an unsigned build workflow. The M1 exit criteria are not yet met: source code and host checks do not replace a physical Apple TV result or the runtime dependency audit.
 
 **Deliverables**
 
