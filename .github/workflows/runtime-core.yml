@@ -3,8 +3,20 @@ name: Runtime core experiment
 on:
   pull_request:
     branches: [main]
+    paths:
+      - .github/workflows/runtime-core.yml
+      - experiments/runtime-core/**
+      - scripts/check-runtime-core.sh
+      - scripts/verify-runtime-source.py
+      - upstream/audit-baseline.json
   push:
     branches: [main]
+    paths:
+      - .github/workflows/runtime-core.yml
+      - experiments/runtime-core/**
+      - scripts/check-runtime-core.sh
+      - scripts/verify-runtime-source.py
+      - upstream/audit-baseline.json
   workflow_dispatch:
 
 permissions:

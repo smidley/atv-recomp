@@ -3,8 +3,30 @@ name: RT64 Metal experiment
 on:
   pull_request:
     branches: [main]
+    paths:
+      - .github/workflows/rt64-metal.yml
+      - experiments/rt64-metal/**
+      - scripts/check-rt64-metal.sh
+      - scripts/check-rt64-shaders.sh
+      - scripts/prepare-rt64-metal.py
+      - scripts/test-rt64-window.sh
+      - scripts/inspect-tvos-sdk.py
+      - scripts/ci-run-experiment.sh
+      - upstream/audit-baseline.json
+      - .gitattributes
   push:
     branches: [main]
+    paths:
+      - .github/workflows/rt64-metal.yml
+      - experiments/rt64-metal/**
+      - scripts/check-rt64-metal.sh
+      - scripts/check-rt64-shaders.sh
+      - scripts/prepare-rt64-metal.py
+      - scripts/test-rt64-window.sh
+      - scripts/inspect-tvos-sdk.py
+      - scripts/ci-run-experiment.sh
+      - upstream/audit-baseline.json
+      - .gitattributes
   workflow_dispatch:
 
 permissions:
@@ -29,7 +51,10 @@ jobs:
           persist-credentials: false
       - name: Read tvOS SDK availability declarations
         id: sdk
-        run: python3 scripts/inspect-tvos-sdk.py
+        run: bash scripts/ci-run-experiment.sh python3 scripts/inspect-tvos-sdk.py
+      - name: "${{ steps.sdk.outputs.diagnostic }}"
+        if: failure() && steps.sdk.outcome == 'failure'
+        run: echo 'See SDK inspection output.'
       - name: "${{ steps.sdk.outputs.declarations }}"
         run: echo 'Native SDK declarations are recorded in the preceding step.'
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
