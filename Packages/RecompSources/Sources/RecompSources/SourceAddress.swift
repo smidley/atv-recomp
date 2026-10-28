@@ -59,7 +59,7 @@ struct SMBAddress: Sendable {
         switch location {
         case .root: return root
         case .directory(let value): path = value
-        case .rom: throw LibraryError.message("This location does not belong to an SMB share.")
+        case .rom, .platform: throw LibraryError.message("This location does not belong to an SMB share.")
         }
         try path.split(separator: "/", omittingEmptySubsequences: false).map(String.init).forEach(validateComponent)
         guard root.isEmpty || path == root || path.hasPrefix(root + "/") else {

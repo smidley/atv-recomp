@@ -86,18 +86,41 @@ class Handler(BaseHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError):
                 pass
             return
+        if path.startswith("/roms-only/"):
+            path = path.removeprefix("/roms-only")
+            if path == "/api/platforms":
+                return self.send(403, {})
+        if path == "/api/platforms":
+            return self.send(200, [
+                {"id": 1, "name": "Nintendo 64", "display_name": "Nintendo 64", "rom_count": 2},
+                {"id": 2, "name": "Super Nintendo", "display_name": "SNES", "rom_count": 1},
+            ])
         if path == "/api/roms":
             query = parse_qs(url.query)
             offset = int(query.get("offset", ["0"])[0])
-            return self.send(200, {"items": [{"id": 3 + offset, "name": "Synthetic Ocarina fixture",
-                                            "fs_name": "Fixture", "platform_display_name": "Nintendo 64"}],
-                                   "total": 2, "offset": offset, "limit": 50})
+            rows = [
+                {"id": 3, "name": "Synthetic Ocarina fixture", "fs_name": "Fixture", "platform_id": 1, "platform_display_name": "Nintendo 64"},
+                {"id": 4, "name": "Second N64 fixture", "fs_name": "Second", "platform_id": 1, "platform_display_name": "Nintendo 64"},
+                {"id": 5, "name": "SNES fixture", "fs_name": "Other", "platform_id": 2, "platform_display_name": "SNES"},
+            ]
+            platforms = query.get("platform_ids", [])
+            if platforms:
+                rows = [row for row in rows if str(row["platform_id"]) in platforms]
+            return self.send(200, {"items": rows[offset:offset + 1], "total": len(rows), "offset": offset, "limit": 50})
         if path == "/api/roms/3":
             return self.send(200, {"id": 3, "files": [
                 {"id": 11, "file_name": "Fixture.z64", "file_size_bytes": len(ROM)},
                 {"id": 12, "file_name": "Archive.zip", "file_size_bytes": 100},
             ]})
-        if path == "/api/roms/11/files/content/Fixture.z64":
+        if path == "/api/roms/4":
+            return self.send(200, {"id": 4, "files": [
+                {"id": 13, "file_name": "Second.z64", "file_size_bytes": len(ROM)},
+            ]})
+        if path == "/api/roms/5":
+            return self.send(200, {"id": 5, "files": [
+                {"id": 14, "file_name": "Other.sfc", "file_size_bytes": len(ROM)},
+            ]})
+        if path in ["/api/roms/11/files/content/Fixture.z64", "/api/roms/13/files/content/Second.z64"]:
             return self.send(200, ROM, "application/octet-stream")
         return self.send(404, {})
 

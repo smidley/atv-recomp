@@ -35,27 +35,24 @@ struct RomMProvider: LibraryProvider {
     func list(_ location: LibraryLocation, search: String, offset: Int) async throws -> LibraryPage {
         switch location {
         case .root:
-            guard offset >= 0 else { throw LibraryError.message("Invalid page offset.") }
-            let query = [
-                URLQueryItem(name: "limit", value: "50"), URLQueryItem(name: "offset", value: String(offset)),
-                URLQueryItem(name: "search_term", value: search),
-                URLQueryItem(name: "with_char_index", value: "false"),
-                URLQueryItem(name: "with_filter_values", value: "false"),
-                URLQueryItem(name: "with_rom_id_index", value: "false"),
-                URLQueryItem(name: "order_by", value: "name"),
-            ]
-            let page = try await decode(RomMPage.self, path: ["roms"], query: query)
-            guard page.offset == offset, page.items.count <= 50,
-                  page.items.allSatisfy({ $0.id > 0 }), Set(page.items.map(\.id)).count == page.items.count else {
-                throw LibraryError.message("RomM returned an invalid catalog page.")
-            }
+            guard offset == 0 else { throw LibraryError.message("Invalid platform page.") }
+            let platforms = try await platforms()
+            let entries = platforms.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) }
+                .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+                .map { platform in
+                    LibraryEntry(id: "platform-\(platform.id)", name: platform.title,
+                                 detail: platform.rom_count == 1 ? "1 ROM" : "\(platform.rom_count) ROMs", size: nil,
+                                 target: .folder(.platform(platform.id)))
+                }
+            return LibraryPage(entries: entries, nextOffset: nil)
+        case .platform(let id):
+            guard id > 0 else { throw LibraryError.message("Invalid RomM platform.") }
+            let page = try await catalog(platformID: id, search: search, offset: offset)
             let entries = page.items.map { rom in
                 LibraryEntry(id: "rom-\(rom.id)", name: rom.name ?? rom.fs_name,
-                             detail: rom.platform_display_name ?? "Open to choose a ROM file",
-                             size: nil, target: .folder(.rom(rom.id)))
+                             detail: "Open to choose a ROM file", size: nil, target: .folder(.rom(rom.id)))
             }
-            let next = offset + page.items.count
-            return LibraryPage(entries: entries, nextOffset: !entries.isEmpty && next < page.total ? next : nil)
+            return LibraryPage(entries: entries, nextOffset: page.nextOffset)
         case .rom(let id):
             guard id > 0 else { throw LibraryError.message("Invalid RomM item.") }
             let rom = try await decode(RomMDetail.self, path: ["roms", String(id)])
@@ -73,6 +70,61 @@ struct RomMProvider: LibraryProvider {
             }
             return LibraryPage(entries: entries, nextOffset: nil)
         case .directory: throw LibraryError.message("This location does not belong to RomM.")
+        }
+    }
+
+    private func catalog(platformID: Int?, search: String, offset: Int) async throws -> RomMPage {
+        guard offset >= 0 else { throw LibraryError.message("Invalid page offset.") }
+        var query = [
+            URLQueryItem(name: "limit", value: "50"), URLQueryItem(name: "offset", value: String(offset)),
+            URLQueryItem(name: "search_term", value: search),
+            URLQueryItem(name: "with_char_index", value: "false"),
+            URLQueryItem(name: "with_filter_values", value: "false"),
+            URLQueryItem(name: "with_rom_id_index", value: "false"),
+            URLQueryItem(name: "group_by_meta_id", value: "false"),
+            URLQueryItem(name: "order_by", value: "name"),
+        ]
+        if let platformID { query.append(URLQueryItem(name: "platform_ids", value: String(platformID))) }
+        let page = try await decode(RomMPage.self, path: ["roms"], query: query)
+        guard page.offset == offset, page.total >= 0, page.items.count <= 50,
+              page.items.allSatisfy({ $0.id > 0 && $0.platform_id > 0 && (platformID == nil || $0.platform_id == platformID) }),
+              Set(page.items.map(\.id)).count == page.items.count,
+              !page.items.isEmpty || offset >= page.total else {
+            throw LibraryError.message("RomM returned an invalid catalog page. Refresh the library.")
+        }
+        return page
+    }
+
+    private func platforms() async throws -> [RomMPlatform] {
+        do {
+            let platforms = try await decode([RomMPlatform].self, path: ["platforms"])
+            guard platforms.allSatisfy({ $0.id > 0 && $0.rom_count >= 0 }),
+                  Set(platforms.map(\.id)).count == platforms.count else {
+                throw LibraryError.message("RomM returned an invalid platform list.")
+            }
+            return platforms
+        } catch LibraryError.httpStatus(let code) where code == 403 || code == 404 {
+            // Existing roms.read-only tokens remain usable. Group every metadata page
+            // when the optional platforms.read endpoint is unavailable.
+            var groups = [Int: RomMPlatform]()
+            var seen = Set<Int>()
+            var offset = 0
+            while true {
+                try Task.checkCancellation()
+                let page = try await catalog(platformID: nil, search: "", offset: offset)
+                for rom in page.items where seen.insert(rom.id).inserted {
+                    var group = groups[rom.platform_id] ?? RomMPlatform(
+                        id: rom.platform_id, name: rom.platform_display_name ?? "Platform \(rom.platform_id)",
+                        display_name: nil, custom_name: nil, rom_count: 0)
+                    group.rom_count += 1
+                    groups[rom.platform_id] = group
+                }
+                guard let next = page.nextOffset else { return Array(groups.values) }
+                guard next > offset, next <= 100_000 else {
+                    throw LibraryError.message("The platform catalog is too large to scan. Enable platforms.read on the token.")
+                }
+                offset = next
+            }
         }
     }
 
@@ -96,11 +148,16 @@ private struct RomMPage: Decodable {
     let items: [RomMItem]
     let total: Int
     let offset: Int
+    var nextOffset: Int? {
+        let next = offset + items.count
+        return !items.isEmpty && next < total ? next : nil
+    }
 }
 private struct RomMItem: Decodable {
     let id: Int
     let name: String?
     let fs_name: String
+    let platform_id: Int
     let platform_display_name: String?
 }
 private struct RomMDetail: Decodable {
@@ -111,4 +168,18 @@ private struct RomMFile: Decodable {
     let id: Int
     let file_name: String
     let file_size_bytes: Int64
+}
+
+private struct RomMPlatform: Decodable {
+    let id: Int
+    let name: String
+    let display_name: String?
+    let custom_name: String?
+    var rom_count: Int
+    var title: String {
+        for value in [display_name, custom_name, name] {
+            if let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return value }
+        }
+        return "Platform \(id)"
+    }
 }

@@ -4,7 +4,7 @@ import RecompSources
 
 /// Opt-in CI probe: fixed loopback endpoints and synthetic data only. No launch argument can
 /// supply a remote host, credential, or accepted-ROM hash. Excluded from release/device builds.
-enum SourceSimulatorProbe {
+@MainActor enum SourceSimulatorProbe {
     static func runIfRequested() async {
         guard ProcessInfo.processInfo.arguments.contains("--source-fixture-probe"),
               let runID = ProcessInfo.processInfo.environment["RECOMPTV_PROBE_ID"] else { return }
@@ -44,6 +44,25 @@ enum SourceSimulatorProbe {
                 }
                 steps.append(source.kind.rawValue)
             }
+            // Exercise the observable UI model as well as the package queue: in-place
+            // updates of an optional observed report must not overlap reads/writes.
+            let batchSource = sources[0].0
+            try CredentialStore.save(sources[0].1, for: batchSource.id)
+            defer { try? CredentialStore.remove(batchSource.id) }
+            let library = LibraryModel(cache: cache)
+            library.acquireAll(in: .platform(1), title: "Fixture N64", source: batchSource)
+            let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+            while library.isImporting && ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            guard !library.isImporting, let report = library.batchReport,
+                  report.discoveryComplete, report.failure == nil, !report.cancelled,
+                  report.total == 3, report.count(.unsupported) == 2, report.count(.skipped) == 1,
+                  library.importedROMs.isEmpty else {
+                library.cancelImport()
+                throw LibraryError.message("The platform batch UI model did not complete correctly.")
+            }
+            steps.append("platform-batch")
             write(runID: runID, passed: true, steps: steps, error: nil)
         } catch {
             write(runID: runID, passed: false, steps: steps, error: userFacingNetworkError(error))

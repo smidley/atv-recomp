@@ -70,7 +70,7 @@ def main():
                     report = json.loads(report_file.read_text())
                     if report.get("run_id") == run_id:
                         (args.output / f"launch-{launch + 1}.json").write_text(json.dumps(report, indent=2))
-                        if report.get("passed") is not True or report.get("steps") != ["keychain", "romm", "smb"]:
+                        if report.get("passed") is not True or report.get("steps") != ["keychain", "romm", "smb", "platform-batch"]:
                             raise RuntimeError("Source probe failed: " + str(report))
                         break
                 time.sleep(0.25)

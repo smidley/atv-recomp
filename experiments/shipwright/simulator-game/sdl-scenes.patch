@@ -1,0 +1,101 @@
+--- a/src/video/uikit/SDL_uikitappdelegate.m
++++ b/src/video/uikit/SDL_uikitappdelegate.m
+@@ -414,7 +414,7 @@
+ {
+     NSBundle *bundle = [NSBundle mainBundle];
+ 
+-#ifdef SDL_IPHONE_LAUNCHSCREEN
++#if defined(SDL_IPHONE_LAUNCHSCREEN) && !defined(RECOMPTV_TVOS_SCENES)
+     /* The normal launch screen is displayed until didFinishLaunching returns,
+      * but SDL_main is called after that happens and there may be a noticeable
+      * delay between the start of SDL_main and when the first real frame is
+@@ -470,7 +470,9 @@
+                         SDL_IdleTimerDisabledChanged, NULL);
+ 
+     SDL_SetMainReady();
++#ifndef RECOMPTV_TVOS_SCENES
+     [self performSelector:@selector(postFinishLaunch) withObject:nil afterDelay:0.0];
++#endif
+ 
+     return YES;
+ }
+@@ -527,6 +529,25 @@
+ 
+ @end
+ 
++
++#ifdef RECOMPTV_TVOS_SCENES
++/* RecompTV simulator adapter: start SDL only after UIKit connects its scene. */
++@interface RecompTVGameSceneDelegate : NSObject <UIWindowSceneDelegate>
++@end
++
++@implementation RecompTVGameSceneDelegate
++- (void)sceneDidBecomeActive:(UIScene *)scene
++{
++    static BOOL started = NO;
++    if (!started) {
++        started = YES;
++        SDLUIKitDelegate *delegate = (SDLUIKitDelegate *)UIApplication.sharedApplication.delegate;
++        [delegate performSelector:@selector(postFinishLaunch) withObject:nil afterDelay:0.0];
++    }
++}
++@end
++#endif
++
+ #endif /* SDL_VIDEO_DRIVER_UIKIT */
+ 
+ /* vi: set ts=4 sw=4 expandtab: */
+--- a/src/video/uikit/SDL_uikitwindow.m
++++ b/src/video/uikit/SDL_uikitwindow.m
+@@ -207,7 +207,22 @@
+ 
+         /* ignore the size user requested, and make a fullscreen window */
+         /* !!! FIXME: can we have a smaller view? */
++#ifdef RECOMPTV_TVOS_SCENES
++        /* RecompTV: the tvOS 27 SDK requires the SDL window to belong to a scene. */
++        UIWindowScene *windowScene = nil;
++        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
++            if ([scene isKindOfClass:[UIWindowScene class]] &&
++                ((UIWindowScene *)scene).screen == data.uiscreen) {
++                windowScene = (UIWindowScene *)scene;
++                break;
++            }
++        }
++        if (!windowScene) return SDL_SetError("No connected tvOS window scene.");
++        uiwindow = [[SDL_uikitwindow alloc] initWithWindowScene:windowScene];
++        uiwindow.frame = windowScene.coordinateSpace.bounds;
++#else
+         uiwindow = [[SDL_uikitwindow alloc] initWithFrame:data.uiscreen.bounds];
++#endif
+ 
+         /* put the window on an external display if appropriate. */
+         if (data.uiscreen != [UIScreen mainScreen]) {
+--- a/src/video/uikit/SDL_uikitevents.m
++++ b/src/video/uikit/SDL_uikitevents.m
+@@ -53,10 +53,26 @@
+     NSNotificationCenter *notificationCenter = NSNotificationCenter.defaultCenter;
+     if (UIKit_EventPumpEnabled && !self.isObservingNotifications) {
+         self.isObservingNotifications = YES;
++#ifdef RECOMPTV_TVOS_SCENES
++        [notificationCenter addObserver:self selector:@selector(applicationDidBecomeActive) name:UISceneDidActivateNotification object:nil];
++#else
+         [notificationCenter addObserver:self selector:@selector(applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
++#endif
++#ifdef RECOMPTV_TVOS_SCENES
++        [notificationCenter addObserver:self selector:@selector(applicationWillResignActive) name:UISceneWillDeactivateNotification object:nil];
++#else
+         [notificationCenter addObserver:self selector:@selector(applicationWillResignActive) name:UIApplicationWillResignActiveNotification object:nil];
++#endif
++#ifdef RECOMPTV_TVOS_SCENES
++        [notificationCenter addObserver:self selector:@selector(applicationDidEnterBackground) name:UISceneDidEnterBackgroundNotification object:nil];
++#else
+         [notificationCenter addObserver:self selector:@selector(applicationDidEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
++#endif
++#ifdef RECOMPTV_TVOS_SCENES
++        [notificationCenter addObserver:self selector:@selector(applicationWillEnterForeground) name:UISceneWillEnterForegroundNotification object:nil];
++#else
+         [notificationCenter addObserver:self selector:@selector(applicationWillEnterForeground) name:UIApplicationWillEnterForegroundNotification object:nil];
++#endif
+         [notificationCenter addObserver:self selector:@selector(applicationWillTerminate) name:UIApplicationWillTerminateNotification object:nil];
+         [notificationCenter addObserver:self selector:@selector(applicationDidReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+ #if !TARGET_OS_TV
