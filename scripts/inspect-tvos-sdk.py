@@ -16,7 +16,8 @@ queries = [
 ]
 declarations = []
 for path, symbol in queries:
-    lines = (frameworks / path).read_text().splitlines()
+    header = re.sub(r"/\*.*?\*/", "", (frameworks / path).read_text(), flags=re.DOTALL)
+    lines = header.splitlines()
     hits = [i for i, line in enumerate(lines) if symbol in line and not line.strip().startswith(('*', '//'))]
     if hits:
         start = hits[0]

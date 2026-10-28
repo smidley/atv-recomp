@@ -32,3 +32,7 @@ endforeach()
 
 add_executable(rt64_metal_link LinkProbe.cpp)
 target_link_libraries(rt64_metal_link PRIVATE rt64_metal)
+# Apple platform generators may place this fixture inside an .app bundle.
+# Publish CMake's actual target path instead of assuming a flat build directory.
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/link-probe-path.txt"
+    CONTENT "$<TARGET_FILE:rt64_metal_link>\n")

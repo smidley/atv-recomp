@@ -24,7 +24,9 @@ cmake --build "$probe_build" --target rt64_metal_link --parallel 2
 
 # A successful archive alone can hide unresolved desktop dependencies. Require
 # the executable link, then inspect its actual framework dependencies.
-otool -L "$probe_build/rt64_metal_link" > "$probe_build/dependencies.txt"
+IFS= read -r probe_binary < "$probe_build/link-probe-path.txt"
+[[ -f "$probe_binary" ]] || { echo "error: Linked fixture is missing: $probe_binary" >&2; exit 1; }
+otool -L "$probe_binary" > "$probe_build/dependencies.txt"
 cat "$probe_build/dependencies.txt"
 if grep -q 'AppKit.framework\|SDL' "$probe_build/dependencies.txt"; then
     echo 'error: Desktop framework leaked into the tvOS renderer link.' >&2
