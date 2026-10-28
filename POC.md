@@ -16,6 +16,8 @@ The POC does not need SMB, RomM, artwork, a polished library, multiple games, sa
 
 ## Prerequisites
 
+The foundation harness uses no game data or upstream runtime. The ROM and pinned dependency prerequisites below apply before the dependency/game integration checkpoints.
+
 - Mac with a working Xcode/tvOS SDK installation and device signing setup.
 - Physical Apple TV with its model, chipset, and tvOS version recorded.
 - Compatible game controller.

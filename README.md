@@ -60,7 +60,7 @@ The initial documentation was reconstructed from the project's planning discussi
 
 ## Development prerequisites
 
-The first experiment needs a Mac with Xcode and the tvOS SDK, a physical Apple TV available for development, a compatible controller, and a user-supplied ROM matching the selected upstream revision. Record exact hardware, OS, toolchain, and dependency versions when starting the experiment.
+The foundation harness needs a Mac with Xcode and the tvOS SDK; physical validation also needs an Apple TV available for development and its remote or a controller. It does not need a ROM. The later game experiment additionally needs a compatible game controller and a user-supplied ROM matching the selected upstream revision. Record exact hardware, OS, toolchain, and dependency versions when starting each experiment.
 
 The minimum Apple TV model and tvOS version have not been selected. Simulator results alone will not establish graphics, performance, or device compatibility.
 

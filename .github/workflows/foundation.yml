@@ -40,16 +40,14 @@ jobs:
           plutil -lint RecompTV.xcodeproj/project.pbxproj
           xcodebuild -list -project RecompTV.xcodeproj
       - name: Build tvOS Simulator (Debug, unsigned)
-        run: >-
-          xcodebuild -project RecompTV.xcodeproj -scheme RecompTV
-          -configuration Debug -sdk appletvsimulator
-          -destination 'generic/platform=tvOS Simulator'
-          -derivedDataPath build/simulator
-          CODE_SIGNING_ALLOWED=NO build
+        id: simulator
+        run: bash scripts/ci-build-tvos.sh simulator
+      - name: "${{ steps.simulator.outputs.diagnostic }}"
+        if: failure() && steps.simulator.outcome == 'failure'
+        run: echo 'See the simulator build step for the complete compiler output.'
       - name: Build Apple TV (Release, unsigned)
-        run: >-
-          xcodebuild -project RecompTV.xcodeproj -scheme RecompTV
-          -configuration Release -sdk appletvos
-          -destination 'generic/platform=tvOS'
-          -derivedDataPath build/device
-          CODE_SIGNING_ALLOWED=NO build
+        id: device
+        run: bash scripts/ci-build-tvos.sh device
+      - name: "${{ steps.device.outputs.diagnostic }}"
+        if: failure() && steps.device.outcome == 'failure'
+        run: echo 'See the device build step for the complete compiler output.'
