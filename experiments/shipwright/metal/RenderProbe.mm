@@ -110,13 +110,16 @@ void Finish(const char* status, const std::string& detail) {
 }
 
 void CreateRenderer() {
+    Report("running", "Creating renderer for cycle " + std::to_string(cycle + 1));
     ImGui::CreateContext();
     ImGui::GetIO().IniFilename = nullptr;
     renderer = std::make_unique<Fast::GfxRenderingAPIMetal>();
     imguiMetalInitialized = renderer->MetalInit(sdlRenderer);
     if (!imguiMetalInitialized) throw std::runtime_error("libultraship Metal initialization failed");
+    Report("running", "Initializing Metal depth shader");
     renderer->Init();
     // (0 - 0) * 0 + input1: one RGB vertex attribute, no textures or blending.
+    Report("running", "Generating and compiling the triangle shader from the O2R template");
     auto* program = reinterpret_cast<Fast::ShaderProgramMetal*>(
         renderer->CreateAndLoadNewShader(uint64_t(SHADER_INPUT_1) << 12, 0));
     if (!program || program->numFloats != 7 || program->numInputs != 1 || !program->pipeline_state_variants[1]) {
@@ -187,6 +190,7 @@ void SDLCALL Tick(void*) {
             };
             renderer->DrawTriangles(vertices, std::size(vertices), 1);
             renderer->ReadFramebufferToCPU(0, width, height, pixels.data());
+            Report("running", "Submitting triangle frame and waiting for GPU completion");
             renderer->EndFrame();
             std::string gpuError;
             if (!renderer->WaitForFrame(gpuError)) throw std::runtime_error(gpuError);
