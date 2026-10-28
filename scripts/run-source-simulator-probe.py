@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import pathlib
+import plistlib
 import re
 import subprocess
 import time
@@ -30,9 +31,26 @@ def main():
     udid = run("xcrun", "simctl", "create", "RecompTV Network " + str(uuid.uuid4()), device["identifier"], runtime["identifier"])
     bundle = "com.smidley.RecompTVHarness"
     try:
+        with (args.app / "Info.plist").open("rb") as info_file:
+            info = plistlib.load(info_file)
+        if info.get("CFBundleIdentifier") != bundle or "AppleTVSimulator" not in info.get("CFBundleSupportedPlatforms", []):
+            raise RuntimeError("This runner only signs the RecompTV tvOS Simulator app")
         run("xcrun", "simctl", "boot", udid)
         run("xcrun", "simctl", "bootstatus", udid, "-b")
         run("codesign", "--force", "--deep", "--sign", "-", str(args.app))
+        # CODE_SIGNING_ALLOWED=NO omits Xcode's normal application-identifier claim.
+        # Give this disposable simulator build its own default Keychain group. Do not
+        # change the project, a user's signing team, or any device provisioning profile.
+        test_app_id = "RECOMPTV01." + bundle
+        entitlements = args.output / "simulator-entitlements.plist"
+        entitlements.write_bytes(plistlib.dumps({
+            "application-identifier": test_app_id,
+            "keychain-access-groups": [test_app_id],
+        }))
+        run("codesign", "--force", "--sign", "-", "--entitlements", str(entitlements), str(args.app))
+        signature = subprocess.check_output(["codesign", "--display", "--entitlements", "-", str(args.app)])
+        if plistlib.loads(signature).get("keychain-access-groups") != [test_app_id]:
+            raise RuntimeError("The simulator app's Keychain entitlement was not signed")
         run("xcrun", "simctl", "install", udid, str(args.app))
         container = pathlib.Path(run("xcrun", "simctl", "get_app_container", udid, bundle, "data"))
         report_file = container / "Documents" / "source-probe.json"
