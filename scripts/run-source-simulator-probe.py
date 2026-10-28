@@ -48,7 +48,8 @@ def main():
             "keychain-access-groups": [test_app_id],
         }))
         run("codesign", "--force", "--sign", "-", "--entitlements", str(entitlements), str(args.app))
-        signature = subprocess.check_output(["codesign", "--display", "--entitlements", "-", str(args.app)])
+        # The colon strips the binary entitlement-blob header, leaving a parseable plist.
+        signature = subprocess.check_output(["codesign", "--display", "--entitlements", ":-", str(args.app)])
         if plistlib.loads(signature).get("keychain-access-groups") != [test_app_id]:
             raise RuntimeError("The simulator app's Keychain entitlement was not signed")
         run("xcrun", "simctl", "install", udid, str(args.app))
