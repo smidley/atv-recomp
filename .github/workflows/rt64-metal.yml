@@ -32,3 +32,54 @@ jobs:
         run: python3 scripts/inspect-tvos-sdk.py
       - name: "${{ steps.sdk.outputs.declarations }}"
         run: echo 'Native SDK declarations are recorded in the preceding step.'
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: rt64/rt64
+          ref: 23cab603c4f9f4a8b369b38e036f1aa484603878
+          path: build/upstream/rt64
+          submodules: false
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: Cyan4973/xxHash
+          ref: 1864a50c9b5cf8500d8e9e61ed92aa0dd3772750
+          path: build/upstream/rt64/src/contrib/xxHash
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: KhronosGroup/SPIRV-Cross
+          ref: 6173e24b31f09a0c3217103a130e74c4ddec14a6
+          path: build/upstream/rt64/src/contrib/spirv-cross
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: renderbag/dxc-bin # canonical location of the pinned rt64/dxc-bin repository
+          ref: cc15e715ee378a4f675b335bd1071ff105873fc8
+          path: build/upstream/rt64/src/contrib/dxc
+          persist-credentials: false
+      - name: Verify upstream revisions and prepare isolated patched sources
+        id: prepare
+        run: bash scripts/ci-run-experiment.sh python3 scripts/prepare-rt64-metal.py build/upstream/rt64
+      - name: "${{ steps.prepare.outputs.diagnostic }}"
+        if: failure() && steps.prepare.outcome == 'failure'
+        run: echo 'See preparation output.'
+      - name: Compile and link RT64 Metal for arm64 tvOS Simulator
+        id: arm64
+        run: bash scripts/ci-run-experiment.sh bash scripts/check-rt64-metal.sh arm64 build/upstream/rt64
+      - name: "${{ steps.arm64.outputs.diagnostic }}"
+        if: failure() && steps.arm64.outcome == 'failure'
+        run: echo 'See the arm64 build output.'
+      - name: Compile and link RT64 Metal for x86_64 tvOS Simulator
+        id: intel
+        if: always() && steps.prepare.outcome == 'success'
+        run: bash scripts/ci-run-experiment.sh bash scripts/check-rt64-metal.sh x86_64 build/upstream/rt64
+      - name: "${{ steps.intel.outputs.diagnostic }}"
+        if: failure() && steps.intel.outcome == 'failure'
+        run: echo 'See the x86_64 build output.'
+      - name: Convert upstream vertex, fragment and compute shaders for tvOS Simulator
+        id: shaders
+        if: always() && steps.prepare.outcome == 'success'
+        run: bash scripts/ci-run-experiment.sh bash scripts/check-rt64-shaders.sh build/upstream/rt64
+      - name: "${{ steps.shaders.outputs.diagnostic }}"
+        if: failure() && steps.shaders.outcome == 'failure'
+        run: echo 'See the shader build output.'

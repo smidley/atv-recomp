@@ -1,0 +1,2 @@
+# Unified diff context must preserve whitespace in the pinned upstream sources.
+experiments/rt64-metal/*.patch whitespace=-blank-at-eol
