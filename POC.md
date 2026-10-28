@@ -1,12 +1,12 @@
-# Native tvOS Recompilation Proof of Concept
+# Native tvOS Game Runtime Proof of Concept
 
-**Status:** the maintainer confirmed the [foundation harness](docs/FOUNDATION_HARNESS.md) bridge and visible Metal checks in the simulator on 2026-10-28. Work now proceeds on the simulator by request. The [source dependency audit and isolated core experiment](docs/RUNTIME_AUDIT.md) address checkpoint 3. Physical Apple TV validation is deferred, and no game runtime is integrated.
+**Status:** the maintainer confirmed the [foundation harness](docs/FOUNDATION_HARNESS.md) bridge and visible Metal checks in the simulator on 2026-10-28. Work proceeds on the simulator by request. [Shipwright](docs/SHIPWRIGHT_PORT.md) is the selected first game; the earlier Zelda64Recomp/RT64 experiments are separate research. Physical Apple TV validation is deferred, and no game runtime is integrated.
 
 ## Question to answer
 
-Can an existing N64 static recompilation project be adapted to run natively on a physical Apple TV with usable graphics and controller input?
+Can Shipwright's native Ocarina of Time port run in the tvOS Simulator using the user's game data, and later pass physical Apple TV graphics, input, audio, and lifecycle checks?
 
-The first candidate is **The Legend of Zelda: Majora's Mask**, using [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp) as the starting point and a user-supplied ROM. Its desktop support is not evidence of tvOS support.
+The first candidate is **The Legend of Zelda: Ocarina of Time**, using [Ship of Harkinian](https://github.com/HarbourMasters/Shipwright). Its decompiled game source is compiled natively; libultraship supplies platform services and rendering, and the user's ROM supplies extracted assets. Its macOS Metal backend is a starting point, not evidence of tvOS support.
 
 ## Scope
 
@@ -18,7 +18,7 @@ The POC does not need SMB, RomM, artwork, a polished library, multiple games, sa
 
 The foundation harness uses no game data or upstream runtime. The ROM and pinned dependency prerequisites below apply before the dependency/game integration checkpoints.
 
-For the current simulator work, use the requirements and commands in the runtime audit. Hardware and ROM prerequisites below apply to the later physical/game experiment, not to the isolated core build. The source snapshot has been pinned; full transitive license and platform validation remains open.
+For current work, use the [Shipwright baseline](docs/SHIPWRIGHT_PORT.md). The ROM-identification tests use synthetic bytes and need no ROM. A real user-supplied ROM is needed for asset extraction and game boot; a physical Apple TV is needed only for the deferred device checks. The first source pins are recorded; transitive dependency and platform validation remain open.
 
 - Mac with a working Xcode/tvOS SDK installation and device signing setup.
 - Physical Apple TV with its model, chipset, and tvOS version recorded.
@@ -61,7 +61,9 @@ For each dependency record:
 
 ### 4. Integrate ROM loading and game boot
 
-Add the selected game runtime, provision the user ROM locally, and validate the actual bytes before invoking game code. Record the exact revision and checksum policy; do not invent an accepted hash.
+Add the selected game runtime, provision the user ROM locally, and validate the actual bytes before invoking game code. The host prototype uses Shipwright's pinned SHA-1 allowlist and canonical N64 byte order; it also records SHA-256. Port and test that contract in the app before calling it app-level validation.
+
+Prepare Shipwright's game asset archive from the validated ROM using the matching extractor. Host extraction is acceptable for an initial development boot. The intended launcher flow must eventually prepare assets after ROM acquisition without making users supply a desktop executable or manually construct archives.
 
 Adapt graphics and host services sufficiently to attempt a recognizable game screen.
 

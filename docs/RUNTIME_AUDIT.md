@@ -1,5 +1,9 @@
 # Runtime audit and simulator experiment
 
+**Scope note:** this is the earlier Zelda64Recomp/Majora's Mask investigation.
+The confirmed first game is now [Shipwright/Ocarina of Time](SHIPWRIGHT_PORT.md).
+These pins and tests remain separate research, not Shipwright dependencies.
+
 **Baseline: 2026-10-28.** Development continues on the tvOS Simulator at the
 maintainer's request. The foundation bridge and visible blue/green/red checks
 were confirmed by the maintainer; hardware validation remains deferred. This
@@ -46,7 +50,7 @@ of the upstream desktop target. The full runtime and renderer remain unported.
 
 The core-services experiment subsequently passed its host callback tests and both
 simulator architecture builds in [CI at `94aa928`](https://github.com/smidley/atv-recomp/actions/runs/40743318116).
-The next source adaptation is tracked in the [RT64 Metal experiment](RT64_METAL_EXPERIMENT.md).
+The subsequent adaptation is recorded in the [RT64 Metal experiment](RT64_METAL_EXPERIMENT.md).
 
 ## ROM identity is a later gate
 

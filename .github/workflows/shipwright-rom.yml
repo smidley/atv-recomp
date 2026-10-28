@@ -1,0 +1,31 @@
+name: Shipwright ROM identification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/shipwright-rom.yml
+      - scripts/identify-shipwright-rom.py
+      - experiments/shipwright/ROMIdentificationTests.py
+      - upstream/shipwright-*.json
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/shipwright-rom.yml
+      - scripts/identify-shipwright-rom.py
+      - experiments/shipwright/ROMIdentificationTests.py
+      - upstream/shipwright-*.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-rom-checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check byte order, hash matching, malformed data, and pinned provenance
+        run: python3 experiments/shipwright/ROMIdentificationTests.py
