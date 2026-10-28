@@ -109,6 +109,7 @@ final class SMBFileSink: @unchecked Sendable {
     private let size: Int64
     private let progress: ProgressHandler
     private var count: Int64 = 0
+    private var lastReported: Int64 = 0
     private var failure: (any Error)?
     private var cancelled = false
 
@@ -134,7 +135,15 @@ final class SMBFileSink: @unchecked Sendable {
             count += Int64(data.count)
             return TransferProgress(bytes: count, total: size)
         }
-        if let update { progress(update); return true }
+        if let update {
+            let report = lock.withLock {
+                guard update.bytes - lastReported >= 256 * 1024 || update.bytes == size else { return false }
+                lastReported = update.bytes
+                return true
+            }
+            if report { progress(update) }
+            return true
+        }
         return false
     }
 

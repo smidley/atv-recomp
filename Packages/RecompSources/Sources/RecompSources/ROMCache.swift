@@ -87,7 +87,7 @@ public actor ROMCache {
         try JSONEncoder().encode(result).write(to: root.appendingPathComponent("current.json"), options: .atomic)
         // This first-game milestone retains one verified ROM. Source files are never modified.
         for file in try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
-            where file.pathExtension == "romdata" && file != destination {
+            where file.pathExtension == "romdata" && file.lastPathComponent != destination.lastPathComponent {
             try? FileManager.default.removeItem(at: file)
         }
         return result

@@ -12,6 +12,8 @@ final class LibraryModel {
     var error: String?
     @ObservationIgnored private var cache: ROMCache?
     @ObservationIgnored private var transfer: Task<Void, Never>?
+    @ObservationIgnored private var importID = UUID()
+    @ObservationIgnored private var verifying = false
     private let settingsKey = "library.sources.v1"
 
     init() {
@@ -51,6 +53,7 @@ final class LibraryModel {
     func acquire(_ entry: LibraryEntry, source: LibrarySource) {
         guard !isImporting, let cache else { return }
         isImporting = true; importStatus = "Connecting…"; importFraction = nil
+        let generation = UUID(); importID = generation; verifying = false
         transfer = Task { [weak self] in
             guard let self else { return }
             defer { isImporting = false; transfer = nil }
@@ -58,10 +61,11 @@ final class LibraryModel {
                 let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
                 let result = try await cache.acquire(entry, sourceID: source.id, provider: provider) { [weak self] event in
                     Task { @MainActor [weak self] in
-                        guard let self, self.isImporting else { return }
+                        guard let self, self.isImporting, self.importID == generation else { return }
                         switch event {
-                        case .verifying: self.importStatus = "Verifying ROM…"; self.importFraction = nil
+                        case .verifying: self.verifying = true; self.importStatus = "Verifying ROM…"; self.importFraction = nil
                         case .downloading(let value):
+                            guard !self.verifying else { return }
                             self.importStatus = "Downloading \(ByteCountFormatter.string(fromByteCount: value.bytes, countStyle: .file))"
                             self.importFraction = value.total.flatMap { $0 > 0 ? Double(value.bytes) / Double($0) : nil }
                         }
@@ -77,7 +81,7 @@ final class LibraryModel {
         }
     }
 
-    func cancelImport() { transfer?.cancel(); importStatus = "Cancelling…" }
+    func cancelImport() { importID = UUID(); transfer?.cancel(); importStatus = "Cancelling…" }
 
     func clearCache() async {
         do { try await cache?.clear(); imported = nil; importStatus = "" }

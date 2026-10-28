@@ -9,6 +9,9 @@ struct RecompTVApp: App {
                 FoundationView().tabItem { Label("Diagnostics", systemImage: "waveform.path.ecg") }
             }
             .preferredColorScheme(.dark)
+            #if DEBUG && targetEnvironment(simulator)
+            .task { await SourceSimulatorProbe.runIfRequested() }
+            #endif
         }
     }
 }

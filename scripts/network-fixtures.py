@@ -55,6 +55,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Length", str(64 * 1024 * 1024 + 1))
             self.end_headers()
+            self.wfile.flush()
+            # Let the client process the advertised length before closing an incomplete body.
+            time.sleep(2)
             self.close_connection = True
             return
         if path == "/chunked":

@@ -11,6 +11,7 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
     private var output: FileHandle?
     private var data = Data()
     private var count: Int64 = 0
+    private var lastReported: Int64 = 0
     private var expected: Int64?
     private var failure: (any Error)?
 
@@ -90,7 +91,10 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
         do {
             if let output { try output.write(contentsOf: chunk) } else { data.append(chunk) }
             count += Int64(chunk.count)
-            progress(TransferProgress(bytes: count, total: expected))
+            if count - lastReported >= 256 * 1024 || count == expected {
+                lastReported = count
+                progress(TransferProgress(bytes: count, total: expected))
+            }
         } catch {
             failure = LibraryError.message("Could not write the download. Check available storage.")
             dataTask.cancel()
