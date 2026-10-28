@@ -9,13 +9,15 @@ probe_arch=$1
 probe_source=$(cd "$2" && pwd)
 probe_root=$(cd "$(dirname "$0")/.." && pwd)
 probe_build="$probe_root/build/shipwright-metal/simulator-$probe_arch"
+probe_sdk=$(xcrun --sdk appletvsimulator --show-sdk-path)
 python3 "$probe_root/scripts/prepare-shipwright-metal.py" "$probe_source"
-cmake -S "$probe_root/experiments/shipwright/metal" -B "$probe_build" \
+cmake --fresh -S "$probe_root/experiments/shipwright/metal" -B "$probe_build" \
     -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug \
     -DRECOMPTV_LUS_SOURCE="$probe_root/build/shipwright-metal/source" \
     -DCMAKE_SYSTEM_NAME=tvOS -DCMAKE_OSX_SYSROOT=appletvsimulator \
     -DCMAKE_OSX_ARCHITECTURES="$probe_arch" -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
-    -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+    -DCMAKE_FIND_ROOT_PATH="$probe_sdk" \
+    -DCMAKE_TRY_COMPILE_TARGET_TYPE=EXECUTABLE \
     -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$probe_build" --target shipwright_metal_link --parallel 3
