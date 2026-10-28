@@ -11,6 +11,8 @@ probe_root=$(cd "$(dirname "$0")/.." && pwd)
 probe_build="$probe_root/build/shipwright-metal/simulator-$probe_arch"
 probe_sdk=$(xcrun --sdk appletvsimulator --show-sdk-path)
 python3 "$probe_root/scripts/prepare-shipwright-metal.py" "$probe_source"
+# Feature probes must link: static archives incorrectly report absent libc
+# functions as available. Refresh the cache so old probe results cannot survive.
 cmake --fresh -S "$probe_root/experiments/shipwright/metal" -B "$probe_build" \
     -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug \
     -DRECOMPTV_LUS_SOURCE="$probe_root/build/shipwright-metal/source" \
