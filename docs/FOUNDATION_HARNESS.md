@@ -30,10 +30,11 @@ concurrency features or external dependencies are enabled.
   by C++. **Next test color** cycles through green, red, and blue. The native
   buttons use tvOS focus navigation with the remote or a controller; this is not
   a game-controller mapping implementation.
-- **Metal frame presented:** requires both successful GPU command completion
-  and a strictly positive, finite drawable presentation timestamp. GPU submission
-  or completion by itself cannot pass the display check. Visually confirm the
-  expected color even when both callbacks arrive.
+- **Confirm blue/green/red frame:** becomes available after successful GPU
+  command completion. Check that the surface actually shows the expected color,
+  then select this button with the remote. The status explicitly records your
+  visual confirmation. GPU submission or completion alone never passes the
+  display check; tvOS does not expose a drawable presentation callback.
 - **Rerun check:** starts a fresh attempt. Old callbacks cannot mark it passed or
   failed. Backgrounding invalidates the current attempt; returning to the active
   app requests a new frame. Test repeated suspend/resume on physical hardware.
@@ -45,8 +46,8 @@ MetalKit owns resizing. The view is paused with `enableSetNeedsDisplay = true`,
 so it redraws only on requests/layout changes instead of running a game loop.
 
 If no drawable is available, keep the app visible and rerun the check. If the GPU
-completion arrives but the display timestamp remains pending, record that result;
-do not treat it as a pass. A simulator may expose different GPU/presentation
+completion arrives but the expected color is not visible, leave the visual check
+unconfirmed and record the failure. A simulator may expose different GPU/presentation
 behavior from Apple TV. No Metal device, failed queue/encoder allocation, and GPU
 errors are displayed explicitly. Repeated failures are evidence to investigate,
 not a reason to bypass the checks.
@@ -69,8 +70,8 @@ On a host with Swift 6, test the presentation evidence state:
 sh scripts/test-evidence.sh
 ```
 
-These tests cover completion without presentation, invalid/dropped timestamps,
-reversed callback order, persistent failures, and stale attempts. They do not
+These tests cover completion without visual confirmation, premature or stale
+confirmation, persistent failures, and fresh attempts. They do not
 create a Metal device or simulate actual presentation.
 
 The **Foundation harness** GitHub workflow runs these checks and builds Debug
@@ -88,7 +89,7 @@ Use the result record in [POC.md](../POC.md), including:
 | Toolchain | Xcode build number, tvOS SDK, signing setup |
 | Hardware | Apple TV model/chipset, installed tvOS, remote/controller |
 | Native bridge | Visible result; unexpected values or errors |
-| Metal | GPU name, drawable size, visible blue/green/red, both callback outcomes |
+| Metal | GPU name, drawable size, GPU completion, user-confirmed blue/green/red |
 | Lifecycle | Rerun and suspend/resume outcomes, reproduction steps for failures |
 | Next gate | Upstream dependency/renderer audit remains open |
 
@@ -99,10 +100,10 @@ complete M1's dependency audit or M2's game boot/gameplay criteria.
 
 - [Apple: MTKView](https://developer.apple.com/documentation/metalkit/mtkview)
 - [Apple: currentDrawable](https://developer.apple.com/documentation/metalkit/mtkview/currentdrawable)
-- [Apple: addPresentedHandler](https://developer.apple.com/documentation/metal/mtldrawable/addpresentedhandler(_:))
-- [Apple: presentedTime](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime)
+- [Apple: addCompletedHandler](https://developer.apple.com/documentation/metal/mtlcommandbuffer/addcompletedhandler(_:))
 
-Apple documents a zero presentation timestamp for an unpresented or dropped
-drawable. The harness records the callback values instead of substituting a CPU
-timestamp. SDK signatures and physical behavior must be checked with the Xcode
-and device versions in the experiment record.
+The tvOS SDK does not provide `MTKView.colorspace` or the drawable presentation
+handler. The harness uses a BGRA8 sRGB render target with system-managed
+presentation, reports GPU completion, and requires a separate user visual check.
+It does not synthesize a display timestamp or treat command completion as proof
+that a frame was visible. Record the SDK and physical device used for validation.

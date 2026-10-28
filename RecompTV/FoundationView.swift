@@ -9,6 +9,7 @@ struct FoundationView: View {
     private enum Control: Hashable {
         case rerun
         case nextColor
+        case confirmVisible
     }
 
     var body: some View {
@@ -51,6 +52,11 @@ struct FoundationView: View {
                     .focused($focusedControl, equals: .rerun)
                 Button("Next test color") { session.nextColor() }
                     .focused($focusedControl, equals: .nextColor)
+                Button("Confirm \(session.colorName.lowercased()) frame") {
+                    session.confirmVisibleFrame()
+                }
+                .focused($focusedControl, equals: .confirmVisible)
+                .disabled(!session.evidence.canConfirmVisibility)
             }
             .disabled(!session.isActive)
 
@@ -79,15 +85,17 @@ private struct MetalEvidenceView: View {
             } else {
                 switch evidence.status {
                 case .waiting:
-                    Text("Waiting for Metal evidence")
+                    Text("Waiting for GPU completion")
+                case .needsVisualConfirmation:
+                    Text("GPU completed · confirm the visible color")
                 case .passed:
-                    Label("Metal frame presented", systemImage: "checkmark.circle")
+                    Label("Visible frame confirmed by you", systemImage: "checkmark.circle")
                 case .failed(let message):
                     Label("Metal check failed", systemImage: "exclamationmark.triangle")
                     Text(message).font(.caption)
                 }
                 Text("GPU completion: \(evidence.gpuCompleted ? "received" : "pending")")
-                Text("Display timestamp: \(evidence.presentedTime != nil ? "received" : "pending")")
+                Text("Visual check: \(evidence.visuallyConfirmed ? "confirmed" : "not yet confirmed")")
             }
         }
         .font(.callout)

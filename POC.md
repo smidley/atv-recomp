@@ -36,7 +36,7 @@ The native **RecompTV** target now calls `RTVBridgeAdd(19, 23)` through a C brid
 
 ### 2. Establish Metal presentation
 
-The harness now provides an `MTKView` that clears to C++-supplied blue, green, or red. Its passing display status requires successful GPU completion and a valid drawable presentation timestamp. Run and visually verify it on the same device, including reruns and suspend/resume.
+The harness now provides an `MTKView` that clears to C++-supplied blue, green, or red. Its passing display status requires successful GPU completion followed by explicit user confirmation of the visible color; tvOS does not provide the drawable presentation callback. Run and visually verify it on the same device, including reruns and suspend/resume.
 
 **Evidence:** actual device output and the relevant GPU capabilities. Keep this checkpoint separate from any claim about the upstream renderer.
 

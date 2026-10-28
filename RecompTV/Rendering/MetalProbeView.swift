@@ -30,7 +30,8 @@ final class ProbeMetalView: MTKView {
         self.session = session
         super.init(frame: .zero, device: session.device)
         colorPixelFormat = .bgra8Unorm_srgb
-        colorspace = CGColorSpace(name: CGColorSpace.sRGB)
+        // MTKView.colorspace is unavailable on tvOS. Use the sRGB render
+        // target format and let the system manage the view's presentation.
         framebufferOnly = true
         autoResizeDrawable = true
         isOpaque = true
@@ -90,7 +91,7 @@ final class ProbeMetalView: MTKView {
             encoder.endEncoding()
             session.recordDrawable(width: drawable.texture.width, height: drawable.texture.height)
 
-            // Metal's required SDK callbacks copy only scalar/string evidence
+            // Metal's completion callback copies only scalar/string evidence
             // into main-actor tasks; GPU objects never cross into UI state.
             commandBuffer.addCompletedHandler { @Sendable [weak session] buffer in
                 let error: String? = buffer.status == .completed
@@ -100,12 +101,8 @@ final class ProbeMetalView: MTKView {
                     session?.recordGPUCompletion(for: generation, error: error)
                 }
             }
-            drawable.addPresentedHandler { @Sendable [weak session] presentedDrawable in
-                let time = presentedDrawable.presentedTime
-                Task { @MainActor [weak session] in
-                    session?.recordPresentation(for: generation, time: time)
-                }
-            }
+            // tvOS does not expose MTLDrawable's presentation handler. GPU
+            // completion is recorded separately from the user's visual check.
 
             // Standard MTLCommandQueue path: present before commit. Metal 4
             // waitForDrawable/signalDrawable are not part of this API path.

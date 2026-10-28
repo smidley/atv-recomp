@@ -80,8 +80,8 @@ final class ProbeSession {
         evidence.recordGPUCompletion(for: generation, error: error)
     }
 
-    func recordPresentation(for generation: UInt64, time: Double) {
+    func confirmVisibleFrame() {
         guard isActive else { return }
-        evidence.recordPresentation(for: generation, time: time)
+        evidence.confirmVisibleFrame(for: evidence.generation)
     }
 }

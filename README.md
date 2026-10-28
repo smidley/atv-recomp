@@ -8,7 +8,7 @@ RecompTV is the working name for a native Apple TV launcher that discovers a use
 
 Open `RecompTV.xcodeproj` in Xcode 16 or newer, select the **RecompTV** scheme and an Apple TV simulator or paired device, then Run. A physical device needs your development team selected under Signing & Capabilities. No project-generation tool or third-party dependency is required.
 
-The app shows the native C++ result, a solid Metal test surface, and separate GPU-completion and display-presentation evidence. See [Foundation harness](docs/FOUNDATION_HARNESS.md) for setup, checks, limitations, and the physical-device evidence to collect. The provisional tvOS 17 deployment floor is for the harness only.
+The app shows the native C++ result, a solid Metal test surface, and separate GPU-completion and user-confirmed visual evidence. See [Foundation harness](docs/FOUNDATION_HARNESS.md) for setup, checks, limitations, and the physical-device evidence to collect. The provisional tvOS 17 deployment floor is for the harness only.
 
 Portable native checks: `sh scripts/test-native.sh`. Presentation-state checks with Swift 6: `sh scripts/test-evidence.sh`. GitHub CI also builds unsigned simulator and device targets; it does not establish physical-device support.
 
