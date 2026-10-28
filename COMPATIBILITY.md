@@ -6,7 +6,7 @@
 
 | Game | Platform | Candidate runtime | ROM revision/hash | tvOS result |
 | --- | --- | --- | --- | --- |
-| The Legend of Zelda: Ocarina of Time | N64 | Shipwright / Ship of Harkinian 9.3.1 | [19 upstream SHA-1 references](upstream/shipwright-supported-roms.json); no real ROM tested here | First target; host identification prototype only; no tvOS game build/run |
+| The Legend of Zelda: Ocarina of Time | N64 | Shipwright / Ship of Harkinian 9.3.1 | [19 upstream SHA-1 references](upstream/shipwright-supported-roms.json); no real ROM tested here | First target; host identification and [libultraship build experiment](docs/SHIPWRIGHT_METAL_BUILD.md); no tvOS game build/run |
 | The Legend of Zelda: Majora's Mask | N64 | Zelda 64: Recompiled | Earlier audit only | Deferred candidate; isolated core/RT64 builds do not establish gameplay |
 
 Do not interpret upstream desktop support as RecompTV support. Add other titles only with their own runtime integration and test evidence.

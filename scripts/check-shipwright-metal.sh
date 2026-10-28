@@ -25,7 +25,7 @@ cmake --fresh -S "$probe_root/experiments/shipwright/metal" -B "$probe_build" \
 cmake --build "$probe_build" --target shipwright_metal_link --parallel 3
 python3 "$probe_root/scripts/verify-shipwright-metal-build.py" "$probe_build"
 IFS= read -r probe_binary < "$probe_build/link-probe-path.txt"
-lipo -verify_arch "$probe_arch" "$probe_binary"
+lipo "$probe_binary" -verify_arch "$probe_arch"
 otool -L "$probe_binary" > "$probe_build/dependencies.txt"
 cat "$probe_build/dependencies.txt"
 if grep -Eq '(AppKit|Cocoa|OpenGL|OpenGLES)\.framework' "$probe_build/dependencies.txt"; then
