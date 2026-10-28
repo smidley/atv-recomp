@@ -13,7 +13,7 @@ Apple TV validation is deferred.
 ## Open and run
 
 1. On a Mac with Xcode 16 or newer and a tvOS SDK installed, open
-   `RecompTV.xcodeproj`. No project generator or package download is required.
+   `RecompTV.xcodeproj`. No project generator is required. Allow Swift Package Manager to resolve the launcher's network dependencies, then open the **Diagnostics** tab.
 2. Select the shared **RecompTV** scheme.
 3. For a simulator check, select an installed Apple TV simulator and Run.
 4. For physical validation, pair your Apple TV with Xcode, select it as the run
@@ -25,7 +25,8 @@ The target's tvOS 17 deployment setting is a provisional harness floor so it can
 use Observation. It is not a supported-device or final product baseline. The
 project uses Swift 6 with complete concurrency checking, explicitly nonisolated
 default isolation and explicit main-actor UI/rendering ownership. No additional
-concurrency features or external dependencies are enabled.
+concurrency features are enabled. Library providers use a separate Swift package;
+see [Network sources](NETWORK_SOURCES.md).
 
 ## What to check on the TV
 

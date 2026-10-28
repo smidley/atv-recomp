@@ -2,13 +2,13 @@
 
 RecompTV is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported native ports and statically recompiled games locally on tvOS.
 
-**Status: foundation checks confirmed in the simulator; Shipwright selected as the first game.** Development continues with the simulator for now; physical Apple TV validation is deferred. No game runtime is integrated. See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [Shipwright baseline and ROM identification tool](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
+**Status: RomM/SMB browsing and verified ROM import implemented; Shipwright is the first game target.** Development continues with the simulator for now; physical Apple TV validation is deferred. No game runtime is integrated. See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [Shipwright baseline and ROM identification tool](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
 
-## Run the foundation harness
+## Run the launcher
 
-Open `RecompTV.xcodeproj` in Xcode 16 or newer, select the **RecompTV** scheme and an Apple TV simulator or paired device, then Run. A physical device needs your development team selected under Signing & Capabilities. No project-generation tool or third-party dependency is required.
+Open `RecompTV.xcodeproj` in Xcode 16 or newer, let Swift Package Manager resolve dependencies, select the **RecompTV** scheme and an Apple TV simulator, then Run. In **Library**, add an SMB share or RomM connection and import an uncompressed N64 ROM. See [Network sources](docs/NETWORK_SOURCES.md) for connection details and testing. No project-generation tool is required.
 
-The app shows the native C++ result, a solid Metal test surface, and separate GPU-completion and user-confirmed visual evidence. See [Foundation harness](docs/FOUNDATION_HARNESS.md) for setup, checks, limitations, and the physical-device evidence to collect. The provisional tvOS 17 deployment floor is for the harness only.
+The **Diagnostics** tab shows the native C++ result, a solid Metal test surface, and separate GPU-completion and user-confirmed visual evidence. See [Foundation harness](docs/FOUNDATION_HARNESS.md) for setup, checks, limitations, and the physical-device evidence to collect. The provisional tvOS 17 deployment floor is for the harness only.
 
 Portable native checks: `sh scripts/test-native.sh`. Presentation-state checks with Swift 6: `sh scripts/test-evidence.sh`. GitHub CI also builds unsigned simulator and device targets; it does not establish physical-device support.
 
@@ -30,7 +30,7 @@ The first game is **The Legend of Zelda: Ocarina of Time**, using **Ship of Hark
 
 The agreed order is Shipwright first, then expanding N64 coverage toward the full library, then other platforms. Each added title needs a compatible native runtime and its own validation. A shared launcher does not automatically make every N64 ROM executable.
 
-The proof of concept comes before the full launcher and network integrations. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
+Game integration remains a proof of concept; network browsing and verified imports can now be developed and tested independently. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
 ## Intended technology stack
 
@@ -40,11 +40,11 @@ The proof of concept comes before the full launcher and network integrations. De
 | Game execution | Game-specific C/C++ code compiled ahead of time for ARM64 | tvOS dependency and lifecycle support |
 | Graphics | Metal on Apple TV | Selected runtime renderer and device feature requirements |
 | Input | Apple Game Controller framework | Mapping, disconnects, pause, and resume |
-| Library sources | Independent SMB and RomM adapters | SMB library choice and supported RomM versions |
+| Library sources | AMSMB2 4.0.3 and RomM 5.4.1 API contract | Live intended-server validation; artwork and broader version coverage |
 | Game data | User-supplied ROMs, validated local cache | Revision hashes, format handling, storage limits |
 | Saves | Local runtime saves; optional synchronization later | Durable storage and recovery on tvOS |
 
-These are design directions, not implemented capabilities.
+The source/import implementation is described in [Network sources](docs/NETWORK_SOURCES.md); the runtime, controller and save integrations remain work in progress.
 
 ## Documentation
 
@@ -54,6 +54,7 @@ These are design directions, not implemented capabilities.
 | [Architecture](ARCHITECTURE.md) | App components, providers, runtime boundary, and data flow |
 | [Roadmap](ROADMAP.md) | Milestones ordered around technical feasibility |
 | [Proof of concept](POC.md) | First native tvOS experiment and go/no-go evidence |
+| [Network sources](docs/NETWORK_SOURCES.md) | RomM/SMB setup, verified ROM imports, storage limits, and fixture tests |
 | [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
 | [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
 | [Shipwright first game](docs/SHIPWRIGHT_PORT.md) | Pinned native port, local ROM identification, and next tvOS integration steps |

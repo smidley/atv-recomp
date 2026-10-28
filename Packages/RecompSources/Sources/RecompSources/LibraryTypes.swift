@@ -105,3 +105,13 @@ public enum ProviderFactory {
         }
     }
 }
+
+public enum SourceNotices {
+    public static var license: String {
+        guard let url = Bundle.module.url(forResource: "AMSMB2-LICENSE", withExtension: "txt"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else {
+            return "AMSMB2 / libsmb2 · GNU Lesser General Public License 2.1. See the repository's network sources guide."
+        }
+        return "AMSMB2 4.0.3 / libsmb2\nSource: https://github.com/amosavian/AMSMB2/tree/4.0.3\n\n" + text
+    }
+}

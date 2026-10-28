@@ -53,8 +53,13 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_headers()
         if path == "/oversized":
             self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
             self.send_header("Content-Length", str(64 * 1024 * 1024 + 1))
             self.end_headers()
+            try:
+                self.wfile.write(bytes(4096))
+            except (BrokenPipeError, ConnectionResetError):
+                return
             self.wfile.flush()
             # Let the client process the advertised length before closing an incomplete body.
             time.sleep(2)
