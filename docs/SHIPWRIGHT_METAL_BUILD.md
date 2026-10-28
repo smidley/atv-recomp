@@ -11,7 +11,14 @@ and checks for a real Metal device instead of assuming one exists. The existing
 libultraship `__IOS__` flag selects its shared mobile host code; the actual SDK
 and compiler target remain tvOS Simulator. The iOS toolchain file is not used.
 
-Scripting/TinyCC, dynamic native-library loading, MPQ archives and the graphics
+Mac-only Core Audio player selection, native Mac fullscreen helpers, and desktop
+GL setup are restricted to macOS. tvOS selects the existing SDL audio backend,
+including when a desktop audio setting is encountered. Fullscreen requests
+retain the UIKit-owned fullscreen surface rather than invoking Mac window APIs.
+These are platform adaptations; audible output and window lifecycle still need
+simulator execution tests.
+
+Scripting/TinyCC, libultraship's native mod-library loading, MPQ archives and the graphics
 disassembler are disabled. O2R/ZIP support, platform services, SDL2, ImGui, and
 the actual Metal renderer remain in the build. SDL owns the experimental window
 path; integration with the SwiftUI app host is still separate work. Mobile file

@@ -249,3 +249,131 @@
      // iOS always supports Metal and MTLCopyAllDevices is not available
      return true;
  #else
+--- a/src/ship/audio/Audio.cpp
++++ b/src/ship/audio/Audio.cpp
+@@ -1,6 +1,10 @@
+ #include "ship/audio/Audio.h"
+ 
+ #ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
++
++#if defined(__APPLE__) && TARGET_OS_OSX
+ #include "ship/audio/CoreAudioAudioPlayer.h"
+ #endif
+ 
+@@ -21,7 +25,7 @@
+             mAudioPlayer = std::make_shared<WasapiAudioPlayer>(this->mAudioSettings);
+             break;
+ #endif
+-#ifdef __APPLE__
++#if defined(__APPLE__) && TARGET_OS_OSX
+         case AudioBackend::COREAUDIO:
+             mAudioPlayer = std::make_shared<CoreAudioAudioPlayer>(this->mAudioSettings);
+             break;
+@@ -48,7 +52,7 @@
+ #ifdef _WIN32
+     mAvailableAudioBackends->push_back(AudioBackend::WASAPI);
+ #endif
+-#ifdef __APPLE__
++#if defined(__APPLE__) && TARGET_OS_OSX
+     mAvailableAudioBackends->push_back(AudioBackend::COREAUDIO);
+ #endif
+     mAvailableAudioBackends->push_back(AudioBackend::SDL);
+@@ -68,6 +72,12 @@
+ 
+ AudioBackend Audio::GetSavedAudioBackend() {
+     std::string backendName = mConfig->GetString("Window.AudioBackend");
++#if defined(__APPLE__) && TARGET_OS_TV
++    // Desktop settings must not select a backend absent from this build.
++    if (backendName == "coreaudio" || backendName == "wasapi") {
++        return AudioBackend::SDL;
++    }
++#endif
+     if (backendName == "wasapi") {
+         return AudioBackend::WASAPI;
+     }
+@@ -97,7 +107,7 @@
+     return AudioBackend::WASAPI;
+ #endif
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) && TARGET_OS_OSX
+     return AudioBackend::COREAUDIO;
+ #endif
+ 
+--- a/src/fast/backends/gfx_sdl2.cpp
++++ b/src/fast/backends/gfx_sdl2.cpp
+@@ -1,6 +1,10 @@
+ #if defined(ENABLE_OPENGL) || defined(__APPLE__)
+ 
+ #include <stdio.h>
++
++#ifdef __APPLE__
++#include <TargetConditionals.h>
++#endif
+ 
+ #include "fast/Fast3dWindow.h"
+ 
+@@ -29,7 +33,9 @@
+ #elif __APPLE__
+ #include <SDL.h>
+ #include "fast/backends/gfx_metal.h"
++#if TARGET_OS_OSX
+ #include "ship/utils/macUtils.h"
++#endif
+ #else
+ #include <SDL2/SDL.h>
+ #define GL_GLEXT_PROTOTYPES 1
+@@ -215,6 +221,15 @@
+ }
+ 
+ void GfxWindowBackendSDL2::SetFullscreenImpl(bool on, bool call_callback) {
++#if defined(__APPLE__) && TARGET_OS_TV
++    // UIKit owns the tvOS fullscreen surface; there is no desktop transition.
++    const bool changed = !mFullScreen;
++    mFullScreen = true;
++    if (changed && call_callback && mOnFullscreenChanged != nullptr) {
++        mOnFullscreenChanged(true);
++    }
++    return;
++#endif
+     if (mFullScreen == on) {
+         return;
+     }
+@@ -235,7 +250,7 @@
+         }
+     }
+ 
+-#if defined(__APPLE__)
++#if defined(__APPLE__) && TARGET_OS_OSX
+     // Implement fullscreening with native macOS APIs
+     if (on != isNativeMacOSFullscreenActive(mWnd)) {
+         toggleNativeMacOSFullscreen(mWnd);
+@@ -345,7 +360,7 @@
+         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+     }
+ 
+-#if defined(__APPLE__)
++#if defined(__APPLE__) && TARGET_OS_OSX
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+@@ -674,7 +689,7 @@
+     }
+ 
+     // resync fullscreen state
+-#ifdef __APPLE__
++#if defined(__APPLE__) && TARGET_OS_OSX
+     auto nextFullscreenState = isNativeMacOSFullscreenActive(mWnd);
+     if (mFullScreen != nextFullscreenState) {
+         mFullScreen = nextFullscreenState;
+@@ -702,7 +717,7 @@
+ #ifdef _WIN32
+     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
+     left -= 15000UL;
+-#elif defined(__APPLE__)
++#elif defined(__APPLE__) && TARGET_OS_OSX
+     // Use macOS scheduler interval on macOS. Don't trust sysctl on macOS
+     left -= 10000UL;
+ #elif defined(__OpenBSD__)

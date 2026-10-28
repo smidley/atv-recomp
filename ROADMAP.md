@@ -91,6 +91,9 @@ RT64 is not Shipwright's renderer and its execution work is deferred.
 
 Add N64 native ports and static recompilation runtimes, working toward the full library. Track each title's source/runtime availability, ROM revisions, build and rendering blockers, and actual gameplay results. Reuse launcher and host services where appropriate; each added title must pass its own ROM, device, gameplay, and save validation.
 
+Use [recomp.fyi](https://recomp.fyi/) for project discovery, then verify the
+linked upstream sources under the [candidate policy](COMPATIBILITY.md#finding-candidate-projects).
+
 ## M7 — Add more platforms
 
 After the N64 expansion phase, evaluate native runtimes for other platforms through the same launcher boundary. Platform-specific graphics, input, assets, and saves still require their own work. Optional synchronization and enhancements can be scheduled separately; emulator fallback is outside the native-runtime plan.
