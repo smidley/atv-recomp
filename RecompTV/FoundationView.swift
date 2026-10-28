@@ -60,7 +60,7 @@ struct FoundationView: View {
             }
             .disabled(!session.isActive)
 
-            Text("Foundation probe only. Game runtime, ROM loading, audio and library sources are not integrated.")
+            Text("Foundation probe only. Use Library to connect a server and verify a ROM. Native gameplay is not integrated.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(48)

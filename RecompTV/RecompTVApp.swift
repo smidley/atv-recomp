@@ -4,7 +4,11 @@ import SwiftUI
 struct RecompTVApp: App {
     var body: some Scene {
         WindowGroup {
-            FoundationView()
+            TabView {
+                LibraryView().tabItem { Label("Library", systemImage: "books.vertical") }
+                FoundationView().tabItem { Label("Diagnostics", systemImage: "waveform.path.ecg") }
+            }
+            .preferredColorScheme(.dark)
         }
     }
 }
