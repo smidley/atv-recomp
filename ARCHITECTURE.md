@@ -53,7 +53,7 @@ A proposed provider contract includes connection testing, paginated or increment
 
 **RomM:** the initial implementation uses the 5.4.1 catalog/file API contract and a Client API token with `roms.read`. Artwork and additional authentication flows remain planned. Use the instance's OpenAPI specification to pin the integration rather than inventing endpoints. RomM documents an instance API explorer at /api/docs and a specification at /openapi.json. See the [RomM API reference](https://docs.romm.app/latest/developers/api-reference/).
 
-RomM's [client API token documentation](https://docs.romm.app/latest/developers/client-api-tokens/) describes scoped tokens and pairing options. Select a supported flow during integration; keep credentials in a platform credential store, outside catalog metadata. Save synchronization is a later adapter capability.
+RomM's [client API token documentation](https://docs.romm.app/latest/developers/client-api-tokens/) describes scoped tokens and pairing options. The initial client-token flow keeps credentials in Keychain, outside catalog metadata. Pairing and save synchronization are later adapter capabilities.
 
 ## Runtime and build boundary
 
