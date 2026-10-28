@@ -5,6 +5,13 @@
 	};
 	"objectVersion" = "56";
 	"objects" = {
+		"B52D1A2409C2DB2F3CED0193" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/LibraryModel.swift"; "sourceTree" = "SOURCE_ROOT"; };
+		"95EF33CAB3CF68C9D5E86046" = { "isa" = "PBXBuildFile"; "fileRef" = "B52D1A2409C2DB2F3CED0193"; };
+		"042064B99A910D4E9735395E" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/LibraryView.swift"; "sourceTree" = "SOURCE_ROOT"; };
+		"370340BBE638A857F7D98094" = { "isa" = "PBXBuildFile"; "fileRef" = "042064B99A910D4E9735395E"; };
+		"227BE863F736519B8E4FC2E6" = { "isa" = "XCLocalSwiftPackageReference"; "relativePath" = "Packages/RecompSources"; };
+		"8A309769EE32B90A778A1E3A" = { "isa" = "XCSwiftPackageProductDependency"; "productName" = "RecompSources"; };
+		"F87A9D7ED4153DFDBEF2DF40" = { "isa" = "PBXBuildFile"; "productRef" = "8A309769EE32B90A778A1E3A"; };
 		"9B8FE359FA991A79FF3C2C48" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -132,6 +139,8 @@
 			"isa" = "PBXGroup";
 			"children" = (
 				"9B8FE359FA991A79FF3C2C48",
+				"042064B99A910D4E9735395E",
+				"B52D1A2409C2DB2F3CED0193",
 				"CC801877703A5DFBF5407A33",
 				"B5535D144E8CEDBA08083DF8",
 				"F8A654A34960DFA981CCC8D5",
@@ -176,6 +185,8 @@
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"F4709C3647840CA54D32F967",
+				"370340BBE638A857F7D98094",
+				"95EF33CAB3CF68C9D5E86046",
 				"345EEB2158655CEA2A1E3271",
 				"9311C93244D6563B1CECA8EF",
 				"8634E04A453FACA8DA877D82",
@@ -189,6 +200,7 @@
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"94EC04D104C8ADA5CD0495E7",
+				"F87A9D7ED4153DFDBEF2DF40",
 				"C9A551FDBAC72CE1B1BC88BF",
 				"8496E44D41268E4BF9E989B0",
 				"8ECA5D271EF0B3E2EB24EA50",
@@ -282,6 +294,7 @@
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
 				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "RecompTV/Info.plist";
 				"INFOPLIST_KEY_CFBundleDisplayName" = "RecompTV";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
 				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
@@ -304,6 +317,7 @@
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
 				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "RecompTV/Info.plist";
 				"INFOPLIST_KEY_CFBundleDisplayName" = "RecompTV";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
 				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
@@ -331,6 +345,7 @@
 		};
 		"34A04005BCAF206EEC990BD9" = {
 			"isa" = "PBXNativeTarget";
+			"packageProductDependencies" = ("8A309769EE32B90A778A1E3A",);
 			"buildConfigurationList" = "C5C73E6481A31CFC647F47AB";
 			"buildPhases" = (
 				"878A52FC5FF6A57D50B7B870",
@@ -348,6 +363,7 @@
 		};
 		"244210E48437B6556980A702" = {
 			"isa" = "PBXProject";
+			"packageReferences" = ("227BE863F736519B8E4FC2E6",);
 			"attributes" = {
 				"BuildIndependentTargetsInParallel" = "YES";
 				"LastSwiftUpdateCheck" = "1600";
