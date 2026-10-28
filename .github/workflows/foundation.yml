@@ -1,0 +1,55 @@
+name: Foundation harness
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-bridge:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test C consumer against C++ implementation
+        run: sh scripts/test-native.sh
+      - name: Test visual confirmation state with Swift 6
+        run: sh scripts/test-evidence.sh
+
+  tvos-build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Record toolchain
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+      - name: Test native bridge and presentation evidence
+        run: |
+          sh scripts/test-native.sh
+          sh scripts/test-evidence.sh
+      - name: Validate project and scheme
+        run: |
+          plutil -lint RecompTV.xcodeproj/project.pbxproj
+          xcodebuild -list -project RecompTV.xcodeproj
+      - name: Build tvOS Simulator (Debug, unsigned)
+        id: simulator
+        run: bash scripts/ci-build-tvos.sh simulator
+      - name: "${{ steps.simulator.outputs.diagnostic }}"
+        if: failure() && steps.simulator.outcome == 'failure'
+        run: echo 'See the simulator build step for the complete compiler output.'
+      - name: Build Apple TV (Release, unsigned)
+        id: device
+        run: bash scripts/ci-build-tvos.sh device
+      - name: "${{ steps.device.outputs.diagnostic }}"
+        if: failure() && steps.device.outcome == 'failure'
+        run: echo 'See the device build step for the complete compiler output.'

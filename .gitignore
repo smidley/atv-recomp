@@ -1,0 +1,19 @@
+.DS_Store
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+.build/
+
+# User game data and private development inputs never belong in Git.
+LocalData/
+*.z64
+*.v64
+*.n64
+*.rom
+*.iso
+*.sav
+*.srm
+.env
+.env.*

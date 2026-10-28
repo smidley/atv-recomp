@@ -1,6 +1,10 @@
 # Decisions and Risks
 
-**Baseline:** 2026-10-28. This register separates agreed project direction from implementation proposals and unanswered feasibility questions. No runtime, renderer, or provider integration has been demonstrated in this repository.
+**Baseline:** 2026-10-28. This register separates agreed project direction from implementation proposals and unanswered feasibility questions. A foundation app/bridge/Metal probe is implemented; no game runtime, game renderer, provider integration, or physical Apple TV result has been demonstrated.
+
+## Foundation implementation note — 2026-10-28
+
+The first source harness uses a C ABI backed by C++17, Swift 6 complete concurrency checking, and MetalKit's standard command-buffer presentation path. It uses the tvOS 17 APIs needed for Observation as a provisional development floor. These choices avoid importing the game runtime before the basic app/bridge/presentation checks exist. They do not resolve the minimum supported Apple TV, upstream dependency selection, runtime threading, or P01's device-evidence requirement. See [the harness instructions](docs/FOUNDATION_HARNESS.md); all device gates remain open.
 
 ## Agreed decisions
 

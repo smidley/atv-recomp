@@ -2,7 +2,15 @@
 
 RecompTV is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported, statically recompiled games locally on tvOS.
 
-**Status: planning and feasibility research.** This repository currently contains project documentation only. There is no application, build command, release, or validated tvOS game support yet.
+**Status: foundation harness implemented; device feasibility unverified.** The repository includes a minimal SwiftUI tvOS app that calls C++ through a C bridge and requests a deterministic Metal frame. No game runtime is integrated, and no Apple TV or game support is validated yet.
+
+## Run the foundation harness
+
+Open `RecompTV.xcodeproj` in Xcode 16 or newer, select the **RecompTV** scheme and an Apple TV simulator or paired device, then Run. A physical device needs your development team selected under Signing & Capabilities. No project-generation tool or third-party dependency is required.
+
+The app shows the native C++ result, a solid Metal test surface, and separate GPU-completion and user-confirmed visual evidence. See [Foundation harness](docs/FOUNDATION_HARNESS.md) for setup, checks, limitations, and the physical-device evidence to collect. The provisional tvOS 17 deployment floor is for the harness only.
+
+Portable native checks: `sh scripts/test-native.sh`. Presentation-state checks with Swift 6: `sh scripts/test-evidence.sh`. GitHub CI also builds unsigned simulator and device targets; it does not establish physical-device support.
 
 ## Project direction
 
@@ -44,6 +52,7 @@ These are design directions, not implemented capabilities.
 | [Architecture](ARCHITECTURE.md) | App components, providers, runtime boundary, and data flow |
 | [Roadmap](ROADMAP.md) | Milestones ordered around technical feasibility |
 | [Proof of concept](POC.md) | First native tvOS experiment and go/no-go evidence |
+| [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
 | [Compatibility](COMPATIBILITY.md) | ROM validation, runtime eligibility, and support status |
 | [Decisions and risks](DECISIONS_AND_RISKS.md) | Agreed direction, proposals, unresolved choices, and sources |
 
@@ -51,7 +60,7 @@ The initial documentation was reconstructed from the project's planning discussi
 
 ## Development prerequisites
 
-The first experiment needs a Mac with Xcode and the tvOS SDK, a physical Apple TV available for development, a compatible controller, and a user-supplied ROM matching the selected upstream revision. Record exact hardware, OS, toolchain, and dependency versions when starting the experiment.
+The foundation harness needs a Mac with Xcode and the tvOS SDK; physical validation also needs an Apple TV available for development and its remote or a controller. It does not need a ROM. The later game experiment additionally needs a compatible game controller and a user-supplied ROM matching the selected upstream revision. Record exact hardware, OS, toolchain, and dependency versions when starting each experiment.
 
 The minimum Apple TV model and tvOS version have not been selected. Simulator results alone will not establish graphics, performance, or device compatibility.
 
