@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** proposed implementation architecture for the agreed product direction, 2026-10-28. No components below have been implemented or validated in this repository.
+**Status:** proposed product architecture, 2026-10-28. A [foundation harness](docs/FOUNDATION_HARNESS.md) now implements a minimal SwiftUI shell, C/C++ probe, and Metal presentation check. The product components below remain proposals; no game runtime, provider, or physical-device behavior is validated.
 
 ## System boundary
 
@@ -63,6 +63,8 @@ Use a narrow Swift-to-C/C++ boundary, potentially a C interface with an Objectiv
 - Pause/resume, save flush, controlled shutdown, and diagnostic errors.
 
 Keep game state separate from SwiftUI view state. Define which thread owns the runtime and renderer. Avoid blocking the main UI thread with discovery, hashing, downloads, or game execution.
+
+The foundation harness uses a C-compatible bridging header and a C++17 translation unit. SwiftUI diagnostics and the tiny, on-demand `MTKView` clear pass are main-actor owned. Metal callbacks send scalar/string evidence back to that actor, tagged by test generation. This ownership is specific to the probe; it is not a decision to execute future game code or data transfers on the UI thread.
 
 The renderer must ultimately present through Metal on tvOS. Existing desktop Metal support does not prove that the required GPU features, shaders, windowing code, or dependencies work on Apple TV. The exact backend adaptation is a POC outcome.
 

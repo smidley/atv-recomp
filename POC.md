@@ -1,6 +1,6 @@
 # Native tvOS Recompilation Proof of Concept
 
-**Status:** planned; no experiment has been run in this repository as of 2026-10-28.
+**Status:** the [foundation harness](docs/FOUNDATION_HARNESS.md) is implemented for checkpoints 1–2. The physical Apple TV experiment has not been run, the upstream dependency audit is open, and no game runtime is integrated as of 2026-10-28.
 
 ## Question to answer
 
@@ -28,13 +28,13 @@ Never put ROMs or extracted game assets in Git, CI artifacts, screenshots of sou
 
 ### 1. Establish the app and native bridge
 
-Create the native tvOS target with SwiftUI. Compile a trivial C++ function into the application and call it through the proposed bridge.
+The native **RecompTV** target now calls `RTVBridgeAdd(19, 23)` through a C bridging header and displays the result. Open `RecompTV.xcodeproj` using the harness instructions and run it on the selected device.
 
 **Evidence:** a successful device build/run and an observable result from the C++ code. Document the bridge and toolchain.
 
 ### 2. Establish Metal presentation
 
-Create the smallest Metal-backed surface that can present a deterministic frame on the same device.
+The harness now provides an `MTKView` that clears to C++-supplied blue, green, or red. Its passing display status requires successful GPU completion and a valid drawable presentation timestamp. Run and visually verify it on the same device, including reruns and suspend/resume.
 
 **Evidence:** actual device output and the relevant GPU capabilities. Keep this checkpoint separate from any claim about the upstream renderer.
 
@@ -84,7 +84,7 @@ Passing these checkpoints justifies the next engineering phase. It does not cert
 
 ## Result record
 
-Complete this record after the experiment; all fields are currently untested.
+Complete this record after the physical-device experiment; its outcome is still untested. Host checks and CI builds are documented separately in the harness instructions and must not be entered as device results.
 
 - Date and developer:
 - App commit:

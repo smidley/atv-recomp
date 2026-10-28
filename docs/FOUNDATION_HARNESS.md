@@ -1,0 +1,108 @@
+# Foundation harness
+
+This is the first implementation step for [M1](../ROADMAP.md). It contains a
+native tvOS application, a C ABI implemented in C++, and an on-demand Metal
+clear pass. It does not contain Zelda 64: Recompiled, RT64, ROM loading, game
+assets, audio, or library providers.
+
+## Open and run
+
+1. On a Mac with Xcode 16 or newer and a tvOS SDK installed, open
+   `RecompTV.xcodeproj`. No project generator or package download is required.
+2. Select the shared **RecompTV** scheme.
+3. For a simulator check, select an installed Apple TV simulator and Run.
+4. For physical validation, pair your Apple TV with Xcode, select it as the run
+   destination, and choose your development team under **Signing & Capabilities**.
+   Change `com.smidley.RecompTVHarness` if your signing account needs a unique
+   bundle identifier. Build and Run.
+
+The target's tvOS 17 deployment setting is a provisional harness floor so it can
+use Observation. It is not a supported-device or final product baseline. The
+project uses Swift 6 with complete concurrency checking, explicitly nonisolated
+default isolation and explicit main-actor UI/rendering ownership. No additional
+concurrency features or external dependencies are enabled.
+
+## What to check on the TV
+
+- **C++ bridge returned 42:** Swift called `RTVBridgeAdd(19, 23)` through a C
+  bridging header and received the expected result from the `.cpp` implementation.
+- **Solid blue surface:** an actual `MTKView` clear pass, using a color returned
+  by C++. **Next test color** cycles through green, red, and blue. The native
+  buttons use tvOS focus navigation with the remote or a controller; this is not
+  a game-controller mapping implementation.
+- **Metal frame presented:** requires both successful GPU command completion
+  and a strictly positive, finite drawable presentation timestamp. GPU submission
+  or completion by itself cannot pass the display check. Visually confirm the
+  expected color even when both callbacks arrive.
+- **Rerun check:** starts a fresh attempt. Old callbacks cannot mark it passed or
+  failed. Backgrounding invalidates the current attempt; returning to the active
+  app requests a new frame. Test repeated suspend/resume on physical hardware.
+
+The renderer uses `MTLCommandQueue` and `MTLCommandBuffer.present` followed by
+`commit`, not the Metal 4 queue API. There is no shader pipeline or claim about
+the eventual game's renderer. Drawable references stay local to the draw call.
+MetalKit owns resizing. The view is paused with `enableSetNeedsDisplay = true`,
+so it redraws only on requests/layout changes instead of running a game loop.
+
+If no drawable is available, keep the app visible and rerun the check. If the GPU
+completion arrives but the display timestamp remains pending, record that result;
+do not treat it as a pass. A simulator may expose different GPU/presentation
+behavior from Apple TV. No Metal device, failed queue/encoder allocation, and GPU
+errors are displayed explicitly. Repeated failures are evidence to investigate,
+not a reason to bypass the checks.
+
+## Automated checks
+
+Run the portable C/C++ ABI check on Linux or macOS:
+
+```sh
+sh scripts/test-native.sh
+```
+
+It compiles the consumer as C17 and the implementation as C++17, links them, and
+checks the returned arithmetic and RGBA structs, including boundary indices.
+Compilers default to `cc`/`c++`; `CC`/`CXX` can select other compiler executables.
+
+On a host with Swift 6, test the presentation evidence state:
+
+```sh
+sh scripts/test-evidence.sh
+```
+
+These tests cover completion without presentation, invalid/dropped timestamps,
+reversed callback order, persistent failures, and stale attempts. They do not
+create a Metal device or simulate actual presentation.
+
+The **Foundation harness** GitHub workflow runs these checks and builds Debug
+for the tvOS Simulator and Release for Apple TV without signing. Builds validate
+compilation/linking, not device execution or graphics output. Inspect the workflow
+result for the exact commit; the presence of a workflow file is not a passing run.
+
+## Physical evidence still required
+
+Use the result record in [POC.md](../POC.md), including:
+
+| Item | Record |
+| --- | --- |
+| App revision | Exact Git commit being tested |
+| Toolchain | Xcode build number, tvOS SDK, signing setup |
+| Hardware | Apple TV model/chipset, installed tvOS, remote/controller |
+| Native bridge | Visible result; unexpected values or errors |
+| Metal | GPU name, drawable size, visible blue/green/red, both callback outcomes |
+| Lifecycle | Rerun and suspend/resume outcomes, reproduction steps for failures |
+| Next gate | Upstream dependency/renderer audit remains open |
+
+No game or device is marked supported by this harness. Passing it does not
+complete M1's dependency audit or M2's game boot/gameplay criteria.
+
+## Presentation references
+
+- [Apple: MTKView](https://developer.apple.com/documentation/metalkit/mtkview)
+- [Apple: currentDrawable](https://developer.apple.com/documentation/metalkit/mtkview/currentdrawable)
+- [Apple: addPresentedHandler](https://developer.apple.com/documentation/metal/mtldrawable/addpresentedhandler(_:))
+- [Apple: presentedTime](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime)
+
+Apple documents a zero presentation timestamp for an unpresented or dropped
+drawable. The harness records the callback values instead of substituting a CPU
+timestamp. SDK signatures and physical behavior must be checked with the Xcode
+and device versions in the experiment record.
