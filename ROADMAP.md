@@ -20,7 +20,7 @@ Validate native execution before investing in the full launcher. If the runtime 
 
 **Progress:** the [foundation harness](docs/FOUNDATION_HARNESS.md) provides a SwiftUI tvOS target, C/C++ bridge probe, on-demand Metal surface, visual confirmation checks, and an unsigned build workflow. The maintainer [confirmed its simulator checks](docs/SIMULATOR_PROGRESS.md). A [first source audit](docs/RUNTIME_AUDIT.md) pins the candidate runtime and identifies desktop rendering and live-recompiler boundaries. The isolated core experiment compiles the upstream service library separately from the game, renderer, and mod loader. M1's physical-device exit criteria remain open.
 
-**Active simulator track:** adapt [Shipwright and libultraship](docs/SHIPWRIGHT_PORT.md). Its local ROM-identification prototype uses the pinned upstream hash list and synthetic tests. Next, isolate the relevant platform services and Metal backend for tvOS Simulator builds.
+**Active simulator track:** adapt [Shipwright and libultraship](docs/SHIPWRIGHT_PORT.md). Its local ROM-identification prototype uses the pinned upstream hash list and synthetic tests. The [libultraship build experiment](docs/SHIPWRIGHT_METAL_BUILD.md) compiles the platform services and real Metal backend, then checks a complete executable link for both simulator architectures. Its workflow result records build evidence; the next execution step is a bounded renderer fixture inside a simulator application.
 
 The core service builds and callback tests passed in PR #2. The
 [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) now isolates the renderer's
