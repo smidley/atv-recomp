@@ -9,6 +9,7 @@ on:
       - scripts/check-shipwright-metal.sh
       - scripts/prepare-shipwright-metal.py
       - scripts/verify-shipwright-metal-build.py
+      - scripts/run-shipwright-render-probe.py
       - scripts/ci-run-experiment.sh
       - upstream/shipwright-baseline.json
       - upstream/libultraship-simulator.json
@@ -20,6 +21,7 @@ on:
       - scripts/check-shipwright-metal.sh
       - scripts/prepare-shipwright-metal.py
       - scripts/verify-shipwright-metal-build.py
+      - scripts/run-shipwright-render-probe.py
       - scripts/ci-run-experiment.sh
       - upstream/shipwright-baseline.json
       - upstream/libultraship-simulator.json
@@ -48,13 +50,36 @@ jobs:
           submodules: false
           persist-credentials: false
       - name: Record Xcode and SDK
+        id: host
         run: |
           xcodebuild -version
           xcrun --sdk appletvsimulator --show-sdk-version
           cmake --version
+          echo "architecture=$(uname -m)" >> "$GITHUB_OUTPUT"
+      - name: Test renderer evidence validation and asset packaging
+        run: python3 experiments/shipwright/metal/ProbeTests.py
       - name: Compile and link libultraship services and Metal backend
         id: build
         run: bash scripts/ci-run-experiment.sh bash scripts/check-shipwright-metal.sh ${{ matrix.architecture }} build/upstream/libultraship
       - name: "${{ steps.build.outputs.diagnostic }}"
         if: failure() && steps.build.outcome == 'failure'
         run: echo 'See the build step for the complete error.'
+      - name: Run renderer in the native simulator architecture
+        id: render
+        if: matrix.architecture == steps.host.outputs.architecture
+        run: |
+          probe_build="build/shipwright-metal/simulator-${{ matrix.architecture }}"
+          IFS= read -r probe_app < "$probe_build/render-probe-path.txt"
+          bash scripts/ci-run-experiment.sh python3 scripts/run-shipwright-render-probe.py "$probe_app" \
+            --output "$probe_build/render-evidence" --allow-unavailable
+      - name: "Renderer result: ${{ steps.render.outputs.render_status }} ${{ steps.render.outputs.diagnostic }}"
+        if: always() && steps.render.outcome != 'skipped'
+        run: echo 'See render-evidence/result.json and the job summary; unavailable is not a rendering pass.'
+      - name: Save renderer reports, logs, and screenshots
+        if: always() && steps.render.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: shipwright-render-${{ matrix.architecture }}
+          path: build/shipwright-metal/simulator-${{ matrix.architecture }}/render-evidence
+          if-no-files-found: warn
+          retention-days: 14
