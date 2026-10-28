@@ -8,6 +8,8 @@ on:
       - RecompTV/**
       - scripts/network-fixtures.py
       - scripts/test-network-sources.sh
+      - scripts/run-source-simulator-probe.py
+      - RecompTV.xcodeproj/**
       - .github/workflows/network-sources.yml
   push:
     branches: [main]
@@ -15,6 +17,9 @@ on:
       - Packages/RecompSources/**
       - scripts/network-fixtures.py
       - scripts/test-network-sources.sh
+      - scripts/run-source-simulator-probe.py
+      - RecompTV/**
+      - RecompTV.xcodeproj/**
       - .github/workflows/network-sources.yml
   workflow_dispatch:
 
@@ -55,6 +60,26 @@ jobs:
       - name: "${{ steps.tests.outputs.diagnostic }}"
         if: failure() && steps.tests.outcome == 'failure'
         run: echo 'See test output for full diagnostics.'
+      - name: Build the app for tvOS Simulator
+        id: build
+        run: bash scripts/ci-build-tvos.sh simulator
+      - name: "${{ steps.build.outputs.diagnostic }}"
+        if: failure() && steps.build.outcome == 'failure'
+        run: echo 'See simulator build output for full diagnostics.'
+      - name: Run providers and Keychain in tvOS Simulator twice
+        id: simulator
+        run: python3 scripts/run-source-simulator-probe.py --app build/simulator/Build/Products/Debug-appletvsimulator/RecompTV.app --output build/source-probe
+      - name: "${{ steps.simulator.outputs.diagnostic }}"
+        if: failure() && steps.simulator.outcome == 'failure'
+        run: echo 'See source probe output for full diagnostics.'
+      - name: Save simulator reports and launcher screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: network-source-simulator
+          path: build/source-probe/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Stop fixture servers
         if: always()
         run: |
