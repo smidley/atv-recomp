@@ -1,0 +1,251 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -11,7 +11,7 @@
+ option(DISABLE_DLL_LOADER "Disable dynamic library loading support" OFF)
+ option(ENABLE_SCRIPTING "Enable TCC-based C mod compilation and scripting system" OFF)
+ 
+-if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if((CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     option(SIGN_LIBRARY "Enable xcode signing" OFF)
+     option(BUNDLE_ID "Bundle ID for xcode signing" "com.example.libultraship")
+     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+@@ -19,7 +19,7 @@
+ 
+ project(libultraship LANGUAGES C CXX)
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     enable_language(OBJCXX)
+     set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc")
+     set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -fobjc-arc")
+@@ -56,7 +56,7 @@
+     include(cmake/dependencies/mac.cmake)
+ endif()
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if ((CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     include(cmake/dependencies/ios.cmake)
+ endif()
+ 
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -55,7 +55,7 @@
+ 
+ add_subdirectory("ship")
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ship/utils/AppleFolderManager.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
+ endif()
+ 
+@@ -72,7 +72,7 @@
+ 
+ #=================== Linking ===================
+ if(INCLUDE_MPQ_SUPPORT)
+-    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
++    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+         target_link_libraries(libultraship PUBLIC "$<LINK_LIBRARY:WHOLE_ARCHIVE,storm>")
+     else()
+         target_link_libraries(libultraship PUBLIC storm)
+@@ -110,7 +110,7 @@
+ 
+ endif()
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     find_Library(OSX_FOUNDATION Foundation)
+     find_Library(OSX_AVFOUNDATION AVFoundation)
+     find_library(METAL Metal)
+@@ -153,7 +153,7 @@
+     )
+ endif()
+ 
+-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     set_target_properties(${PROJECT_NAME} PROPERTIES
+         XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+     )
+@@ -173,7 +173,7 @@
+     message(FATAL_ERROR "SPDLOG_MIN_CUTOFF must be one of ${LOG_LEVELS}")
+ endif()
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if ((CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     target_compile_definitions(libultraship PRIVATE
+         $<$<CONFIG:Debug>:_DEBUG>
+         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+@@ -181,7 +181,8 @@
+         __IOS__
+     )
+ 
+-    set_xcode_property(${PROJECT_NAME} PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID} All)
++    set_target_properties(${PROJECT_NAME} PROPERTIES
++        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BUNDLE_ID}")
+ 
+     if(NOT SIGN_LIBRARY)
+         set_target_properties(${PROJECT_NAME} PROPERTIES
+--- a/src/fast/CMakeLists.txt
++++ b/src/fast/CMakeLists.txt
+@@ -31,11 +31,11 @@
+     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/dxsdk/*")
+ endif()
+ 
+-if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/gfx_metal*")
+ endif()
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if ((CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     list(FILTER Source_Files__Graphic EXCLUDE REGEX "graphic/Fast3D/backends/gfx_opengl*")
+ endif()
+ 
+--- a/src/ship/CMakeLists.txt
++++ b/src/ship/CMakeLists.txt
+@@ -59,7 +59,7 @@
+ 
+ file(GLOB_RECURSE Source_Files__Utils RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utils/*.cpp" "utils/*.c")
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     list(APPEND Source_Files__Utils ${CMAKE_CURRENT_SOURCE_DIR}/utils/AppleFolderManager.mm)
+ endif()
+ 
+@@ -94,7 +94,7 @@
+ 
+ #=================== Port ===================
+ 
+-if (CMAKE_SYSTEM_NAME STREQUAL "Android" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++if (CMAKE_SYSTEM_NAME STREQUAL "Android" OR (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "tvOS"))
+     set(Source_Files__Port
+         ${CMAKE_CURRENT_SOURCE_DIR}/port/mobile/MobileImpl.cpp
+     )
+--- a/cmake/dependencies/common.cmake
++++ b/cmake/dependencies/common.cmake
+@@ -1,6 +1,8 @@
+ include(FetchContent)
+ 
+-find_package(OpenGL QUIET)
++if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS")
++    find_package(OpenGL QUIET)
++endif()
+ 
+ #=================== ImGui ===================
+ set(imgui_fixes_and_config_patch_file ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies/patches/imgui-fixes-and-config.patch)
+@@ -9,7 +11,7 @@
+ FetchContent_Declare(
+     ImGui
+     GIT_REPOSITORY https://github.com/ocornut/imgui.git
+-    GIT_TAG v1.91.9b-docking
++    GIT_TAG 4806a1924ff6181180bf5e4b8b79ab4394118875
+     PATCH_COMMAND ${imgui_apply_patch_command}
+ )
+ FetchContent_MakeAvailable(ImGui)
+@@ -29,9 +31,12 @@
+ 
+ target_sources(ImGui
+     PRIVATE
+-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+ )
++
++if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS")
++    target_sources(ImGui PRIVATE ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
++endif()
+ 
+ target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends PRIVATE ${SDL2_INCLUDE_DIRS})
+ 
+@@ -130,7 +135,7 @@
+ FetchContent_Declare(
+     ThreadPool
+     GIT_REPOSITORY https://github.com/bshoshany/thread-pool.git
+-    GIT_TAG v4.1.0
++    GIT_TAG 097aa718f25d44315cadb80b407144ad455ee4f9
+ )
+ FetchContent_MakeAvailable(ThreadPool)
+ 
+--- a/cmake/dependencies/ios.cmake
++++ b/cmake/dependencies/ios.cmake
+@@ -6,7 +6,7 @@
+     FetchContent_Declare(
+         SDL2
+         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+-        GIT_TAG release-2.32.10
++        GIT_TAG 5d249570393f7a37e037abf22cd6012a4cc56a71
+         OVERRIDE_FIND_PACKAGE
+     )
+     FetchContent_MakeAvailable(SDL2)
+@@ -18,7 +18,7 @@
+     FetchContent_Declare(
+         nlohmann_json
+         GIT_REPOSITORY https://github.com/nlohmann/json.git
+-        GIT_TAG v3.12.0
++        GIT_TAG 55f93686c01528224f448c19128836e7df245f72
+         OVERRIDE_FIND_PACKAGE
+     )
+     FetchContent_MakeAvailable(nlohmann_json)
+@@ -31,7 +31,7 @@
+     FetchContent_Declare(
+         tinyxml2
+         GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
+-        GIT_TAG 11.0.0
++        GIT_TAG 9148bdf719e997d1f474be6bcc7943881046dba1
+         OVERRIDE_FIND_PACKAGE
+     )
+     FetchContent_MakeAvailable(tinyxml2)
+@@ -43,7 +43,7 @@
+     FetchContent_Declare(
+         spdlog
+         GIT_REPOSITORY https://github.com/gabime/spdlog.git
+-        GIT_TAG v1.16.0
++        GIT_TAG 486b55554f11c9cccc913e11a87085b2a91f706f
+         OVERRIDE_FIND_PACKAGE
+     )
+     FetchContent_MakeAvailable(spdlog)
+@@ -62,7 +62,7 @@
+     FetchContent_Declare(
+         libzip
+         GIT_REPOSITORY https://github.com/nih-at/libzip.git
+-        GIT_TAG v1.11.4
++        GIT_TAG 6f8a0cdd24a0dc6cce9dac4a7679da784ab124ea
+         OVERRIDE_FIND_PACKAGE
+     )
+     FetchContent_MakeAvailable(libzip)
+@@ -72,8 +72,8 @@
+ #=================== Metal-cpp ===================
+ FetchContent_Declare(
+     metalcpp
+-    GIT_REPOSITORY https://github.com/briaguya-ai/single-header-metal-cpp.git
+-    GIT_TAG macOS13_iOS16
++    GIT_REPOSITORY https://github.com/briaguya0/single-header-metal-cpp.git
++    GIT_TAG 7bf710a725b386f6db869f8a2b48a56be29b6233
+ )
+ FetchContent_MakeAvailable(metalcpp)
+ list(APPEND ADDITIONAL_LIB_INCLUDES ${metalcpp_SOURCE_DIR})
+--- a/src/fast/backends/gfx_metal.cpp
++++ b/src/fast/backends/gfx_metal.cpp
+@@ -8,6 +8,7 @@
+ #ifdef __APPLE__
+ 
+ #include "fast/backends/gfx_metal.h"
++#include <TargetConditionals.h>
+ 
+ #include <vector>
+ #include <algorithm>
+@@ -1282,7 +1283,15 @@
+ } // namespace Fast
+ 
+ bool Metal_IsSupported() {
+-#ifdef __IOS__
++#if TARGET_OS_TV
++    // A simulator may not expose a Metal device; never invent GPU support.
++    MTL::Device* device = MTL::CreateSystemDefaultDevice();
++    const bool available = device != nullptr;
++    if (device != nullptr) {
++        device->release();
++    }
++    return available;
++#elif defined(__IOS__)
+     // iOS always supports Metal and MTLCopyAllDevices is not available
+     return true;
+ #else

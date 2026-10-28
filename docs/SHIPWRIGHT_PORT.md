@@ -92,6 +92,10 @@ implementation and tests before any in-app import is advertised.
 5. Add more N64 runtimes through the same registry, validation, asset preparation,
    and launch boundary. Investigate other platforms after the N64 phase.
 
+The first compilation/link implementation is tracked in the
+[libultraship Metal build experiment](SHIPWRIGHT_METAL_BUILD.md). Its CI result
+must be checked before claiming a successful build; it does not execute the GPU.
+
 Host extraction can simplify the first development boot. The intended product
 still accepts a ROM and prepares required data through the launcher; it must not
 require users to build games or manually assemble O2R archives.
