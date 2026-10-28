@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,24 @@ import time
 import uuid
 
 BUNDLE = "com.smidley.RecompTV.ShipwrightProbe"
+
+
+def failure_detail(prefix, output, attempt, result_path):
+    phase = "No app report was written"
+    if result_path.is_file():
+        try:
+            report = json.loads(result_path.read_text())
+            phase = f"Last app phase: {report.get('status')}: {report.get('detail')}"
+        except (OSError, ValueError):
+            phase = "App report could not be read"
+    lines = []
+    for suffix in ("stdout", "stderr"):
+        path = output / f"launch-{attempt}.{suffix}.log"
+        if path.is_file():
+            lines.extend(path.read_text(errors="replace")[-12000:].splitlines())
+    errors = [line for line in lines if re.search(r"error|assert|abort|failed|exception", line, re.I)]
+    excerpt = " ".join((errors[-5:] if errors else lines[-4:]))[:1400]
+    return f"{prefix}. {phase}. {excerpt}"
 
 
 def validate_report(report, run_id):
@@ -77,10 +96,12 @@ def run_probe(app, output, keep_simulator=False):
             result_path.unlink(missing_ok=True)
             environment = os.environ.copy()
             environment.update(SIMCTL_CHILD_RECOMPTV_PROBE_RUN=run_id, SIMCTL_CHILD_MTL_DEBUG_LAYER="1")
-            command("xcrun", "simctl", "launch", "--terminate-running-process",
+            launch_output = command("xcrun", "simctl", "launch", "--terminate-running-process",
                     "--stdout=" + str(output / f"launch-{attempt}.stdout.log"),
                     "--stderr=" + str(output / f"launch-{attempt}.stderr.log"),
                     simulator, BUNDLE, env=environment)
+            match = re.search(r":\s*(\d+)\s*$", launch_output)
+            pid = int(match.group(1)) if match else None
             deadline = time.monotonic() + 120
             while time.monotonic() < deadline:
                 if result_path.is_file():
@@ -91,9 +112,14 @@ def run_probe(app, output, keep_simulator=False):
                         if status != "passed":
                             return status, report.get("detail", "No renderer diagnostic")
                         break
+                if pid:
+                    try:
+                        os.kill(pid, 0)  # Simulator apps run as host processes.
+                    except ProcessLookupError:
+                        raise RuntimeError(failure_detail("Renderer process exited before reporting a result", output, attempt, result_path))
                 time.sleep(1)
             else:
-                raise RuntimeError("Renderer did not finish within 120 seconds; inspect the captured app logs")
+                raise RuntimeError(failure_detail("Renderer did not finish within 120 seconds", output, attempt, result_path))
             command("xcrun", "simctl", "io", simulator, "screenshot", str(output / f"launch-{attempt}.png"))
             if attempt != 2 or not keep_simulator:
                 command("xcrun", "simctl", "terminate", simulator, BUNDLE)
