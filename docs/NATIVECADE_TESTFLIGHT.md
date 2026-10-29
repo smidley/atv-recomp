@@ -10,10 +10,9 @@ and network-source harness used by CI. It does not require the game framework.
 ## Build from source
 
 Use a Mac with Xcode, the tvOS SDK, CMake 3.26 or newer, Ninja, and Python 3.
-Place clean checkouts at the exact revisions in `upstream/shipwright-baseline.json`
-under `build/upstream/Shipwright`, `build/upstream/Torch`, and
-`build/upstream/libultraship`. Add the clean SpaghettiKart revision from
-`upstream/spaghettikart-baseline.json` at `build/upstream/SpaghettiKart`.
+The runtime script first downloads the upstream releases pinned in
+`upstream/shipwright-baseline.json` and `upstream/spaghettikart-baseline.json`
+into `build/upstream/` (see [Updating game runtimes](UPDATING_UPSTREAM.md)).
 The preparation scripts patch generated copies;
 they do not modify those checkouts or existing player data.
 

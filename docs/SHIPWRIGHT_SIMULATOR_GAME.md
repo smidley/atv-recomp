@@ -12,7 +12,8 @@ backups, and controller vibration settings; see
 ## Build the host asset tools
 
 Use the exact clean checkouts recorded in `upstream/shipwright-baseline.json` under
-`build/upstream/Shipwright`, `build/upstream/Torch` and `build/upstream/libultraship`.
+`build/upstream/Shipwright`, `build/upstream/Torch` and `build/upstream/libultraship`;
+`python3 scripts/upstream.py fetch` creates them.
 CMake 3.26 or newer and Ninja must be on PATH. A local Python virtual environment
 can supply both without changing the system installation.
 

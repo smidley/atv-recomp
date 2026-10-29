@@ -9,7 +9,7 @@ import zipfile
 root = Path(__file__).resolve().parent.parent
 source = root / "build/upstream/SpaghettiKart"
 pin = json.loads((root / "upstream/spaghettikart-baseline.json").read_text())
-if subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip() != pin["revision"]:
+if subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip() != pin["sources"]["spaghettikart"]["revision"]:
     raise SystemExit("Use the pinned SpaghettiKart source.")
 output = root / "build/nativecade-runtime/NativecadeGame/SpaghettiKart"
 output.mkdir(parents=True, exist_ok=True)
@@ -52,7 +52,7 @@ assert converted == 3, "Review VRAM mappings when updating the pinned game."
 shutil.copy2(source / "include/defines.h", output / "include/defines.h")
 shutil.copy2(source / "config.yml", output / "config.yml")
 (output / "Upstream.txt").write_text(
-    "SpaghettiKart 1.0.0 by HarbourMasters\nhttps://github.com/HarbourMasters/SpaghettiKart\n"
-    + pin["revision"] + "\nShared runtime dependencies and notices: ../ThirdPartyNotices.txt\n"
+    f"SpaghettiKart {pin['release']} by HarbourMasters\nhttps://github.com/HarbourMasters/SpaghettiKart\n"
+    + pin["sources"]["spaghettikart"]["revision"] + "\nShared runtime dependencies and notices: ../ThirdPartyNotices.txt\n"
     "No Mario Kart ROM or extracted mk64.o2r is included.\n")
 print(f"Prepared SpaghettiKart support files: {output}")

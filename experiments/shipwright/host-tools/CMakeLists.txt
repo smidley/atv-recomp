@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(RecompTVShipwrightTools LANGUAGES C CXX)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../upstream/pins.cmake")
 
 # These executables run on the development Mac. Never cross-compile and then
 # execute an asset tool as part of a simulator or device build.
@@ -18,8 +19,8 @@ function(require_revision source revision)
         message(FATAL_ERROR "Wrong source revision at ${source}: expected ${revision}")
     endif()
 endfunction()
-require_revision("${RECOMPTV_SHIPWRIGHT_SOURCE}" f0599f96f8d442f26d0fa1c5cedafddacd56633f)
-require_revision("${RECOMPTV_TORCH_SOURCE}" 2ab12fe9660aec04e02ee89fe81baed304a1a1d6)
+require_revision("${RECOMPTV_SHIPWRIGHT_SOURCE}" "${RECOMPTV_SHIPWRIGHT_REVISION}")
+require_revision("${RECOMPTV_TORCH_SOURCE}" "${RECOMPTV_TORCH_REVISION}")
 
 include(FetchContent)
 # First declarations win, pinning Torch's tag-based dependencies to commits.
@@ -47,6 +48,7 @@ add_executable(soh-torch ExtractROM.cpp
     "${ship}/soh/Extractor/TorchExtract.cpp")
 target_include_directories(soh-torch PRIVATE "${ship}/soh/Extractor")
 target_link_libraries(soh-torch PRIVATE torch)
+target_compile_definitions(soh-torch PRIVATE RECOMPTV_SHIPWRIGHT_RELEASE="${RECOMPTV_SHIPWRIGHT_RELEASE}")
 add_executable(soh-o2r-packer "${ship}/assets/tools/soh-o2r-packer/main.cpp"
     "${ship}/assets/tools/soh-o2r-packer/PngTexture.cpp")
 target_link_libraries(soh-o2r-packer PRIVATE torch)

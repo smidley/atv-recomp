@@ -1,0 +1,26 @@
+name: Upstream game releases
+
+# Weekly: open one issue per game whose maintainers published a newer release
+# than the one Nativecade builds. Starting the update stays a deliberate step.
+on:
+  schedule:
+    - cron: '17 14 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  releases:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Compare pinned releases and open issues for newer ones
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 scripts/upstream.py releases --open-issues

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(RecompTVShipwrightMetal LANGUAGES C CXX OBJC OBJCXX)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../upstream/pins.cmake")
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     message(FATAL_ERROR "This experiment must use the tvOS SDK")
 endif()
@@ -60,7 +61,8 @@ add_custom_command(OUTPUT "${probe_archive}"
 add_custom_target(shipwright_probe_assets DEPENDS "${probe_archive}")
 add_executable(shipwright_metal_render MACOSX_BUNDLE RenderProbe.mm)
 add_dependencies(shipwright_metal_render shipwright_probe_assets)
-target_compile_definitions(shipwright_metal_render PRIVATE __IOS__ SDL_MAIN_HANDLED)
+target_compile_definitions(shipwright_metal_render PRIVATE __IOS__ SDL_MAIN_HANDLED
+    RECOMPTV_LUS_REVISION="${RECOMPTV_LUS_REVISION}")
 target_compile_options(shipwright_metal_render PRIVATE -fobjc-arc -fblocks
     -Werror=unguarded-availability -Werror=unguarded-availability-new)
 target_link_libraries(shipwright_metal_render PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,libultraship>")

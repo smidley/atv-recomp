@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parent.parent
 pin = json.loads((root / "upstream/spaghettikart-baseline.json").read_text())
 source = root / "build/upstream/SpaghettiKart"
 actual = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
-if actual != pin["revision"]:
+if actual != pin["sources"]["spaghettikart"]["revision"]:
     raise SystemExit("The SpaghettiKart checkout does not match the pinned release.")
 if subprocess.check_output(["git", "-C", str(source), "status", "--porcelain"], text=True).strip():
     raise SystemExit("Preserve the upstream checkout's local edits before preparing a generated copy.")

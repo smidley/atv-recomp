@@ -105,7 +105,7 @@ bool NativecadePrepareGame(const char *romPath, const char *expectedSHA1, char *
         if (!ValidArchive(port) || ![files fileExistsAtPath:[definitions stringByAppendingPathComponent:@"config.yml"]])
             return Failure(error, capacity, "This app build is missing its game support files.");
         NSString *cache = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
-            stringByAppendingPathComponent:[@"Nativecade/Prepared/9.3.1" stringByAppendingPathComponent:hash]];
+            stringByAppendingPathComponent:[@"Nativecade/Prepared/" NATIVECADE_SHIPWRIGHT_RELEASE stringByAppendingPathComponent:hash]];
         if (![files createDirectoryAtPath:cache withIntermediateDirectories:YES attributes:nil error:nil])
             return Failure(error, capacity, "There is not enough storage to prepare this game.");
         NSString *archiveName = @"oot.o2r";
@@ -116,7 +116,7 @@ bool NativecadePrepareGame(const char *romPath, const char *expectedSHA1, char *
             Total = std::max<size_t>(1, SohTorch::CountAssetFiles(definitions.fileSystemRepresentation));
             std::vector<uint8_t> rom(bytes, bytes + data.length);
             std::string result = SohTorch::Extract(std::move(rom), definitions.fileSystemRepresentation,
-                staging.fileSystemRepresentation, "9.3.1", &Extracted);
+                staging.fileSystemRepresentation, NATIVECADE_SHIPWRIGHT_RELEASE, &Extracted);
             archiveName = result.empty() ? nil : @(result.c_str());
             bool valid = archiveName && [@[@"oot.o2r", @"oot-mq.o2r"] containsObject:archiveName] &&
                 ValidArchive([staging stringByAppendingPathComponent:archiveName]);

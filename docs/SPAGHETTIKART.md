@@ -1,7 +1,8 @@
 # Mario Kart 64 / SpaghettiKart
 
-Nativecade includes the [SpaghettiKart 1.0.0 source port](https://github.com/HarbourMasters/SpaghettiKart/tree/1.0.0),
-pinned to `1732542a6a200a21a9112a75820517a754d9514a`. It runs compiled game code
+Nativecade includes the [SpaghettiKart source port](https://github.com/HarbourMasters/SpaghettiKart)
+at the release pinned in `upstream/spaghettikart-baseline.json` (1.0.0 on 2026-10-28;
+see [Updating game runtimes](UPDATING_UPSTREAM.md)). It runs compiled game code
 locally and prepares game assets from the user's imported ROM. No ROM or
 extracted game archive is distributed.
 

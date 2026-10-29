@@ -84,7 +84,7 @@ bool NativecadePrepareMarioKart(const char *romPath, const char *expectedSHA1, c
         if (!ValidArchive(port, "mods.toml") || ![files fileExistsAtPath:[support stringByAppendingPathComponent:@"config.yml"]])
             return Fail(error, capacity, "This app build is missing its Mario Kart support files.");
         NSString *cache = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
-            stringByAppendingPathComponent:@"Nativecade/Prepared/SpaghettiKart-1.0.0-torch2ab12fe-legacy2"];
+            stringByAppendingPathComponent:@"Nativecade/Prepared/" NATIVECADE_KART_PREPARED];
         NSString *root = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/MarioKart64"];
         if (![files createDirectoryAtPath:cache withIntermediateDirectories:YES attributes:nil error:nil] ||
             ![files createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:nil])

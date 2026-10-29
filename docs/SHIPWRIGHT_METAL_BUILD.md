@@ -30,8 +30,7 @@ validated by this build.
 On a Mac with Xcode's tvOS SDK, Git, Python 3, CMake 3.24 or newer, and Make:
 
 ```sh
-git clone --no-checkout https://github.com/kenix3/libultraship.git build/upstream/libultraship
-git -C build/upstream/libultraship checkout --detach da6daf1a50a5e46d6641408d52227e31e85e46df
+python3 scripts/upstream.py fetch libultraship
 bash scripts/check-shipwright-metal.sh arm64 build/upstream/libultraship
 bash scripts/check-shipwright-metal.sh x86_64 build/upstream/libultraship
 ```

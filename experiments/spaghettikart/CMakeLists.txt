@@ -34,8 +34,13 @@ add_library(NativecadeSpaghettiObjects OBJECT ${kart_sources} SpaghettiRuntime.m
 set_target_properties(NativecadeSpaghettiObjects PROPERTIES C_STANDARD 11)
 target_compile_definitions(NativecadeSpaghettiObjects PRIVATE VERSION_US=1 ENABLE_RUMBLE=1 F3DEX_GBI=1
     _LANGUAGE_C _USE_MATH_DEFINES CIMGUI_DEFINE_ENUMS_AND_STRUCTS NON_MATCHING=1 NON_EQUIVALENT=1
-    AVOID_UB=1 SPAGHETTI_VERSION="1.0.0" __IOS__ PLATFORM_IOS=1 RECOMPTV_TVOS SDL_MAIN_HANDLED
+    AVOID_UB=1 SPAGHETTI_VERSION="${RECOMPTV_SPAGHETTIKART_RELEASE}" __IOS__ PLATFORM_IOS=1 RECOMPTV_TVOS SDL_MAIN_HANDLED
     EXCLUDE_MPQ_SUPPORT _CONSOLE UNICODE _UNICODE SPDLOG_ACTIVE_LEVEL=2)
+# Prepared assets depend on the game release, the shared Torch and our asset
+# adapter; bump "legacy2" when prepare-spaghettikart.py changes the adapter.
+string(SUBSTRING "${RECOMPTV_TORCH_REVISION}" 0 7 recomptv_torch_short)
+target_compile_definitions(NativecadeSpaghettiObjects PRIVATE
+    NATIVECADE_KART_PREPARED="SpaghettiKart-${RECOMPTV_SPAGHETTIKART_RELEASE}-torch${recomptv_torch_short}-legacy2")
 target_compile_options(NativecadeSpaghettiObjects PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden
     -Wno-narrowing -Wno-deprecated-enum-enum-conversion -Wno-unknown-pragmas -Wno-return-type
     $<$<COMPILE_LANGUAGE:C>:-Wno-incompatible-pointer-types;-Wno-int-conversion>
@@ -55,5 +60,5 @@ target_link_libraries(NativecadeSpaghetti PRIVATE RecompTVShipwright libzip::zip
 set_target_properties(NativecadeSpaghetti PROPERTIES FRAMEWORK TRUE OUTPUT_NAME NativecadeSpaghetti
     PUBLIC_HEADER "${CMAKE_CURRENT_LIST_DIR}/SpaghettiRuntime.h"
     MACOSX_FRAMEWORK_IDENTIFIER "com.smidley.nativecade.spaghettikart"
-    MACOSX_FRAMEWORK_SHORT_VERSION_STRING "1.0.0" MACOSX_FRAMEWORK_BUNDLE_VERSION "1"
+    MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${RECOMPTV_SPAGHETTIKART_RELEASE}" MACOSX_FRAMEWORK_BUNDLE_VERSION "1"
     INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR TRUE XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")

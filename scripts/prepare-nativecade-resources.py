@@ -2,12 +2,15 @@
 
 This script deliberately has no ROM path argument and never reads LocalData.
 """
+import json
 from pathlib import Path
 import shutil
 import subprocess
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
+release = json.loads((root / "upstream/shipwright-baseline.json").read_text())["release"]
+kart_release = json.loads((root / "upstream/spaghettikart-baseline.json").read_text())["release"]
 ship = root / "build/upstream/Shipwright"
 torch = root / "build/upstream/Torch"
 lus = root / "build/upstream/libultraship"
@@ -23,15 +26,17 @@ if stage.exists():
 shutil.copytree(ship / "soh/assets/custom", stage)
 shutil.copytree(lus / "src/fast/shaders", stage / "shaders", dirs_exist_ok=True)
 output.mkdir(parents=True, exist_ok=True)
-subprocess.run([str(host / "soh-o2r-packer"), str(stage), str(output / "soh.o2r"), "9.3.1"], check=True)
+subprocess.run([str(host / "soh-o2r-packer"), str(stage), str(output / "soh.o2r"), release], check=True)
 with zipfile.ZipFile(output / "soh.o2r") as archive:
     assert archive.testzip() is None, "Port support archive failed its CRC check"
-    assert archive.read("portVersion").hex() == "01000900030001", "Incorrect port version"
+    # One byte, then big-endian major, minor and patch: 9.3.1 is 01 0009 0003 0001.
+    expected = bytes([1]) + b"".join(int(part).to_bytes(2, "big") for part in release.split("."))
+    assert archive.read("portVersion") == expected, "Incorrect port version"
 definitions = output / "yml"
 if definitions.exists():
     shutil.rmtree(definitions)
 shutil.copytree(ship / "soh/assets/yml", definitions)
-notices = ["Nativecade uses Shipwright 9.3.1, SpaghettiKart 1.0.0, Torch and libultraship.\n"
+notices = [f"Nativecade uses Shipwright {release}, SpaghettiKart {kart_release}, Torch and libultraship.\n"
            "https://github.com/HarbourMasters/Shipwright\n"
            "https://github.com/HarbourMasters/SpaghettiKart\n"
            "https://github.com/HarbourMasters/Torch\n"
