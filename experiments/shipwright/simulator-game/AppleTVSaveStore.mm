@@ -156,6 +156,12 @@ static BOOL AtomicWrite(NSString *path, NSData *data) {
     } else [self.data appendData:data];
 }
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+#ifdef RECOMPTV_SAVE_TEST_MAIN
+    // Numeric diagnostics for the isolated host fixture; never log URLs, tokens or response bodies.
+    if (error) fprintf(stderr, "Save fixture transport error: %s %ld; underlying %ld\n",
+                       error.domain.UTF8String, (long)error.code,
+                       (long)[error.userInfo[NSUnderlyingErrorKey] code]);
+#endif
     if (!self.error && error) self.error = SaveError(@"RomM is unavailable. Local saves are safe; backups will retry.");
     dispatch_semaphore_signal(self.done);
 }
