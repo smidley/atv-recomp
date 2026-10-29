@@ -1,0 +1,28 @@
+Nativecade
+Classic games, built for Apple TV
+
+Working name selected on October 28, 2026.
+
+Visual identity
+A bold coral N with a mint play triangle. The simple silhouette gives the Apple TV tile a clear focal point from across the room. The wordmark uses friendly, substantial geometric lettering.
+
+Palette direction
+Ink: #111C2C
+Coral: #FF715B
+Mint: #81E3C4
+Ivory: #F6F3EC
+These are design targets; generated artwork may vary slightly.
+
+Files
+nativecade-brand-preview.png — logo, supporting line and Apple TV tile presentation (1619 × 971).
+nativecade-logo-on-light.png — primary horizontal logo on ivory (2172 × 724).
+nativecade-tv-icon.png — standalone landscape icon artwork (1619 × 971).
+generation-prompts.txt — full prompts used with the built-in image generation tool.
+
+Artwork status
+These are raster design masters and an icon concept, not an installed Xcode asset catalog. A production tvOS icon needs separate foreground/background layers and exact catalog exports; Apple’s guidance uses an 800 × 480 landscape image stack with parallax. Preserve the emblem’s generous clear space and let the operating system supply the outer mask.
+
+Apple icon guidance: https://developer.apple.com/design/human-interface-guidelines/app-icons
+
+The Nativecade name and art do not imply that game runtime integration is complete. The current launcher and separate Shipwright simulator experiment retain their existing integration status.
+

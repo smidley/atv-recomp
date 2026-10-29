@@ -1,6 +1,10 @@
-# RecompTV
+# Nativecade
 
-RecompTV is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported native ports and statically recompiled games locally on tvOS.
+**Classic games, built for Apple TV.**
+
+Nativecade is the working name for a native Apple TV launcher that discovers a user's game library through SMB or RomM and runs supported native ports and statically recompiled games locally on tvOS. The Xcode project and scheme are currently named RecompTV.
+
+The [branding preview](docs/branding/nativecade/nativecade-brand-preview.png), [logo](docs/branding/nativecade/nativecade-logo-on-light.png), and [Apple TV icon concept](docs/branding/nativecade/nativecade-tv-icon.png) are saved with [design notes](docs/branding/nativecade/brand-notes.txt).
 
 **Status: RomM/SMB browsing and verified ROM import implemented; Shipwright is the first game target.** Development continues with the simulator for now; physical Apple TV validation is deferred. No game runtime is integrated. See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [Shipwright baseline and ROM identification tool](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
 
