@@ -27,6 +27,44 @@ struct RomMAddress: Sendable {
         guard let result = parts.url else { throw LibraryError.message("The RomM URL is invalid.") }
         return result
     }
+
+    /// RomM serves cached covers/screenshots below its resources mount, not /api.
+    /// Rebase root-relative paths beneath a configured reverse-proxy prefix.
+    func artworkURL(_ path: String) throws -> URL {
+        guard path.count <= 8192,
+              !path.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains),
+              let supplied = URLComponents(string: path),
+              supplied.user == nil, supplied.password == nil, supplied.fragment == nil,
+              (supplied.queryItems ?? []).allSatisfy({ ["ts", "v"].contains($0.name) }) else {
+            throw LibraryError.message("RomM returned an invalid artwork path.")
+        }
+        if supplied.scheme != nil || supplied.host != nil {
+            guard supplied.scheme == base.scheme, supplied.host?.lowercased() == base.host?.lowercased(),
+                  supplied.port == base.port else {
+                throw LibraryError.message("Artwork must come from the configured RomM server.")
+            }
+        }
+        var components = supplied.path.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        if components.first == "" { components.removeFirst() }
+        let prefix = base.path.split(separator: "/").map(String.init)
+        if !prefix.isEmpty && components.starts(with: prefix) { components.removeFirst(prefix.count) }
+        guard components.starts(with: ["assets", "romm", "resources"]), components.count > 3 else {
+            throw LibraryError.message("RomM returned an unsupported artwork location.")
+        }
+        var url = base
+        for component in components {
+            try validateComponent(component)
+            // Do not allow another decoding layer to turn encoded text into traversal.
+            guard !component.contains("%") else { throw LibraryError.message("Invalid artwork path encoding.") }
+            url.appendPathComponent(component)
+        }
+        guard var result = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw LibraryError.message("Invalid artwork URL.")
+        }
+        result.queryItems = supplied.queryItems
+        guard let url = result.url else { throw LibraryError.message("Invalid artwork URL.") }
+        return url
+    }
 }
 
 struct SMBAddress: Sendable {

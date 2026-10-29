@@ -9,6 +9,7 @@ public struct ImportedROM: Codable, Sendable, Identifiable, Equatable {
     public let sha256: String
     public let size: Int64
     public let sourceID: UUID
+    public var artwork: RomMArtwork? = nil
     public var recognized: Bool { revision != nil }
     // Identity alone is not launch eligibility. The app must also provide a runtime
     // and revalidate the cached file before handing it to that runtime.
@@ -78,10 +79,24 @@ public actor ROMCache {
 
     /// Resolve only an indexed, supported ROM whose cached bytes still match its identity.
     public func verifiedFileURL(for record: ImportedROM) throws -> URL {
-        guard try records().contains(record), isValid(record) else {
+        // Artwork can refresh while Play is being selected. Compare the indexed
+        // ROM identity, not presentation metadata, before checking the actual bytes.
+        guard try records().contains(where: {
+            $0.sha256 == record.sha256 && $0.sha1 == record.sha1 && $0.size == record.size &&
+            $0.sourceID == record.sourceID && $0.revision == record.revision
+        }), isValid(record) else {
             throw LibraryError.message("The cached ROM is missing or changed. Import it again from your server.")
         }
         return root.appendingPathComponent(record.sha256 + ".romdata")
+    }
+
+    public func attachArtwork(_ artwork: RomMArtwork, to record: ImportedROM) throws -> ImportedROM? {
+        guard !importing else { return nil }
+        var retained = try records()
+        guard let index = retained.firstIndex(where: { $0.id == record.id && $0.sourceID == record.sourceID }) else { return nil }
+        retained[index].artwork = artwork
+        try JSONEncoder().encode(retained).write(to: root.appendingPathComponent("library.json"), options: .atomic)
+        return retained[index]
     }
 
     public func acquire(_ entry: LibraryEntry, sourceID: UUID, provider: any LibraryProvider,
@@ -100,7 +115,7 @@ public actor ROMCache {
         progress(.verifying)
         let identity = try ROMIdentity.read(transfer, normalizedOutput: canonical)
         let result = ImportedROM(name: entry.name, revision: revisions[identity.sha1], sha1: identity.sha1,
-                                 sha256: identity.sha256, size: identity.size, sourceID: sourceID)
+                                 sha256: identity.sha256, size: identity.size, sourceID: sourceID, artwork: entry.artwork)
         try Task.checkCancellation()
         guard result.recognized else { return result }
         let destination = root.appendingPathComponent(result.sha256 + ".romdata")

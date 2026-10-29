@@ -12,6 +12,8 @@ final class LibraryModel {
     private(set) var isImporting = false
     private(set) var isPreparingGame = false
     private(set) var preparingTitle = ""
+    private(set) var isRefreshingArtwork = false
+    private(set) var artworkRefreshID = UUID()
     private(set) var importStatus = ""
     private(set) var importFraction: Double?
     var error: String?
@@ -21,6 +23,7 @@ final class LibraryModel {
     @ObservationIgnored private var verifying = false
     @ObservationIgnored private var batchIndex = 0
     @ObservationIgnored private let gamePreparation = GamePreparation()
+    @ObservationIgnored private let artworkCache = try? ArtworkCache()
     private let settingsKey = "library.sources.v1"
 
     init(cache: ROMCache? = nil) {
@@ -38,6 +41,54 @@ final class LibraryModel {
             imported = importedROMs.last
         }
         catch { self.error = "The cached ROM could not be verified. Import it again from your server." }
+    }
+
+    func artworkData(at path: String, artwork: RomMArtwork, sourceID: UUID,
+                     sourceOverride: LibrarySource? = nil) async -> Data? {
+        guard let artworkCache else { return nil }
+        var paths = [path]
+        if path == artwork.coverSmall, let large = artwork.coverLarge, large != path { paths.append(large) }
+        for candidate in paths {
+            if let data = try? await artworkCache.image(at: candidate, artwork: artwork, sourceID: sourceID, provider: nil) {
+                return data
+            }
+        }
+        let source = sourceOverride ?? sources.first { $0.id == sourceID }
+        let provider: (any LibraryProvider)?
+        if let source, artwork.belongs(to: source) {
+            provider = try? ProviderFactory.make(source: source, secret: CredentialStore.load(sourceID))
+        } else { provider = nil }
+        // A cached cover remains usable offline, even after removing a connection.
+        for candidate in paths {
+            guard !Task.isCancelled else { return nil }
+            if let data = try? await artworkCache.image(at: candidate, artwork: artwork, sourceID: sourceID, provider: provider) {
+                return data
+            }
+        }
+        return nil
+    }
+
+    func refreshArtwork(force: Bool = false) async {
+        guard !isRefreshingArtwork, !isPreparingGame, !isImporting, let cache else { return }
+        isRefreshingArtwork = true
+        defer { isRefreshingArtwork = false; artworkRefreshID = UUID() }
+        for rom in importedROMs where force || rom.artwork == nil {
+            guard !Task.isCancelled, !isPreparingGame, !isImporting else { return }
+            guard let source = sources.first(where: { $0.id == rom.sourceID && $0.kind == .romm }),
+                  rom.artwork == nil || rom.artwork?.belongs(to: source) == true else { continue }
+            do {
+                let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
+                if let artwork = try await provider.artwork(for: rom) {
+                    try Task.checkCancellation()
+                    guard !isPreparingGame, !isImporting else { return }
+                    if let updated = try await cache.attachArtwork(artwork, to: rom),
+                       let index = importedROMs.firstIndex(where: { $0.id == rom.id }) {
+                        importedROMs[index] = updated
+                        if imported?.id == rom.id { imported = updated }
+                    }
+                }
+            } catch { /* Artwork is optional; offline play and ROM imports remain available. */ }
+        }
     }
 
     func save(_ source: LibrarySource, secret: String) throws {
@@ -189,15 +240,19 @@ final class SourceBrowserModel {
     private(set) var nextOffset: Int?
     private(set) var location = LibraryLocation.root
     private(set) var title: String
+    private(set) var artwork: RomMArtwork?
     private(set) var history = [(LibraryLocation, String)]()
     var search = ""
     var error: String?
     @ObservationIgnored private var operation: Task<Void, Never>?
     @ObservationIgnored private var generation = UUID()
 
-    init(source: LibrarySource) { self.source = source; title = source.name }
+    init(source: LibrarySource, location: LibraryLocation = .root) {
+        self.source = source; title = source.name; self.location = location
+    }
 
     var isPlatformList: Bool { source.kind == .romm && location == .root }
+    var isGameList: Bool { if case .platform = location { true } else { false } }
     var batchLocation: LibraryLocation? {
         if case .platform = location { return location }
         if source.kind == .smb { return location }
@@ -224,7 +279,7 @@ final class SourceBrowserModel {
         cancel()
         let generation = UUID(); self.generation = generation
         let offset = more ? (nextOffset ?? 0) : 0
-        if !more { entries = []; nextOffset = nil }
+        if !more { entries = []; nextOffset = nil; artwork = nil }
         loading = true
         operation = Task { [weak self] in
             guard let self else { return }
@@ -238,6 +293,7 @@ final class SourceBrowserModel {
                 var known = Set(entries.map(\.id))
                 entries.append(contentsOf: page.entries.filter { known.insert($0.id).inserted })
                 nextOffset = page.nextOffset
+                if !more { artwork = page.artwork }
             } catch {
                 if !Task.isCancelled && self.generation == generation { self.error = userFacingNetworkError(error) }
             }

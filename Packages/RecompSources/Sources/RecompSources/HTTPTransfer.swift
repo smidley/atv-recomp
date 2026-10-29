@@ -7,6 +7,7 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
     private let limit: Int64
     private let destination: URL?
     private let progress: ProgressHandler
+    private let resourceTimeout: TimeInterval
     private var continuation: CheckedContinuation<Data, any Error>?
     private var output: FileHandle?
     private var data = Data()
@@ -15,8 +16,10 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
     private var expected: Int64?
     private var failure: (any Error)?
 
-    init(limit: Int64, destination: URL? = nil, progress: @escaping ProgressHandler = { _ in }) {
+    init(limit: Int64, destination: URL? = nil, resourceTimeout: TimeInterval = 600,
+         progress: @escaping ProgressHandler = { _ in }) {
         self.limit = limit; self.destination = destination; self.progress = progress
+        self.resourceTimeout = resourceTimeout
     }
 
     func run(_ request: URLRequest, configuration: URLSessionConfiguration = .ephemeral) async throws -> Data {
@@ -31,8 +34,8 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
         configuration.httpShouldSetCookies = false
         configuration.urlCredentialStorage = nil
         configuration.urlCache = nil
-        configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 600
+        configuration.timeoutIntervalForRequest = min(30, resourceTimeout)
+        configuration.timeoutIntervalForResource = resourceTimeout
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
         let session = URLSession(configuration: configuration, delegate: self, delegateQueue: queue)
@@ -80,7 +83,7 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive chunk: Data) {
         guard failure == nil else { return }
         guard Int64(chunk.count) <= limit - count else {
-            failure = LibraryError.message("The download exceeds the 64 MiB ROM limit.")
+            failure = LibraryError.message("The download exceeds the allowed size.")
             dataTask.cancel(); return
         }
         do {

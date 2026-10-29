@@ -44,7 +44,7 @@ The first integrated game is ready for device testing; network browsing and veri
 | Game execution | Game-specific C/C++ code compiled ahead of time for ARM64 | tvOS dependency and lifecycle support |
 | Graphics | Metal on Apple TV | Selected runtime renderer and device feature requirements |
 | Input | Apple Game Controller framework | Mapping, disconnects, pause, and resume |
-| Library sources | AMSMB2 4.0.3 and RomM 5.4.1 API contract | Live intended-server validation; artwork and broader version coverage |
+| Library sources | AMSMB2 4.0.3 and RomM 5.4.1 API contract, cover cards and screenshots with offline caching | Live intended-server artwork and broader version coverage |
 | Game data | User-supplied ROMs, validated local cache | Revision hashes, format handling, storage limits |
 | Saves | Local runtime saves, preference recovery, optional versioned RomM backups | Physical Apple TV recovery and intended-server validation |
 

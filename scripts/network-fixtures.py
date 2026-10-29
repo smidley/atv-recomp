@@ -6,6 +6,8 @@ import pathlib
 import tempfile
 import threading
 import time
+import struct
+import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
@@ -14,6 +16,24 @@ from impacket.ntlm import compute_lmhash, compute_nthash
 
 ROM = bytes([0x80, 0x37, 0x12, 0x40]) + bytes(i % 251 for i in range(4, 256 * 1024))
 TOKEN = "fixture-token"
+
+
+def fixture_image():
+    """A generated color chart, with no remote artwork or copyrighted game data."""
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+    width, height = 600, 400
+    pixels = b"".join(b"\0" + b"".join(bytes((x * 255 // width, y * 255 // height, 110))
+                                      for x in range(width)) for y in range(height))
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(pixels)) + chunk(b"IEND", b""))
+
+
+ART = fixture_image()
+MEDIA = {"path_cover_small": "/assets/romm/resources/roms/1/3/cover/small.png?ts=2026-10-28",
+         "path_cover_large": "/assets/romm/resources/roms/1/3/cover/big.png?ts=2026-10-28",
+         "merged_screenshots": ["/assets/romm/resources/roms/1/3/screenshots/0.jpg",
+                                "https://outside.invalid/private.jpg"]}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -44,6 +64,17 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, {"hits": Handler.trap_hits})
         if self.headers.get("Authorization") != "Bearer " + TOKEN:
             return self.send(401, {})
+        if path.startswith("/art-proxy/"):
+            path = path.removeprefix("/art-proxy")
+        if path.startswith("/assets/romm/resources/"):
+            if path.endswith("/redirect.png"):
+                self.send_response(302)
+                self.send_header("Location", f"http://localhost:{self.server.server_port}/trap")
+                self.send_header("Content-Length", "0")
+                return self.end_headers()
+            if path.endswith("/login.png"):
+                return self.send(200, b"<html>Sign in</html>", "text/html")
+            return self.send(200, ART, "image/png")
         if path.startswith("/unauthorized/"):
             return self.send(403, {})
         if path.startswith("/redirect/"):
@@ -99,7 +130,7 @@ class Handler(BaseHTTPRequestHandler):
             query = parse_qs(url.query)
             offset = int(query.get("offset", ["0"])[0])
             rows = [
-                {"id": 3, "name": "Synthetic Ocarina fixture", "fs_name": "Fixture", "platform_id": 1, "platform_display_name": "Nintendo 64"},
+                {"id": 3, "name": "Synthetic Ocarina fixture", "fs_name": "Fixture", "platform_id": 1, "platform_display_name": "Nintendo 64", **MEDIA},
                 {"id": 4, "name": "Second N64 fixture", "fs_name": "Second", "platform_id": 1, "platform_display_name": "Nintendo 64"},
                 {"id": 5, "name": "SNES fixture", "fs_name": "Other", "platform_id": 2, "platform_display_name": "SNES"},
             ]
@@ -108,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
                 rows = [row for row in rows if str(row["platform_id"]) in platforms]
             return self.send(200, {"items": rows[offset:offset + 1], "total": len(rows), "offset": offset, "limit": 50})
         if path == "/api/roms/3":
-            return self.send(200, {"id": 3, "files": [
+            return self.send(200, {"id": 3, "name": "Synthetic Ocarina fixture", **MEDIA, "files": [
                 {"id": 11, "file_name": "Fixture.z64", "file_size_bytes": len(ROM)},
                 {"id": 12, "file_name": "Archive.zip", "file_size_bytes": 100},
             ]})

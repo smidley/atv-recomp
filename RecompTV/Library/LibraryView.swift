@@ -1,5 +1,6 @@
 import SwiftUI
 import RecompSources
+import UIKit
 
 @MainActor
 struct LibraryView: View {
@@ -22,6 +23,10 @@ struct LibraryView: View {
                         Button("Add RomM") { editing = LibrarySource(kind: .romm) }
                         if !library.importedROMs.isEmpty {
                             Button("Clear ROM cache") { Task { await library.clearCache() } }
+                            Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
+                                Task { await library.refreshArtwork(force: true) }
+                            }
+                            .disabled(library.isRefreshingArtwork || library.isImporting)
                         }
                     }
                     ForEach(library.sources) { source in
@@ -45,7 +50,7 @@ struct LibraryView: View {
                         .font(.callout).foregroundStyle(.secondary)
                     ForEach(library.importedROMs) { rom in
                         VStack(alignment: .leading, spacing: 16) {
-                            ROMResultView(rom: rom)
+                            ROMResultView(rom: rom, library: library)
                             if GameRuntime.available {
                                 Button("Play") { Task { await library.play(rom) } }
                                     .accessibilityLabel("Play \(rom.name)")
@@ -81,6 +86,7 @@ struct LibraryView: View {
                     if let error = library.error { print("Nativecade launch probe failed: \(error)") }
                 }
                 #endif
+                await library.refreshArtwork()
             }
             .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
                 Button("OK") { library.error = nil }
@@ -186,14 +192,17 @@ private struct SourceBrowserView: View {
     @State private var showingBatchResults = false
     let library: LibraryModel
 
-    init(source: LibrarySource, library: LibraryModel) {
-        _browser = State(initialValue: SourceBrowserModel(source: source)); self.library = library
+    init(source: LibrarySource, library: LibraryModel, location: LibraryLocation = .root) {
+        _browser = State(initialValue: SourceBrowserModel(source: source, location: location)); self.library = library
     }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
                 Text(browser.title).font(.title.bold())
+                if let artwork = browser.artwork {
+                    GameScreenshotGallery(artwork: artwork, source: browser.source, library: library)
+                }
                 if browser.isPlatformList {
                     Text("Choose a platform").font(.headline).foregroundStyle(.secondary)
                 } else if browser.source.kind == .smb && browser.history.isEmpty {
@@ -238,16 +247,40 @@ private struct SourceBrowserView: View {
                     }
                     if let failure = report.failure { Text(failure).foregroundStyle(.orange) }
                 } else if !browser.isPlatformList, !library.importStatus.isEmpty, let imported = library.imported {
-                    ROMResultView(rom: imported)
+                    ROMResultView(rom: imported, library: library)
                 }
                 if browser.loading { ProgressView("Loading library…") }
-                ForEach(browser.entries) { entry in
+                if browser.isGameList {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
+                              alignment: .leading, spacing: 36) {
+                        ForEach(browser.entries) { entry in
+                            Button { browser.open(entry) } label: {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    GameArtworkView(path: entry.artwork?.cover, artwork: entry.artwork,
+                                        sourceID: browser.source.id, source: browser.source, library: library,
+                                        width: 290, height: 220)
+                                    Text(entry.name).font(.headline).lineLimit(2)
+                                        .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                                        .frame(width: 290, height: 88, alignment: .topLeading)
+                                }
+                                .padding(20)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.card)
+                            .accessibilityLabel("\(entry.name), browse ROM files")
+                            .disabled(library.isImporting || browser.loading)
+                        }
+                    }
+                } else { ForEach(browser.entries) { entry in
                     Button {
                         if entry.folder != nil { browser.open(entry) }
                         else { library.acquire(entry, source: browser.source) }
                     } label: {
                         HStack(spacing: 20) {
-                            Image(systemName: entry.folder != nil ? "folder" : "doc")
+                            if let artwork = entry.artwork {
+                                GameArtworkView(path: artwork.cover, artwork: artwork,
+                                    sourceID: browser.source.id, source: browser.source, library: library, width: 120, height: 110)
+                            } else { Image(systemName: entry.folder != nil ? "folder" : "doc") }
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(entry.name)
                                 Text(entry.detail).font(.caption).foregroundStyle(.secondary)
@@ -258,7 +291,7 @@ private struct SourceBrowserView: View {
                         }
                     }
                     .disabled(library.isImporting || browser.loading || (entry.folder == nil && !entry.isROM))
-                }
+                } }
                 if browser.entries.isEmpty && !browser.loading {
                     Text(browser.isPlatformList ? "No matching platforms." : "No matching ROMs in this platform or folder.")
                         .foregroundStyle(.secondary)
@@ -324,19 +357,136 @@ private struct BatchResultsView: View {
 
 private struct ROMResultView: View {
     let rom: ImportedROM
+    let library: LibraryModel
     var body: some View {
+        HStack(spacing: 28) {
+            GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork,
+                sourceID: rom.sourceID, library: library, width: 220, height: 180)
         VStack(alignment: .leading, spacing: 10) {
             Label(rom.recognized ? "Ocarina of Time ROM verified" : "ROM revision not supported",
                   systemImage: rom.recognized ? "checkmark.seal" : "exclamationmark.triangle")
                 .font(.headline)
-            Text(rom.name).font(.callout)
+            Text(rom.artwork?.title ?? rom.name).font(.callout)
+            if rom.artwork != nil { Text(rom.name).font(.caption).foregroundStyle(.secondary) }
             if let revision = rom.revision {
                 Text(revision)
             } else { Text("These bytes do not match Shipwright's accepted ROM revisions. The file was not cached.") }
             Text("SHA-1: \(rom.sha1)").font(.caption.monospaced())
         }
+        }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+@MainActor
+private struct GameArtworkView: View {
+    let path: String?
+    let artwork: RomMArtwork?
+    let sourceID: UUID
+    var source: LibrarySource? = nil
+    let library: LibraryModel
+    let width: CGFloat
+    let height: CGFloat
+    @State private var image: UIImage?
+    @State private var loading = false
+
+    private struct Request: Hashable {
+        let path: String?
+        let artwork: RomMArtwork?
+        let sourceID: UUID
+        let refresh: UUID
+    }
+
+    var body: some View {
+        ZStack {
+            Color.white.opacity(0.05)
+            if let image {
+                Image(uiImage: image).resizable().scaledToFit()
+            } else {
+                VStack(spacing: 10) {
+                    Image(systemName: "gamecontroller").font(.title)
+                    Text(loading ? "Loading artwork…" : "No artwork").font(.caption2)
+                }.foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityHidden(true)
+        .task(id: Request(path: path, artwork: artwork, sourceID: sourceID, refresh: library.artworkRefreshID)) {
+            image = nil
+            loading = true
+            defer { loading = false }
+            guard let path, let artwork,
+                  let bytes = await library.artworkData(at: path, artwork: artwork, sourceID: sourceID, sourceOverride: source),
+                  !Task.isCancelled else { return }
+            image = UIImage(data: bytes)
+        }
+    }
+}
+
+#if DEBUG && targetEnvironment(simulator)
+/// Explicit visual fixture: a fixed loopback server and a public test credential.
+/// It never changes saved sources, imports a ROM, or accepts secrets in launch arguments.
+struct ArtworkFixturePreview: View {
+    @State private var library = LibraryModel()
+    @State private var ready = false
+    private let source = LibrarySource(id: UUID(uuidString: "B36968FC-8A85-4B71-BD10-3F00A950A865") ?? UUID(),
+        name: "Artwork fixture · Nintendo 64", kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
+    var body: some View {
+        Group {
+            if ready {
+                SourceBrowserView(source: source, library: library,
+                    location: ProcessInfo.processInfo.arguments.contains("--artwork-fixture-detail") ? .rom(3) : .platform(1))
+            }
+            else { ProgressView("Loading artwork fixture…") }
+        }
+        .task {
+            do { try CredentialStore.save("fixture-token", for: source.id); ready = true }
+            catch { ready = false }
+        }
+        .onDisappear { try? CredentialStore.remove(source.id) }
+    }
+}
+#endif
+
+@MainActor
+private struct GameScreenshotGallery: View {
+    let artwork: RomMArtwork
+    let source: LibrarySource
+    let library: LibraryModel
+    @State private var selected: Screenshot?
+    private struct Screenshot: Identifiable { let id: String }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 28) {
+            GameArtworkView(path: artwork.coverLarge ?? artwork.cover, artwork: artwork,
+                sourceID: source.id, source: source, library: library, width: 260, height: 240)
+            if !artwork.screenshots.isEmpty {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Screenshots").font(.headline)
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 28) {
+                            ForEach(artwork.screenshots, id: \.self) { path in
+                                Button { selected = Screenshot(id: path) } label: {
+                                    GameArtworkView(path: path, artwork: artwork, sourceID: source.id,
+                                        source: source, library: library, width: 340, height: 190)
+                                }
+                                .buttonStyle(.card)
+                                .accessibilityLabel("View screenshot of \(artwork.title)")
+                            }
+                        }.padding(12)
+                    }
+                }
+            }
+        }
+        .sheet(item: $selected) { screenshot in
+            VStack(spacing: 28) {
+                Button("Done") { selected = nil }
+                GameArtworkView(path: screenshot.id, artwork: artwork, sourceID: source.id,
+                    source: source, library: library, width: 1200, height: 650)
+            }.padding(48)
+        }
     }
 }
