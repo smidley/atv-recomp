@@ -1,6 +1,15 @@
 --- a/include/fast/backends/gfx_metal.h
 +++ b/include/fast/backends/gfx_metal.h
-@@ -29,6 +29,7 @@
+@@ -12,6 +12,8 @@
+ 
+ #include <imgui_impl_sdl2.h>
+ #include <simd/simd.h>
++#include <deque>
++#include <vector>
+ 
+ static constexpr size_t kMaxVertexBufferPoolSize = 3;
+ static constexpr size_t METAL_MAX_MULTISAMPLE_SAMPLE_COUNT = 8;
+@@ -29,6 +31,7 @@
  class Function;
  class Buffer;
  class RenderPipelineState;
@@ -8,7 +17,7 @@
  class ComputePipelineState;
  class CommandQueue;
  class Viewport;
-@@ -58,6 +59,11 @@
+@@ -58,6 +61,11 @@
  namespace Fast {
  
  struct ShaderProgramMetal {
@@ -20,7 +29,7 @@
      uint64_t shader_id0;
      uint64_t shader_id1;
  
-@@ -67,7 +73,7 @@
+@@ -67,7 +75,7 @@
      bool markedForDeletion = false;
  
      // hashed by msaa_level
@@ -29,7 +38,7 @@
  };
  
  struct TextureDataMetal {
-@@ -128,7 +134,7 @@
+@@ -128,7 +136,7 @@
  
  class GfxRenderingAPIMetal final : public GfxRenderingAPI {
    public:
@@ -38,15 +47,37 @@
      const char* GetName() override;
      int GetMaxTextureSize() override;
      GfxClipParameters GetClipParameters() override;
-@@ -180,6 +186,7 @@
+@@ -174,12 +182,29 @@
+     void SetSrgbMode() override;
+     ImTextureID GetTextureById(int id) override;
+ 
++    // Polled on the render thread. Timestamps never wait for the GPU.
++    bool GetLatestFrameTiming(uint64_t& sequence, double& milliseconds, uint32_t& renderHeight) const;
++    void GetOutputSize(uint32_t& width, uint32_t& height) const;
+     void NewFrame();
+     void SetupFloatingFrame();
+     void RenderDrawData(ImDrawData* drawData);
      bool MetalInit(SDL_Renderer* renderer);
  
    private:
++    struct PendingFrameTiming {
++        std::vector<MTL::CommandBuffer*> buffers;
++        uint32_t renderHeight;
++        uint64_t sequence;
++    };
++    void TrackTimingBuffer(MTL::CommandBuffer* buffer);
++    void CollectFrameTimings();
++    std::vector<MTL::CommandBuffer*> mCurrentTimingBuffers;
++    std::deque<PendingFrameTiming> mPendingFrameTimings;
++    bool mCollectCurrentTiming = false;
++    uint64_t mNextTimingSequence = 0, mLatestTimingSequence = 0;
++    double mLatestGpuMilliseconds = 0;
++    uint32_t mLatestTimingHeight = 0;
 +    MTL::RenderPipelineState* GetPipelineState(ShaderProgramMetal& program, uint32_t samples);
      bool NonUniformThreadGroupSupported();
      void SetupScreenFramebuffer(uint32_t width, uint32_t height);
      // Elements that only need to be setup once
-@@ -208,6 +215,7 @@
+@@ -208,6 +233,7 @@
      MTL::Buffer* mDepthValueOutputBuffer;
      size_t mCoordBufferSize;
      MTL::Function* mDepthComputeFunction;
@@ -67,7 +98,7 @@
  #include <stddef.h>
  
  #ifndef _LANGUAGE_C
-@@ -45,6 +49,45 @@
+@@ -45,6 +49,49 @@
  
  // MARK: - Helpers
  namespace Fast {
@@ -81,6 +112,10 @@
 +}
 +
 +GfxRenderingAPIMetal::~GfxRenderingAPIMetal() {
++    for (auto* buffer : mCurrentTimingBuffers) buffer->release();
++    for (auto& frame : mPendingFrameTimings) {
++        for (auto* buffer : frame.buffers) buffer->release();
++    }
 +    if (mDepthComputePipelineState) mDepthComputePipelineState->release();
 +}
 +
@@ -113,7 +148,62 @@
  
  static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
      switch (val) {
-@@ -193,6 +236,9 @@
+@@ -97,7 +144,54 @@
+ 
+ static void SetupScreenFramebuffer(uint32_t width, uint32_t height);
+ 
++void GfxRenderingAPIMetal::GetOutputSize(uint32_t& width, uint32_t& height) const {
++    const auto size = mLayer->drawableSize();
++    width = static_cast<uint32_t>(size.width);
++    height = static_cast<uint32_t>(size.height);
++}
++
++bool GfxRenderingAPIMetal::GetLatestFrameTiming(uint64_t& sequence, double& milliseconds,
++                                               uint32_t& renderHeight) const {
++    sequence = mLatestTimingSequence;
++    milliseconds = mLatestGpuMilliseconds;
++    renderHeight = mLatestTimingHeight;
++    return sequence != 0;
++}
++
++void GfxRenderingAPIMetal::TrackTimingBuffer(MTL::CommandBuffer* buffer) {
++    if (mCollectCurrentTiming) mCurrentTimingBuffers.push_back(buffer->retain());
++}
++
++void GfxRenderingAPIMetal::CollectFrameTimings() {
++    while (!mPendingFrameTimings.empty()) {
++        auto& frame = mPendingFrameTimings.front();
++        bool complete = true, valid = true;
++        double milliseconds = 0;
++        for (auto* buffer : frame.buffers) {
++            const auto status = buffer->status();
++            if (status != MTL::CommandBufferStatusCompleted && status != MTL::CommandBufferStatusError) {
++                complete = false;
++                break;
++            }
++            const double start = buffer->GPUStartTime(), end = buffer->GPUEndTime();
++            valid &= status == MTL::CommandBufferStatusCompleted && start > 0 && end > start;
++            milliseconds += (end - start) * 1000.0;
++        }
++        if (!complete) break;
++        if (valid) {
++            mLatestTimingSequence = frame.sequence;
++            mLatestGpuMilliseconds = milliseconds;
++            mLatestTimingHeight = frame.renderHeight;
++        }
++        for (auto* buffer : frame.buffers) buffer->release();
++        mPendingFrameTimings.pop_front();
++    }
++}
++
+ void GfxRenderingAPIMetal::NewFrame() {
++    // Release completed command buffers before acquiring another drawable.
++    CollectFrameTimings();
++    mCollectCurrentTiming = mPendingFrameTimings.size() < 4;
+     int width, height;
+     SDL_GetRendererOutputSize(mRenderer, &width, &height);
+     SetupScreenFramebuffer(width, height);
+@@ -193,6 +287,9 @@
  
      mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
      mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
@@ -123,7 +213,7 @@
  
      library->release();
      autorelease_pool->release();
-@@ -216,6 +262,7 @@
+@@ -216,6 +313,7 @@
  }
  
  struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
@@ -131,7 +221,7 @@
      CCFeatures cc_features;
      gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
  
-@@ -272,24 +319,14 @@
+@@ -272,24 +370,14 @@
      prg->numInputs = cc_features.numInputs;
      prg->numFloats = numFloats;
  
@@ -164,7 +254,7 @@
      }
  
      LoadShader((struct ShaderProgram*)prg);
-@@ -297,7 +334,7 @@
+@@ -297,7 +385,7 @@
      vertexFunc->release();
      fragmentFunc->release();
      library->release();
@@ -173,7 +263,7 @@
      autorelease_pool->release();
  
      return (struct ShaderProgram*)prg;
-@@ -543,7 +580,7 @@
+@@ -543,7 +631,7 @@
          current_framebuffer.mLastShaderProgram = mShaderProgram;
  
          MTL::RenderPipelineState* pipeline_state =
@@ -182,7 +272,40 @@
          current_framebuffer.mCommandEncoder->setRenderPipelineState(pipeline_state);
      }
  
-@@ -693,7 +730,7 @@
+@@ -585,6 +673,7 @@
+         if (!framebuffer.mHasEndedEncoding)
+             framebuffer.mCommandEncoder->endEncoding();
+ 
++        TrackTimingBuffer(framebuffer.mCommandBuffer);
+         framebuffer.mCommandBuffer->commit();
+         it++;
+     }
+@@ -623,6 +712,7 @@
+ 
+     screen_framebuffer.mCommandBuffer->presentDrawable(mCurrentDrawable);
+     mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
++    TrackTimingBuffer(screen_framebuffer.mCommandBuffer);
+     screen_framebuffer.mCommandBuffer->commit();
+ 
+     // Now that commit has been called, retain the command buffer for GPU sync
+@@ -640,6 +730,16 @@
+         mScreenReadbackDataReady = false;
+     }
+ 
++    if (mCollectCurrentTiming && !mCurrentTimingBuffers.empty()) {
++        uint32_t width = 0, height = 0;
++        auto window = std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetRawInstance()->GetWindow());
++        if (window) {
++            if (auto interpreter = window->GetInterpreterWeak().lock()) interpreter->GetCurDimensions(&width, &height);
++        }
++        mPendingFrameTimings.push_back({std::move(mCurrentTimingBuffers), height, ++mNextTimingSequence});
++        mCurrentTimingBuffers.clear();
++    }
++    mCollectCurrentTiming = false;
+     mDrawnFramebuffers.clear();
+ 
+     // Cleanup states
+@@ -693,7 +793,7 @@
      mCurrentDrawable = nullptr;
      mCurrentDrawable = mLayer->nextDrawable();
  
@@ -191,7 +314,7 @@
  
      FramebufferMetal& fb = mFramebuffers[0];
      TextureDataMetal& tex = mTextures[fb.mTextureId];
-@@ -804,7 +841,7 @@
+@@ -804,7 +904,7 @@
  
              bool fb_msaa_enabled = (msaa_level > 1);
              bool game_msaa_enabled =
@@ -200,7 +323,7 @@
  
              if (fb_msaa_enabled) {
                  render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);
-@@ -905,7 +942,7 @@
+@@ -905,7 +1005,7 @@
          fb.mCommandEncoder = fb.mCommandBuffer->renderCommandEncoder(fb.mRenderPassDescriptor);
          std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
          fb.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
@@ -209,7 +332,7 @@
      }
  
      if (noise_scale != 0.0f) {
-@@ -945,7 +982,7 @@
+@@ -945,7 +1045,7 @@
  
      std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Clear", mCurrentFramebuffer);
      framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
@@ -218,7 +341,7 @@
      framebuffer.mCommandEncoder->setViewport(*framebuffer.mViewport);
      framebuffer.mCommandEncoder->setScissorRect(*framebuffer.mScissorRect);
  
-@@ -1056,8 +1093,7 @@
+@@ -1056,8 +1156,7 @@
      auto command_buffer = mCommandQueue->commandBuffer();
      command_buffer->setLabel(NS::String::string("Depth Shader Command Buffer", NS::UTF8StringEncoding));
  
@@ -228,7 +351,15 @@
  
      MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
      compute_encoder->setComputePipelineState(compute_pipeline_state);
-@@ -1091,7 +1127,6 @@
+@@ -1077,6 +1176,7 @@
+ 
+     compute_encoder->endEncoding();
+ 
++    TrackTimingBuffer(command_buffer);
+     command_buffer->commit();
+     command_buffer->waitUntilCompleted();
+ 
+@@ -1091,7 +1191,6 @@
          }
      }
  
@@ -236,7 +367,7 @@
      autorelease_pool->release();
  
      return res;
-@@ -1156,7 +1191,7 @@
+@@ -1156,7 +1255,7 @@
  
      std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
      source_framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
@@ -245,3 +376,58 @@
      source_framebuffer.mCommandEncoder->setViewport(*source_framebuffer.mViewport);
      source_framebuffer.mCommandEncoder->setScissorRect(*source_framebuffer.mScissorRect);
  
+@@ -1240,6 +1339,7 @@
+         }
+         compute_encoder->endEncoding();
+ 
++        TrackTimingBuffer(framebuffer.mCommandBuffer);
+         framebuffer.mCommandBuffer->commit();
+ 
+         if (framebuffer.mUseReadbackQueue) {
+--- a/src/fast/backends/gfx_sdl2.cpp
++++ b/src/fast/backends/gfx_sdl2.cpp
+@@ -4,6 +4,9 @@
+ 
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
++#if TARGET_OS_TV
++#include "FramePacing.h"
++#endif
+ #endif
+ 
+ #include "fast/Fast3dWindow.h"
+@@ -743,12 +746,17 @@
+         t = qpc_to_100ns(SDL_GetPerformanceCounter());
+     }
+ #endif
++#if defined(__APPLE__) && TARGET_OS_TV
++    const int64_t interval = 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
++    t = RecompTV::PacingAnchor(t, next, interval, left > 0);
++#else
+     if (left > 0 && t - next < 10000) {
+         // In case it takes some time for the application to wake up after sleep,
+         // or inaccurate mTimer,
+         // don't let that slow down the framerate.
+         t = next;
+     }
++#endif
+     previous_time = t;
+ }
+ 
+@@ -757,12 +765,16 @@
+ 
+     if (mVsyncEnabled != nextVsyncEnabled) {
+         mVsyncEnabled = nextVsyncEnabled;
++#if !defined(__APPLE__) || !TARGET_OS_TV
+         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
++#endif
+         SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
+     }
+ 
+     SyncFramerateWithTime();
++#if !defined(__APPLE__) || !TARGET_OS_TV
+     SDL_GL_SwapWindow(mWnd);
++#endif // tvOS Metal has already presented in GfxRenderingAPIMetal::EndFrame.
+ }
+ 
+ void GfxWindowBackendSDL2::SwapBuffersEnd() {
