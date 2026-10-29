@@ -91,4 +91,53 @@ import RecompSources
         } catch { /* Missing output is a hard failure in the host runner. */ }
     }
 }
+
+/// Manual integration check against an already configured account. Credentials stay in
+/// Keychain; only the normal provider and ROM verifier can import a playable identity.
+@MainActor enum MarioKartSimulatorImport {
+    static func runIfRequested() async {
+        guard ProcessInfo.processInfo.arguments.contains("--import-mario-kart-from-romm") else { return }
+        var report: [String: Any] = ["passed": false]
+        do {
+            let cache = try ROMCache()
+            if let existing = try await cache.all().first(where: { $0.game == .marioKart64 }) {
+                report = ["passed": true, "sha1": existing.sha1]
+            } else {
+                let data = UserDefaults.standard.data(forKey: "library.sources.v1") ?? Data("[]".utf8)
+                let sources = try JSONDecoder().decode([LibrarySource].self, from: data).filter { $0.kind == .romm }
+                var found: ImportedROM?
+                var checked = 0
+                for source in sources {
+                    let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
+                    let platforms = try await provider.list(.root, search: "64", offset: 0)
+                    for platform in platforms.entries {
+                        guard let location = platform.folder else { continue }
+                        let games = try await provider.list(location, search: "Mario Kart", offset: 0)
+                        for game in games.entries {
+                            guard let location = game.folder, checked < 12 else { continue }
+                            let files = try await provider.list(location, search: "", offset: 0)
+                            for file in files.entries where file.isROM && file.size == 12 * 1024 * 1024 && checked < 12 {
+                                checked += 1
+                                let rom = try await cache.acquire(file, sourceID: source.id, provider: provider, progress: { _ in })
+                                if rom.game == .marioKart64 { found = rom; break }
+                            }
+                            if found != nil { break }
+                        }
+                        if found != nil { break }
+                    }
+                    if found != nil { break }
+                }
+                guard let found else {
+                    throw LibraryError.message("No supported, uncompressed Mario Kart 64 (USA) ROM was found in the configured RomM library.")
+                }
+                report = ["passed": true, "sha1": found.sha1, "files_checked": checked]
+            }
+        } catch { report["error"] = userFacingNetworkError(error) }
+        if let directory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+                                                         appropriateFor: nil, create: true),
+           let data = try? JSONSerialization.data(withJSONObject: report, options: [.sortedKeys]) {
+            try? data.write(to: directory.appendingPathComponent("mario-kart-import.json"), options: .atomic)
+        }
+    }
+}
 #endif

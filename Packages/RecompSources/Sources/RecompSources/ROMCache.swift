@@ -11,6 +11,7 @@ public struct ImportedROM: Codable, Sendable, Identifiable, Equatable {
     public let sourceID: UUID
     public var artwork: RomMArtwork? = nil
     public var recognized: Bool { revision != nil }
+    public var game: SupportedGame? { SupportedGame.identify(sha1: sha1) }
     // Identity alone is not launch eligibility. The app must also provide a runtime
     // and revalidate the cached file before handing it to that runtime.
     public var launchable: Bool { false }
@@ -30,10 +31,7 @@ public actor ROMCache {
         self.root = try root ?? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask,
                                                        appropriateFor: nil, create: true)
             .appendingPathComponent("RecompTV/ROMCache", isDirectory: true)
-        guard let manifest = Bundle.module.url(forResource: "shipwright-supported-roms", withExtension: "json") else {
-            throw LibraryError.message("The Shipwright ROM manifest is missing from this app build.")
-        }
-        let entries = try JSONDecoder().decode([Revision].self, from: Data(contentsOf: manifest))
+        let entries = try SupportedGame.allCases.flatMap { try $0.revisions() }
         revisions = Dictionary(uniqueKeysWithValues: entries.map { ($0.sha1, $0.name) })
         try FileManager.default.createDirectory(at: self.root, withIntermediateDirectories: true)
         // A prior terminated app can leave staging files, but no active transfer exists at init.
@@ -138,8 +136,6 @@ public actor ROMCache {
         }
     }
 }
-
-private struct Revision: Decodable { let name: String; let sha1: String }
 
 struct ROMIdentity: Equatable {
     let sha1: String

@@ -21,6 +21,8 @@ static void (*ShowLibrary)(void);
 static void (*HideLibrary)(void);
 static std::atomic<bool> Preparing{false}, Prepared{false}, LaunchRequested{false};
 static std::atomic<size_t> Extracted{0}, Total{1};
+static int (*GameRunner)(int, char **);
+static NSString *GameDirectory;
 
 static bool Failure(char *error, size_t capacity, const char *message) {
     if (error && capacity) snprintf(error, capacity, "%s", message);
@@ -80,6 +82,7 @@ bool NativecadePrepareGame(const char *romPath, const char *expectedSHA1, char *
     if (Preparing.exchange(true)) return Failure(error, capacity, "Another game is already being prepared.");
     struct Finish { ~Finish() { Preparing = false; } } finish;
     Prepared = false; Extracted = 0; Total = 1;
+    GameRunner = nullptr; GameDirectory = nil;
     @autoreleasepool {
         if (!romPath || !expectedSHA1 || strlen(expectedSHA1) != 40)
             return Failure(error, capacity, "Import and verify a supported ROM first.");
@@ -140,6 +143,16 @@ double NativecadePreparationProgress(void) {
     return std::min(1.0, double(Extracted.load()) / double(std::max<size_t>(1, Total.load())));
 }
 
+bool NativecadeSetPreparedGameRunner(int (*runner)(int, char **), const char *directory) {
+    if (!runner || !directory || LaunchRequested.load() || Preparing.exchange(true)) return false;
+    Prepared = false;
+    GameRunner = runner;
+    GameDirectory = @(directory);
+    Prepared = true;
+    Preparing = false;
+    return true;
+}
+
 bool NativecadeLaunchPreparedGame(void) {
     if (!NSThread.isMainThread || !Prepared.load() || Preparing.load()) return false;
     if (LaunchRequested.exchange(true)) return false;
@@ -158,8 +171,12 @@ static int RunApplication(int argc, char **argv) {
     @autoreleasepool {
         if (!ShowLibrary || !HideLibrary) return 2;
         HideLibrary();
-        NSString *root = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+        NSString *root = GameDirectory ?: [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
         if (chdir(root.fileSystemRepresentation) != 0) return 2;
+        if (GameRunner) {
+            setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
+            return GameRunner(argc, argv);
+        }
         RecompTVInitializeSaveStorage(root.fileSystemRepresentation);
         return RecompTVShipwrightMain(argc, argv);
     }

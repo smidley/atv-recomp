@@ -13,7 +13,7 @@ struct LibraryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     Text("Nativecade").font(.largeTitle.bold())
-                    Text("Connect a server and import Ocarina of Time for Shipwright.")
+                    Text("Connect a server and import Ocarina of Time or Mario Kart 64.")
                         .foregroundStyle(.secondary)
                     if !library.importedROMs.isEmpty {
                         Text(library.importedROMs.count == 1 ? "1 verified ROM saved locally" : "\(library.importedROMs.count) verified ROMs saved locally").font(.headline)
@@ -80,8 +80,10 @@ struct LibraryView: View {
                 #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
                 // Explicit local smoke test. Uses only an already verified cache;
                 // no game bytes, server addresses, or credentials enter the build.
-                if ProcessInfo.processInfo.arguments.contains("--nativecade-play-cached-rom"),
-                   let rom = library.importedROMs.first {
+                let arguments = ProcessInfo.processInfo.arguments
+                let marioKart = arguments.contains("--nativecade-play-mario-kart")
+                if arguments.contains("--nativecade-play-cached-rom") || marioKart,
+                   let rom = library.importedROMs.first(where: { !marioKart || $0.game == .marioKart64 }) {
                     await library.play(rom)
                     if let error = library.error { print("Nativecade launch probe failed: \(error)") }
                 }
@@ -227,7 +229,7 @@ private struct SourceBrowserView: View {
                         Text("Includes every page and subfolder, even when search is active.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("Supported Ocarina of Time revisions are saved. Other games and compressed files appear in the results.")
+                    Text("Supported Ocarina of Time and Mario Kart 64 (USA) ROMs are saved. Other games and compressed files appear in the results.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if library.isImporting {
@@ -363,14 +365,14 @@ private struct ROMResultView: View {
             GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork,
                 sourceID: rom.sourceID, library: library, width: 220, height: 180)
         VStack(alignment: .leading, spacing: 10) {
-            Label(rom.recognized ? "Ocarina of Time ROM verified" : "ROM revision not supported",
+            Label(rom.recognized ? "\(rom.game?.title ?? "Game") ROM verified" : "ROM revision not supported",
                   systemImage: rom.recognized ? "checkmark.seal" : "exclamationmark.triangle")
                 .font(.headline)
             Text(rom.artwork?.title ?? rom.name).font(.callout)
             if rom.artwork != nil { Text(rom.name).font(.caption).foregroundStyle(.secondary) }
             if let revision = rom.revision {
                 Text(revision)
-            } else { Text("These bytes do not match Shipwright's accepted ROM revisions. The file was not cached.") }
+            } else { Text("These bytes do not match a supported game revision. The file was not cached.") }
             Text("SHA-1: \(rom.sha1)").font(.caption.monospaced())
         }
         }

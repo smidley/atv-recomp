@@ -1,0 +1,8 @@
+{
+  "release": "1.0.0",
+  "repository": "HarbourMasters/SpaghettiKart",
+  "revision": "1732542a6a200a21a9112a75820517a754d9514a",
+  "catalog": "https://recomplauncher.com/game/spaghettikart",
+  "rom": {"name": "Mario Kart 64 (USA)", "sha1": "579c48e211ae952530ffc8738709f078d5dd215e", "size": 12582912},
+  "integration": "Uses Nativecade's pinned libultraship and Torch from shipwright-baseline.json, with MK64 extraction enabled, and shares its SDL/Metal runtime."
+}

@@ -10,6 +10,7 @@ runtime_lus="$runtime_root/build/upstream/libultraship"
    -z $(git -C "$runtime_torch" status --porcelain) ]] || { echo 'Use the clean pinned Torch checkout.' >&2; exit 2; }
 python3 "$runtime_root/scripts/prepare-shipwright-metal.py" "$runtime_lus"
 python3 "$runtime_root/scripts/prepare-shipwright-game.py" "$runtime_ship"
+python3 "$runtime_root/scripts/prepare-spaghettikart.py"
 for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
     # The default contains both SDKs; explicit arguments can build one at a time.
     for runtime_platform in $runtime_sdk; do
@@ -27,16 +28,20 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
             -DRECOMPTV_BUILD_RUNTIME_FRAMEWORK=ON \
             -DRECOMPTV_LUS_SOURCE="$runtime_root/build/shipwright-metal/source" \
             -DRECOMPTV_SHIPWRIGHT_SOURCE="$runtime_root/build/shipwright-game/source" \
-            -DRECOMPTV_TORCH_SOURCE="$runtime_torch"
-        cmake --build "$runtime_build" --target RecompTVShipwright --parallel 6
-        runtime_framework="$runtime_build/NativecadeRuntime.framework"
-        lipo "$runtime_framework/NativecadeRuntime" -verify_arch arm64
-        otool -L "$runtime_framework/NativecadeRuntime" > "$runtime_build/dependencies.txt"
-        if grep -Eq '(AppKit|Cocoa|OpenGL|OpenGLES)\.framework' "$runtime_build/dependencies.txt"; then
+            -DRECOMPTV_TORCH_SOURCE="$runtime_torch" \
+            -DRECOMPTV_SPAGHETTIKART_SOURCE="$runtime_root/build/spaghettikart/source"
+        cmake --build "$runtime_build" --target NativecadeSpaghetti --parallel "${NATIVECADE_BUILD_JOBS:-4}"
+        for runtime_relative in NativecadeRuntime.framework spaghettikart/NativecadeSpaghetti.framework; do
+        runtime_framework="$runtime_build/$runtime_relative"
+        runtime_name=$(basename "$runtime_framework" .framework)
+        lipo "$runtime_framework/$runtime_name" -verify_arch arm64
+        otool -L "$runtime_framework/$runtime_name" > "$runtime_build/$runtime_name-dependencies.txt"
+        if grep -Eq '(AppKit|Cocoa|OpenGL|OpenGLES)\.framework' "$runtime_build/$runtime_name-dependencies.txt"; then
             echo 'An unsupported graphics framework entered the runtime.' >&2; exit 1
         fi
         "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil" \
-            "$runtime_framework/NativecadeRuntime" -o "$runtime_build/NativecadeRuntime.framework.dSYM"
+            "$runtime_framework/$runtime_name" -o "$runtime_framework.dSYM"
+        done
     done
 done
 python3 "$runtime_root/scripts/package-nativecade-runtime.py"

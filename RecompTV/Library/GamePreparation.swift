@@ -17,11 +17,15 @@ actor GamePreparation {
     func prepare(_ rom: ImportedROM, cache: ROMCache) async throws {
         #if NATIVECADE_RUNTIME
         let url = try await cache.verifiedFileURL(for: rom)
+        guard let game = rom.game else { throw LibraryError.message("This ROM does not have a playable runtime yet.") }
         try Task.checkCancellation()
         var message = [CChar](repeating: 0, count: 512)
         let prepared = url.path.withCString { path in
             rom.sha1.withCString { hash in
-                NativecadePrepareGame(path, hash, &message, 512)
+                switch game {
+                case .ocarinaOfTime: NativecadePrepareGame(path, hash, &message, 512)
+                case .marioKart64: NativecadePrepareMarioKart(path, hash, &message, 512)
+                }
             }
         }
         guard prepared else {

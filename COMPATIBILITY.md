@@ -1,12 +1,13 @@
 # Compatibility
 
-**Status:** no game or Apple TV model has validated RecompTV support as of 2026-10-28. This document defines the proposed validation model, not an available-games list.
+**Status:** Nativecade includes two experimental native ports as of 2026-10-28. Both have simulator rendering evidence; physical Apple TV qualification remains pending. A verified ROM is launchable in a development build without implying full gameplay or hardware support.
 
 ## Candidate matrix
 
 | Game | Platform | Candidate runtime | ROM revision/hash | tvOS result |
 | --- | --- | --- | --- | --- |
-| The Legend of Zelda: Ocarina of Time | N64 | Shipwright / Ship of Harkinian 9.3.1 | [19 upstream SHA-1 references](upstream/shipwright-supported-roms.json); no real ROM tested here | First target; host identification and [libultraship build experiment](docs/SHIPWRIGHT_METAL_BUILD.md); no tvOS game build/run |
+| The Legend of Zelda: Ocarina of Time | N64 | Shipwright / Ship of Harkinian 9.3.1 | [19 upstream SHA-1 references](upstream/shipwright-supported-roms.json); NTSC 1.0 US imported and extracted | Experimental; integrated app renders in tvOS Simulator; earlier simulator gameplay and controls confirmed by the user. [Evidence](docs/NATIVECADE_TESTFLIGHT.md) |
+| Mario Kart 64 | N64 | SpaghettiKart 1.0.0 | USA, SHA-1 `579c48e211ae952530ffc8738709f078d5dd215e` | Experimental; RomM import, extraction, title/demo, and Luigi Raceway acceleration through SDL controller input verified in tvOS Simulator. [Evidence and limits](docs/SPAGHETTIKART.md) |
 | The Legend of Zelda: Majora's Mask | N64 | Zelda 64: Recompiled | Earlier audit only | Deferred candidate; isolated core/RT64 builds do not establish gameplay |
 
 Do not interpret upstream desktop support as RecompTV support. Add other titles only with their own runtime integration and test evidence.
@@ -24,8 +25,8 @@ The index warns that automatically collected rows can be misclassified.
 Record upstream progress separately from RecompTV progress. A decompilation
 can supply groundwork without supplying a playable native port; a released
 desktop port still needs a tvOS integration. No index row should automatically
-become a bundled runtime or a Ready library entry. Shipwright remains first;
-other N64 projects form the subsequent investigation queue.
+become a bundled runtime or a Ready library entry. Shipwright and SpaghettiKart
+are integrated; other N64 projects remain in the investigation queue.
 
 ## What makes a game launchable
 
@@ -67,11 +68,18 @@ A short smoke test is insufficient to claim a full playthrough. State the test s
 
 Choose an authoritative revision allowlist when pinning a runtime. Record region, revision, byte size, accepted representation, checksum algorithm/value, and source of the reference data. The allowlist ships with the app and is tied to the bundled runtime version.
 
-Proposed baseline: calculate SHA-256 over a documented canonical byte representation, while retaining any additional identity checks required by upstream. If normalization is necessary, define and test it before accepting alternate representations.
+The app hashes a canonical big-endian representation with SHA-1 for the upstream
+allowlist and SHA-256 for local integrity. The cache revalidates both immediately
+before handing the ROM to its selected native runtime.
 
-N64 file extensions such as .z64, .v64, and .n64 are discovery hints only. Byte order, headers, archives, and modified ROMs need explicit handling. The POC may initially accept only the exact uncompressed representation selected for testing. Other formats must not be advertised until implemented and verified.
+N64 file extensions such as .z64, .v64, and .n64 are discovery hints only. The app
+recognizes and normalizes all three uncompressed byte orders from their headers;
+archives and modified ROMs are not accepted by the current allowlists.
 
-The [Shipwright host prototype](docs/SHIPWRIGHT_PORT.md) recognizes byte order from the header, hashes a canonical big-endian stream, and compares the pinned upstream SHA-1 values. Synthetic tests cover all three byte orders. This is not yet the app's validator, real-ROM validation, asset extraction, or permission to label a game Ready.
+Synthetic tests cover all three byte orders. Live imports have matched the
+supported Ocarina NTSC 1.0 US and Mario Kart USA identities, and both native
+preparers recheck the ROM before extracting assets. A filename or RomM title
+cannot select the wrong game's runtime.
 
 Do not use placeholder hashes, accept a filename as identity, or treat a server-reported checksum as a substitute for validating downloaded bytes. ROM hacks, translations, and other modifications are unsupported unless explicitly integrated and validated.
 

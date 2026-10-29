@@ -6,7 +6,7 @@ Nativecade is the working name for a native Apple TV launcher that discovers a u
 
 The [branding preview](docs/branding/nativecade/nativecade-brand-preview.png), [logo](docs/branding/nativecade/nativecade-logo-on-light.png), and [Apple TV icon concept](docs/branding/nativecade/nativecade-tv-icon.png) are saved with [design notes](docs/branding/nativecade/brand-notes.txt).
 
-**Status: the Nativecade app integrates RomM/SMB browsing, verified ROM import, on-device asset preparation, and playable Shipwright.** Both Apple TV and simulator runtimes build; the unified app renders the game in the simulator. Physical Apple TV validation is the next TestFlight step. See [Nativecade build and TestFlight](docs/NATIVECADE_TESTFLIGHT.md). See [simulator evidence](docs/SIMULATOR_PROGRESS.md) and the [Shipwright baseline and ROM identification tool](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
+**Status: Nativecade integrates RomM/SMB browsing, verified ROM import, on-device asset preparation, and playable Ocarina of Time and Mario Kart 64 ports.** Both Apple TV and simulator runtimes build; Mario Kart's menu navigation and race acceleration have passed a simulator controller test. Physical Apple TV validation remains pending. See [Nativecade build and TestFlight](docs/NATIVECADE_TESTFLIGHT.md), [Mario Kart integration](docs/SPAGHETTIKART.md), and the [Shipwright baseline](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
 
 ## Run the launcher
 
@@ -32,9 +32,9 @@ A discovered game is not automatically playable. Each supported title needs a co
 
 The first game is **The Legend of Zelda: Ocarina of Time**, using **Ship of Harkinian (Shipwright)** and a user-supplied ROM. Shipwright compiles decompiled game source and uses libultraship's renderer; it is a different integration from Zelda64Recomp and RT64. The ROM supplies game assets to the native port.
 
-The agreed order is Shipwright first, then expanding N64 coverage toward the full library, then other platforms. Each added title needs a compatible native runtime and its own validation. A shared launcher does not automatically make every N64 ROM executable.
+The second integrated game is **Mario Kart 64 (USA)**, using **SpaghettiKart 1.0.0**. Its hidden game symbols and separate save directory allow it to share Nativecade's SDL/Metal services with Shipwright. The agreed order is to expand N64 coverage before adding other platforms. Each added title needs a compatible native runtime and its own validation. A shared launcher does not automatically make every N64 ROM executable.
 
-The first integrated game is ready for device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
+The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
 ## Intended technology stack
 
@@ -63,6 +63,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
 | [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
 | [Shipwright first game](docs/SHIPWRIGHT_PORT.md) | Pinned native port, local ROM identification, and next tvOS integration steps |
+| [Mario Kart 64](docs/SPAGHETTIKART.md) | SpaghettiKart integration, supported ROM, controls, and simulator evidence |
 | [Shipwright Metal build](docs/SHIPWRIGHT_METAL_BUILD.md) | Complete libultraship services and renderer link checks for tvOS Simulator |
 | [Earlier runtime audit](docs/RUNTIME_AUDIT.md) | Zelda64Recomp dependencies, porting blockers, and isolated core builds |
 | [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) | Separate renderer build research; not Shipwright's renderer |

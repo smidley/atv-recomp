@@ -23,7 +23,10 @@ struct RecompTVRootView: View {
         }
         .preferredColorScheme(.dark)
         #if DEBUG && targetEnvironment(simulator)
-        .task { await SourceSimulatorProbe.runIfRequested() }
+        .task {
+            await SourceSimulatorProbe.runIfRequested()
+            await MarioKartSimulatorImport.runIfRequested()
+        }
         #endif
     }
     private var tabs: some View {
