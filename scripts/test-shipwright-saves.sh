@@ -16,4 +16,7 @@ for ((attempt=0;attempt<50;attempt++)); do
     [[ -s "$saves_port" ]] && break
     sleep 0.1
 done
-"$saves_build/save-tests" "http://127.0.0.1:$(cat "$saves_port")"
+saves_endpoint="http://127.0.0.1:$(cat "$saves_port")"
+# Fail at fixture startup rather than reporting a client regression for an unavailable server.
+curl --fail --silent --show-error --noproxy '*' "$saves_endpoint/stats" >/dev/null
+"$saves_build/save-tests" "$saves_endpoint"
