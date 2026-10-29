@@ -6,6 +6,7 @@ mkdir -p "$saves_build"
 clang++ -std=c++20 -fobjc-arc -fblocks -Wall -Wextra -Werror -Wno-unused-parameter -DRECOMPTV_SAVE_TEST_MAIN \
     "$saves_root/experiments/shipwright/simulator-game/AppleTVSaveStore.mm" \
     "$saves_root/experiments/shipwright/simulator-game/SaveStoreTests.mm" \
+    -Wl,-sectcreate,__TEXT,__info_plist,"$saves_root/experiments/shipwright/simulator-game/SaveTestInfo.plist" \
     -framework Foundation -framework Security -lz -o "$saves_build/save-tests"
 saves_port=$(mktemp "$saves_build/port.XXXXXX")
 python3 "$saves_root/experiments/shipwright/simulator-game/save_test_server.py" "$saves_port" &

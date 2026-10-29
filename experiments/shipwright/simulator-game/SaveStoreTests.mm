@@ -100,6 +100,7 @@ int RecompTVRunSaveStoreTests(const char *serverAddress) {
         CHECK(![store configureGameURL:url token:@"bad\r\ntoken" allowHTTP:YES error:&error]);
         CHECK([store configureGameURL:url token:@"test-token" allowHTTP:YES error:&error]);
         [store waitForBackups];
+        if (![[store status] containsString:@"backed up"]) fprintf(stderr, "Fixture backup status: %s\n", [store status].UTF8String);
         CHECK([[store status] containsString:@"backed up"]);
         CHECK([Control(server,@"/stats")[@"uploads"] intValue] == 1);
         [store backupNow]; [store waitForBackups];
