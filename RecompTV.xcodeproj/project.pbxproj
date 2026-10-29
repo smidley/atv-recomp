@@ -579,7 +579,6 @@
 		"6C7EFF6369083C8E1F2B1994" = {
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"TVOS_DEPLOYMENT_TARGET" = "27.0";
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
 				"GENERATE_INFOPLIST_FILE" = "YES";
@@ -603,7 +602,6 @@
 		"DD75E2CB1C510A828AC72D96" = {
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"TVOS_DEPLOYMENT_TARGET" = "27.0";
 				"CODE_SIGN_STYLE" = "Automatic";
 				"CURRENT_PROJECT_VERSION" = "1";
 				"GENERATE_INFOPLIST_FILE" = "YES";
