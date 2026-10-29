@@ -147,6 +147,11 @@ if(RECOMPTV_BUILD_RUNTIME_FRAMEWORK AND RECOMPTV_SPAGHETTIKART_SOURCE)
     add_subdirectory(../../spaghettikart spaghettikart)
 endif()
 set_source_files_properties("${ship}/src/code/main.c" PROPERTIES COMPILE_DEFINITIONS "main=RecompTVShipwrightMain")
+# Nativecade restores the original game's C globals before each later start (NativecadeRuntime.mm).
+set(game_c ${game})
+list(FILTER game_c INCLUDE REGEX "\\.c$")
+set_property(SOURCE ${game_c} APPEND PROPERTY COMPILE_OPTIONS
+    -include "${CMAKE_CURRENT_LIST_DIR}/GameStateSection.h")
 target_compile_definitions(RecompTVShipwright PRIVATE __IOS__ RECOMPTV_TVOS SDL_MAIN_HANDLED
     NATIVECADE_SHIPWRIGHT_RELEASE="${RECOMPTV_SHIPWRIGHT_RELEASE}"
     F3DEX_GBI_2 _CONSOLE UNICODE _UNICODE SPDLOG_ACTIVE_LEVEL=2 LOG_LEVEL_GAME_PRINTS=6)

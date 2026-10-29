@@ -10,8 +10,17 @@
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <map>
 #include <vector>
 #include <unistd.h>
+#include <mach/mach.h>
+#include <mach-o/dyld.h>
+#include <mach-o/getsect.h>
+#if __has_feature(address_sanitizer)
+#include <sanitizer/asan_interface.h>
+#endif
+#include <ship/Context.h>
+#include <spdlog/spdlog.h>
 #include "NativecadeRuntime.h"
 #include "AppleTVGameplay.h"
 #include "soh/Extractor/TorchExtract.h"
@@ -167,18 +176,87 @@ extern "C" void NativecadeRuntimePresentLibrary(void) {
     if (ShowLibrary) ShowLibrary();
 }
 
+// Zero-initialized game state is hundreds of megabytes. Map fresh zero pages over whole pages
+// instead of writing zeros, so state a game never touched stays uncommitted.
+static void ZeroGameState(uint8_t *start, size_t size) {
+    uintptr_t begin = (uintptr_t)start, end = begin + size, mask = vm_page_size - 1;
+    uintptr_t first = (begin + mask) & ~mask, last = end & ~mask;
+    if (first >= last) { memset(start, 0, size); return; }
+    memset(start, 0, first - begin);
+    memset((void *)last, 0, end - last);
+    vm_address_t pages = first;
+    if (vm_allocate(mach_task_self(), &pages, last - first, VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE) != KERN_SUCCESS)
+        memset((void *)first, 0, last - first);
+}
+
+// The ports keep the original game's state in C globals and expect a fresh process for each
+// start. GameStateSection.h compiles those globals into __game_data and __game_bss. Before
+// every start, put back their load-time values, as a console reset reloads memory.
+static void ResetGameGlobals() {
+    static std::map<const void *, std::vector<uint8_t>> loaded;
+    for (uint32_t i = 0; i < _dyld_image_count(); ++i) {
+        auto header = reinterpret_cast<const struct mach_header_64 *>(_dyld_get_image_header(i));
+        unsigned long size = 0;
+        if (uint8_t *data = getsectiondata(header, "__DATA", "__game_data", &size)) {
+#if __has_feature(address_sanitizer)
+            // Whole-section copies span the redzones Address Sanitizer places between globals.
+            __asan_unpoison_memory_region(data, size);
+#endif
+            auto [values, first] = loaded.try_emplace(header, data, data + size);
+            if (!first) memcpy(data, values->second.data(), size);
+        }
+        if (uint8_t *zeroed = getsectiondata(header, "__DATA", "__game_bss", &size)) {
+#if __has_feature(address_sanitizer)
+            __asan_unpoison_memory_region(zeroed, size);
+#endif
+            ZeroGameState(zeroed, size);
+        }
+    }
+}
+
 static int RunApplication(int argc, char **argv) {
     @autoreleasepool {
         if (!ShowLibrary || !HideLibrary) return 2;
         HideLibrary();
         NSString *root = GameDirectory ?: [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
-        if (chdir(root.fileSystemRepresentation) != 0) return 2;
-        if (GameRunner) {
-            setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
-            return GameRunner(argc, argv);
+        int status = 2;
+        if (chdir(root.fileSystemRepresentation) == 0) {
+            ResetGameGlobals();
+#if TARGET_OS_SIMULATOR
+            // Simulator-only restart check: end the game after 30 seconds, as its Quit button does.
+            if (getenv("NATIVECADE_RESTART_PROBE")) {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    SDL_Event quit = {};
+                    quit.type = SDL_QUIT;
+                    SDL_PushEvent(&quit);
+                });
+            }
+#endif
+            if (GameRunner) {
+                setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
+                status = GameRunner(argc, argv);
+            } else {
+                RecompTVInitializeSaveStorage(root.fileSystemRepresentation);
+                status = RecompTVShipwrightMain(argc, argv);
+            }
         }
-        RecompTVInitializeSaveStorage(root.fileSystemRepresentation);
-        return RecompTVShipwrightMain(argc, argv);
+        // A game's main loop ends when its menu's Quit button closes the window. The ports
+        // expect the process to exit next, so release libultraship's process-wide context
+        // before another game creates one. SDL keeps UIKit running for the library.
+        RecompTVClearGameHooks();
+        std::string logger = Ship::Context::GetRawInstance() ? Ship::Context::GetRawInstance()->GetName() : "";
+        Ship::Context::DestroyInstance();
+        // libultraship registers its logger under the game's name; let the next start register it again.
+        spdlog::drop(logger);
+        spdlog::set_default_logger(std::make_shared<spdlog::logger>("nativecade"));
+        // Quit SDL only now; libultraship's window no longer does (metal/restart.patch).
+        SDL_Quit();
+        // libultraship reads this as the game's data folder; it must not leak into the next game.
+        unsetenv("NATIVECADE_GAME_DIRECTORY");
+        Prepared = false;
+        LaunchRequested = false;
+        ShowLibrary();
+        return status;
     }
 }
 

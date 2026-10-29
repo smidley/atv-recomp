@@ -49,8 +49,8 @@ player saves or another game's ROM cache.
 
 Mario Kart uses `Documents/MarioKart64` for its configuration, `default.sav`
 EEPROM, and `controllerPak_*.sav` files. Ocarina of Time's save directory remains
-separate. Nativecade enters one game per process; close and reopen it to choose
-another game.
+separate. Quit in the game's menu returns to the library, where either game can be
+started again.
 
 The default Xbox mapping uses A to accelerate/select, X to brake, left trigger
 for items, right shoulder/trigger for hopping and drifting, left stick to steer,

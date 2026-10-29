@@ -12,7 +12,7 @@
 #include "NativecadeRuntime.h"
 #include "SpaghettiRuntime.h"
 
-extern "C" int NativecadeSpaghettiMain(int argc, char **argv);
+int NativecadeRunMarioKart(int argc, char **argv); // KartRestart.cpp
 static std::atomic<size_t> Extracted{0};
 static constexpr char SupportedHash[] = "579c48e211ae952530ffc8738709f078d5dd215e";
 
@@ -114,7 +114,7 @@ bool NativecadePrepareMarioKart(const char *romPath, const char *expectedSHA1, c
         if (!Install(port, [root stringByAppendingPathComponent:@"spaghetti.o2r"]) ||
             !Install(archive, [root stringByAppendingPathComponent:@"mk64.o2r"]))
             return Fail(error, capacity, "The prepared Mario Kart assets could not be installed.");
-        if (!NativecadeSetPreparedGameRunner(NativecadeSpaghettiMain, root.fileSystemRepresentation))
+        if (!NativecadeSetPreparedGameRunner(NativecadeRunMarioKart, root.fileSystemRepresentation))
             return Fail(error, capacity, "Another game is already starting. Close and reopen Nativecade.");
         return true;
     }

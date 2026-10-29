@@ -74,9 +74,15 @@ RomM backups are separate from the ROM cache. See
 [Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md) and
 [Apple TV performance](APPLE_TV_PERFORMANCE.md).
 
-The first version enters one game per app session. To return to the library,
-close and reopen Nativecade. Game exit/resume and sustained hardware performance
-remain part of the physical Apple TV test pass.
+To return to the library, open the game's menu with the controller's View button
+and select its red power button (Quit). Progress since the last save or autosave
+is lost, as when switching off a console. Any game can then be started again in
+the same session. Quitting with a physical controller and sustained hardware
+performance remain part of the physical Apple TV test pass.
+
+Neither port was written to start twice in one process.
+[Switching games](GAME_SWITCHING.md) explains what Nativecade resets between games,
+the small upstream changes this needed, and how to check a new game.
 
 ## Verification recorded on 2026-10-28
 

@@ -10,6 +10,7 @@ bool RecompTVDeleteSave(const std::filesystem::path& path);
 void RecompTVBackupNow();
 void RecompTVInitializeGameplayDefaults();
 void RecompTVInitializeGameplay();
+void RecompTVClearGameHooks();
 void RecompTVGameplayFrame();
 void RecompTVSetGameplayActive(bool active);
 bool RecompTVControllerCanRumble(size_t port);

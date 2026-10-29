@@ -78,12 +78,10 @@ struct LibraryView: View {
             .task {
                 await library.restoreCache()
                 #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
-                // Explicit local smoke test. Uses only an already verified cache;
+                // Explicit local smoke tests. They use only an already verified cache;
                 // no game bytes, server addresses, or credentials enter the build.
-                let arguments = ProcessInfo.processInfo.arguments
-                let marioKart = arguments.contains("--nativecade-play-mario-kart")
-                if arguments.contains("--nativecade-play-cached-rom") || marioKart,
-                   let rom = library.importedROMs.first(where: { !marioKart || $0.game == .marioKart64 }) {
+                if let game = SimulatorLaunchProbe.next(),
+                   let rom = library.importedROMs.first(where: { $0.game == game }) {
                     await library.play(rom)
                     if let error = library.error { print("Nativecade launch probe failed: \(error)") }
                 }
@@ -449,6 +447,33 @@ struct ArtworkFixturePreview: View {
             catch { ready = false }
         }
         .onDisappear { try? CredentialStore.remove(source.id) }
+    }
+}
+
+/// Games the simulator smoke tests start, one each time the library appears. A game that
+/// quits brings the library back, so NATIVECADE_RESTART_PROBE (such as "oot,oot,kart,oot")
+/// checks that games restart in one session; the runtime ends each one after 30 seconds.
+@MainActor enum SimulatorLaunchProbe {
+    private static var games: [SupportedGame]?
+    private static var started = 0
+
+    static func next() -> SupportedGame? {
+        let restart = ProcessInfo.processInfo.environment["NATIVECADE_RESTART_PROBE"]
+        if games == nil {
+            let arguments = ProcessInfo.processInfo.arguments
+            games = restart.map { $0.split(separator: ",").map { $0 == "kart" ? .marioKart64 : .ocarinaOfTime } }
+                ?? (arguments.contains("--nativecade-play-mario-kart") ? [.marioKart64]
+                    : arguments.contains("--nativecade-play-cached-rom") ? [.ocarinaOfTime] : [])
+        }
+        guard let game = games?.first else {
+            if restart != nil && started > 0 { NSLog("[RestartProbe] PASS: %d games started in one session", started) }
+            started = 0
+            return nil
+        }
+        games?.removeFirst()
+        started += 1
+        if restart != nil { NSLog("[RestartProbe] starting %@ (%d)", game.title, started) }
+        return game
     }
 }
 #endif

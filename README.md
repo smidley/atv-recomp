@@ -65,6 +65,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Shipwright first game](docs/SHIPWRIGHT_PORT.md) | Pinned native port, local ROM identification, and next tvOS integration steps |
 | [Mario Kart 64](docs/SPAGHETTIKART.md) | SpaghettiKart integration, supported ROM, controls, and simulator evidence |
 | [Updating game runtimes](docs/UPDATING_UPSTREAM.md) | Pinned upstream releases, the weekly release check, update steps, and the release checklist |
+| [Switching games](docs/GAME_SWITCHING.md) | What carries over between game starts, how each case is reset, and how to check a new game |
 | [Shipwright Metal build](docs/SHIPWRIGHT_METAL_BUILD.md) | Complete libultraship services and renderer link checks for tvOS Simulator |
 | [Shipwright renderer fixture](docs/SHIPWRIGHT_RENDER_PROBE.md) | Simulator execution, GPU pixel checks, repeated teardown, and evidence limits |
 | [Earlier runtime audit](docs/RUNTIME_AUDIT.md) | Zelda64Recomp dependencies, porting blockers, and isolated core builds |

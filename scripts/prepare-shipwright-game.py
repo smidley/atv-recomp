@@ -27,7 +27,7 @@ def main():
         raise SystemExit("The generated source must be outside the upstream checkout")
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns(".git"), dirs_exist_ok=True)
     command = ["git", "-C", str(root), "apply", f"--directory={relative}"]
-    for name in ("tvos.patch", "performance.patch", "gameplay.patch"):
+    for name in ("tvos.patch", "performance.patch", "gameplay.patch", "restart.patch"):
         patch = root / "experiments/shipwright/simulator-game" / name
         subprocess.run([*command, "--check", str(patch)], check=True)
         subprocess.run([*command, str(patch)], check=True)

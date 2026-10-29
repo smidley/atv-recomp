@@ -27,7 +27,12 @@ foreach(file guLookAtF guPerspectiveF guMtxF2L guRotateF guOrthoF guScaleF guTra
     list(APPEND kart_sources "${kart}/src/os/${file}.c")
 endforeach()
 list(FILTER kart_sources EXCLUDE REGEX "\\.inc\\.c$|/debug/crash_screen_enhancement\\.c$")
-add_library(NativecadeSpaghettiObjects OBJECT ${kart_sources} SpaghettiRuntime.mm SimulatorInputProbe.cpp
+# Nativecade restores the original game's C globals before each later start (NativecadeRuntime.mm).
+set(kart_c ${kart_sources})
+list(FILTER kart_c INCLUDE REGEX "\\.c$")
+set_property(SOURCE ${kart_c} APPEND PROPERTY COMPILE_OPTIONS
+    -include "${CMAKE_CURRENT_LIST_DIR}/../shipwright/simulator-game/GameStateSection.h")
+add_library(NativecadeSpaghettiObjects OBJECT ${kart_sources} SpaghettiRuntime.mm SimulatorInputProbe.cpp KartRestart.cpp
     "${RECOMPTV_LUS_SOURCE}/src/libultraship/libultra/os_pi.cpp"
     # XML commands must use MK64's F3DEX encoding, not Shipwright's F3DEX2.
     "${RECOMPTV_LUS_SOURCE}/src/fast/resource/factory/DisplayListFactory.cpp")
