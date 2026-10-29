@@ -58,6 +58,7 @@ These are design directions, not implemented capabilities.
 | [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
 | [Shipwright first game](docs/SHIPWRIGHT_PORT.md) | Pinned native port, local ROM identification, and next tvOS integration steps |
 | [Shipwright Metal build](docs/SHIPWRIGHT_METAL_BUILD.md) | Complete libultraship services and renderer link checks for tvOS Simulator |
+| [Shipwright renderer fixture](docs/SHIPWRIGHT_RENDER_PROBE.md) | Simulator execution, GPU pixel checks, repeated teardown, and evidence limits |
 | [Earlier runtime audit](docs/RUNTIME_AUDIT.md) | Zelda64Recomp dependencies, porting blockers, and isolated core builds |
 | [RT64 Metal experiment](docs/RT64_METAL_EXPERIMENT.md) | Separate renderer build research; not Shipwright's renderer |
 | [Compatibility](COMPATIBILITY.md) | ROM validation, runtime eligibility, and support status |

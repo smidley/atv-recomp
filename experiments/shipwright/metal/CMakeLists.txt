@@ -45,3 +45,31 @@ set_source_files_properties(SDKContract.mm PROPERTIES
 target_link_libraries(shipwright_metal_link PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,libultraship>")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/link-probe-path.txt"
     CONTENT "$<TARGET_FILE:shipwright_metal_link>\n")
+
+# A separate installable diagnostic app, using SDL's UIKit bootstrap and the
+# actual libultraship shader generator, renderer, and resource loader.
+set(probe_archive "${CMAKE_CURRENT_BINARY_DIR}/probe-shaders.o2r")
+add_custom_command(OUTPUT "${probe_archive}"
+    COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/pack-probe-shaders.py"
+        "${RECOMPTV_LUS_SOURCE}" "${probe_archive}"
+    DEPENDS pack-probe-shaders.py
+        "${RECOMPTV_LUS_SOURCE}/src/fast/shaders/metal/default.shader.metal"
+        "${RECOMPTV_LUS_SOURCE}/LICENSE"
+    VERBATIM)
+add_custom_target(shipwright_probe_assets DEPENDS "${probe_archive}")
+add_executable(shipwright_metal_render MACOSX_BUNDLE RenderProbe.mm)
+add_dependencies(shipwright_metal_render shipwright_probe_assets)
+target_compile_definitions(shipwright_metal_render PRIVATE __IOS__ SDL_MAIN_HANDLED)
+target_compile_options(shipwright_metal_render PRIVATE -fobjc-arc -fblocks
+    -Werror=unguarded-availability -Werror=unguarded-availability-new)
+target_link_libraries(shipwright_metal_render PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,libultraship>")
+set_target_properties(shipwright_metal_render PROPERTIES
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/RenderProbe-Info.plist.in"
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.smidley.RecompTV.ShipwrightProbe"
+    XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "3")
+add_custom_command(TARGET shipwright_metal_render POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${probe_archive}"
+        "$<TARGET_BUNDLE_DIR:shipwright_metal_render>/probe-shaders.o2r"
+    VERBATIM)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/render-probe-path.txt"
+    CONTENT "$<TARGET_BUNDLE_DIR:shipwright_metal_render>\n")

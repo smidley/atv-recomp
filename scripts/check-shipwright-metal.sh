@@ -22,7 +22,7 @@ cmake --fresh -S "$probe_root/experiments/shipwright/metal" -B "$probe_build" \
     -DCMAKE_TRY_COMPILE_TARGET_TYPE=EXECUTABLE \
     -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-cmake --build "$probe_build" --target shipwright_metal_link --parallel 3
+cmake --build "$probe_build" --target shipwright_metal_link shipwright_metal_render --parallel 3
 python3 "$probe_root/scripts/verify-shipwright-metal-build.py" "$probe_build"
 IFS= read -r probe_binary < "$probe_build/link-probe-path.txt"
 lipo "$probe_binary" -verify_arch "$probe_arch"
@@ -33,3 +33,7 @@ if grep -Eq '(AppKit|Cocoa|OpenGL|OpenGLES)\.framework' "$probe_build/dependenci
     exit 1
 fi
 echo "libultraship services and Metal backend compiled and linked for tvOS Simulator $probe_arch. No GPU execution attempted."
+IFS= read -r probe_app < "$probe_build/render-probe-path.txt"
+plutil -lint "$probe_app/Info.plist"
+codesign --force --sign - --timestamp=none "$probe_app"
+echo "Installable renderer fixture: $probe_app"
