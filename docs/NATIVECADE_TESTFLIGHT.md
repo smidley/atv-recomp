@@ -42,7 +42,8 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
 1. Connect RomM or an SMB share reachable from the Apple TV. Follow
    [Network sources](NETWORK_SOURCES.md), including its token permissions.
 2. Browse a platform and import one supported Ocarina of Time ROM, or use the
-   platform's bulk verification/import action. Other games are not playable yet.
+   platform's bulk verification/import action. RomM covers and screenshots appear
+   while browsing, and imported games retain their cover art. Other games are not playable yet.
 3. Connect a compatible game controller and select **Play** on a verified ROM.
 4. Keep Nativecade open during its first preparation. It rechecks the cached
    ROM, extracts assets locally, checks the archive version and every entry's CRC,
@@ -78,6 +79,11 @@ remain part of the physical Apple TV test pass.
 - The RecompTV diagnostics/library harness still builds independently.
 - Xcode reported a successful internal TestFlight upload of version **0.1.0 (1)**.
   App Store Connect processing and tester availability are separate checks.
+
+Build **0.1.0 (2)** adds RomM covers, screenshots, bounded offline artwork caching,
+and artwork refresh for earlier imports. Its simulator build, 25 host tests, and
+the tvOS source/artwork probe passed. Build 2 still needs a new signed archive and
+TestFlight upload; the already uploaded build 1 does not include this artwork work.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks

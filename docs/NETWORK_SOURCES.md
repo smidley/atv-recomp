@@ -64,7 +64,7 @@ RomM's implemented contract is checked against **5.4.1** source:
   `Authorization: Bearer …`. Obtain the token in RomM's Client API token settings.
 
 This is source-contract validation and fixture testing, not a claim that every
-RomM version or a live 5.4.1 deployment has been tested. Artwork, descriptions,
+RomM version or a live 5.4.1 deployment has been tested. Descriptions,
 device pairing and OAuth refresh are later work. The separate optional game-save
 backup setup is described below. ROM browsing needs no write scope. A 401/403 prompts reconnecting with a valid token and scope.
 
@@ -113,6 +113,46 @@ app does not use browser cookies or persist tokens in URLs or catalog records.
 - **Edit** tests the new connection before updating it. **Remove** deletes the
   source and its Keychain entry; **Clear ROM cache** separately removes local ROM
   data. Neither action changes files on the server.
+
+## Game artwork
+
+RomM platform pages display cover cards, and each game's file page shows a larger
+cover and up to 12 screenshots. Select a screenshot to enlarge it. Imported games
+retain the RomM title and artwork references with their verified ROM record.
+SMB entries and missing artwork use placeholders; image failures never block a
+ROM import or Play.
+
+The implementation uses RomM's `path_cover_small`, `path_cover_large`, and
+`merged_screenshots` fields from its
+[5.4.1 ROM response](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/responses/rom.py)
+and [resource paths](https://github.com/rommapp/romm/blob/5.4.1/backend/models/rom.py).
+It fetches images beneath `/assets/romm/resources` on the configured instance,
+preserving a reverse-proxy prefix. The existing Client API token authenticates
+these requests. Third-party `url_cover` links, redirects, path traversal, and
+non-resource URLs are not followed. No additional RomM write permission is needed.
+
+Each download is limited to 8 MiB and 15 seconds. ImageIO validates and downsamples
+the image to a maximum dimension of 1,200 pixels away from the main actor. Shared
+requests are coalesced and queued; leaving the last requesting view cancels the
+download. The least recently used images are trimmed to a 64 MiB disk budget.
+Cached images remain available offline, subject to tvOS cache eviction. Server
+timestamps in image URLs refresh changed art; a missing small cover can use the
+large cover. Tokens are never stored in image URLs or cache filenames.
+
+**Refresh artwork** updates imported records without transferring the ROM again.
+Older records without a RomM ROM ID are matched only when the catalog contains
+one exact filename/size match; ambiguous matches retain their placeholder. A
+normal reimport also records the current artwork. Metadata refresh cannot change
+ROM identity or invalidate an already selected Play action.
+
+The 2026-10-28 verification pass includes 25 host tests with loopback HTTP/SMB
+fixtures and an on-device simulator probe for authenticated image download,
+ImageIO decoding, and offline reuse. Cover-card and screenshot layouts were
+inspected on the tvOS 27.0 Apple TV 4K simulator using synthetic color charts.
+Live artwork from the intended RomM server and physical remote focus still need
+an interactive pass. `--artwork-fixture-preview` (optionally with
+`--artwork-fixture-detail`) opens that fixed-loopback visual fixture in Debug
+simulator builds only; the fixture is absent from device and Release builds.
 
 ## Automated verification
 

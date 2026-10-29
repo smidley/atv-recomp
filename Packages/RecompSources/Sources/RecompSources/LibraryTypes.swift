@@ -51,6 +51,7 @@ public struct LibraryEntry: Identifiable, Sendable, Equatable {
     public let detail: String
     public let size: Int64?
     public let target: Target
+    public var artwork: RomMArtwork? = nil
     public var folder: LibraryLocation? {
         if case .folder(let location) = target { return location }
         return nil
@@ -64,6 +65,21 @@ public struct LibraryEntry: Identifiable, Sendable, Equatable {
 public struct LibraryPage: Sendable {
     public let entries: [LibraryEntry]
     public let nextOffset: Int?
+    public var artwork: RomMArtwork? = nil
+}
+
+/// Only server-owned artwork references, never a token or third-party image URL.
+public struct RomMArtwork: Codable, Hashable, Sendable {
+    public let romID: Int
+    public let server: String
+    public let title: String
+    public let coverSmall: String?
+    public let coverLarge: String?
+    public let screenshots: [String]
+    public var cover: String? { coverSmall ?? coverLarge }
+    public func belongs(to source: LibrarySource) -> Bool {
+        source.kind == .romm && (try? RomMAddress(source.address, allowHTTP: source.allowHTTP).base.absoluteString) == server
+    }
 }
 
 public struct TransferProgress: Sendable {
@@ -78,6 +94,15 @@ public protocol LibraryProvider: Sendable {
     func list(_ location: LibraryLocation, search: String, offset: Int) async throws -> LibraryPage
     func download(_ entry: LibraryEntry, to destination: URL,
                   progress: @escaping ProgressHandler) async throws
+    func imageData(at path: String) async throws -> Data
+    func artwork(for rom: ImportedROM) async throws -> RomMArtwork?
+}
+
+public extension LibraryProvider {
+    func imageData(at path: String) async throws -> Data {
+        throw LibraryError.message("This source does not provide game artwork.")
+    }
+    func artwork(for rom: ImportedROM) async throws -> RomMArtwork? { nil }
 }
 
 public enum LibraryError: Error, LocalizedError, Equatable, Sendable {

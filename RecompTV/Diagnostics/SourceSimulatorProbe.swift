@@ -37,6 +37,18 @@ import RecompSources
                 guard let entry = files.entries.first(where: { $0.isROM }) else {
                     throw LibraryError.message("The fixture ROM was not listed.")
                 }
+                if source.kind == .romm {
+                    guard let artwork = entry.artwork, let cover = artwork.cover, artwork.screenshots.count == 1 else {
+                        throw LibraryError.message("RomM artwork metadata was not decoded safely.")
+                    }
+                    let images = try ArtworkCache(root: root.appendingPathComponent("images"))
+                    let data = try await images.image(at: cover, artwork: artwork, sourceID: source.id, provider: provider)
+                    let offline = try await images.image(at: cover, artwork: artwork, sourceID: source.id, provider: nil)
+                    guard data.starts(with: [0x89, 0x50, 0x4e, 0x47]), data == offline else {
+                        throw LibraryError.message("Artwork did not decode or survive an offline cache read.")
+                    }
+                    steps.append("romm-artwork")
+                }
                 let result = try await cache.acquire(entry, sourceID: source.id, provider: provider, progress: { _ in })
                 guard result.sha256 == "92a2313a5151db3e56f5386dd2714fcb01f6023fdd6e50d5bbd223fcf491f9c0",
                       !result.recognized, !result.launchable, try await cache.current() == nil else {

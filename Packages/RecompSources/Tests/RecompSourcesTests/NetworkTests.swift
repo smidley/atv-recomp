@@ -39,6 +39,32 @@ struct NetworkTests {
         #expect(page.entries.map(\.detail) == ["2 ROMs", "1 ROM"])
     }
 
+    @Test func rommArtworkUsesAuthenticatedResourcesAndSurvivesOffline() async throws {
+        let provider = try romm("/art-proxy")
+        let page = try await provider.list(.platform(1), search: "", offset: 0)
+        let art = try #require(page.entries.first?.artwork)
+        #expect(art.romID == 3)
+        #expect(art.screenshots.count == 1) // A third-party URL must never receive the token.
+        let files = try await provider.list(.rom(3), search: "", offset: 0)
+        #expect(files.artwork?.title == "Synthetic Ocarina fixture")
+        #expect(files.entries.first?.artwork == files.artwork)
+        let path = try #require(art.cover)
+        let root = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let cache = try ArtworkCache(root: root), id = UUID()
+        let image = try await cache.image(at: path, artwork: art, sourceID: id, provider: provider)
+        #expect(!image.isEmpty)
+        #expect(try await cache.image(at: path, artwork: art, sourceID: id, provider: nil) == image)
+        await #expect(throws: LibraryError.self) {
+            try await provider.imageData(at: "/assets/romm/resources/redirect.png")
+        }
+        await #expect(throws: LibraryError.self) {
+            try await cache.image(at: "/assets/romm/resources/login.png", artwork: art, sourceID: id, provider: provider)
+        }
+        let legacy = ImportedROM(name: "Fixture.z64", revision: "Fixture", sha1: "", sha256: "", size: 256 * 1024, sourceID: id)
+        #expect(try await provider.artwork(for: legacy)?.romID == 3)
+    }
+
     @Test func platformBatchVisitsEveryCatalogPageAndSkipsArchives() async throws {
         let folder = try temporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }

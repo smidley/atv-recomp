@@ -156,7 +156,7 @@
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"SWIFT_OBJC_BRIDGING_HEADER" = "$(SRCROOT)/RecompTV/Native/RecompTV-Bridging-Header.h";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.smidley.nativecade";
-				"CURRENT_PROJECT_VERSION" = "1";
+				"CURRENT_PROJECT_VERSION" = "2";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "$(inherited) NATIVECADE_RUNTIME";
 				"GCC_PREPROCESSOR_DEFINITIONS" = (
 					"$(inherited)",
@@ -189,7 +189,7 @@
 				"PRODUCT_NAME" = "$(TARGET_NAME)";
 				"SWIFT_OBJC_BRIDGING_HEADER" = "$(SRCROOT)/RecompTV/Native/RecompTV-Bridging-Header.h";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.smidley.nativecade";
-				"CURRENT_PROJECT_VERSION" = "1";
+				"CURRENT_PROJECT_VERSION" = "2";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "$(inherited) NATIVECADE_RUNTIME";
 				"GCC_PREPROCESSOR_DEFINITIONS" = (
 					"$(inherited)",

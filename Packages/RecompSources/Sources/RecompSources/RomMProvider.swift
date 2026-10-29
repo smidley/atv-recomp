@@ -50,7 +50,8 @@ struct RomMProvider: LibraryProvider {
             let page = try await catalog(platformID: id, search: search, offset: offset)
             let entries = page.items.map { rom in
                 LibraryEntry(id: "rom-\(rom.id)", name: rom.name ?? rom.fs_name,
-                             detail: "Open to choose a ROM file", size: nil, target: .folder(.rom(rom.id)))
+                             detail: "Open to choose a ROM file", size: nil, target: .folder(.rom(rom.id)),
+                             artwork: artwork(id: rom.id, title: rom.name ?? rom.fs_name, media: rom.media))
             }
             return LibraryPage(entries: entries, nextOffset: page.nextOffset)
         case .rom(let id):
@@ -59,6 +60,7 @@ struct RomMProvider: LibraryProvider {
             guard rom.id == id, Set(rom.files.map(\.id)).count == rom.files.count else {
                 throw LibraryError.message("RomM returned inconsistent file metadata. Refresh the catalog.")
             }
+            let artwork = artwork(id: id, title: rom.name ?? rom.files.first?.file_name ?? "Game", media: rom.media)
             let entries = try rom.files.map { file in
                 try validateComponent(file.file_name)
                 guard file.id > 0, file.file_size_bytes >= 0 else {
@@ -66,11 +68,66 @@ struct RomMProvider: LibraryProvider {
                 }
                 return LibraryEntry(id: "file-\(file.id)", name: file.file_name,
                                     detail: LibraryEntry.isROMName(file.file_name) ? "Unverified N64 ROM" : "Uncompressed N64 ROM required",
-                                    size: file.file_size_bytes, target: .romFile(file.id, file.file_name))
+                                    size: file.file_size_bytes, target: .romFile(file.id, file.file_name), artwork: artwork)
             }
-            return LibraryPage(entries: entries, nextOffset: nil)
+            return LibraryPage(entries: entries, nextOffset: nil, artwork: artwork)
         case .directory: throw LibraryError.message("This location does not belong to RomM.")
         }
+    }
+
+    private func artwork(id: Int, title: String, media: RomMMedia) -> RomMArtwork {
+        func safe(_ value: String?) -> String? {
+            guard let value, !value.isEmpty, (try? address.artworkURL(value)) != nil else { return nil }
+            return value
+        }
+        var seen = Set<String>()
+        return RomMArtwork(romID: id, server: address.base.absoluteString, title: title,
+                           coverSmall: safe(media.small), coverLarge: safe(media.large),
+                           screenshots: media.screenshots.compactMap(safe).filter { seen.insert($0).inserted }.prefix(12).map { $0 })
+    }
+
+    func imageData(at path: String) async throws -> Data {
+        var request = URLRequest(url: try address.artworkURL(path))
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        return try await HTTPTransfer(limit: ArtworkCache.downloadLimit, resourceTimeout: 15)
+            .run(request, configuration: configuration())
+    }
+
+    func artwork(for rom: ImportedROM) async throws -> RomMArtwork? {
+        if let existing = rom.artwork, existing.server == address.base.absoluteString {
+            return try await list(.rom(existing.romID), search: "", offset: 0).artwork
+        }
+        // Older cache records predate ROM IDs. Match one exact filename and size,
+        // rather than guessing a cover from a similar game title. Ambiguity is left alone.
+        let search = (rom.name as NSString).deletingPathExtension
+        var candidates = [RomMItem]()
+        var offset = 0
+        repeat {
+            let page = try await catalog(platformID: nil, search: search, offset: offset)
+            candidates.append(contentsOf: page.items)
+            guard let next = page.nextOffset else { break }
+            guard next < 150 else { return nil }
+            offset = next
+        } while true
+        var matches = [RomMArtwork]()
+        for candidate in candidates {
+            try Task.checkCancellation()
+            // Catalog responses include files in current RomM; a missing field on
+            // an older server falls back to its detail endpoint.
+            let files: [RomMFile]
+            if let included = candidate.files { files = included }
+            else {
+                files = try await decode(RomMDetail.self, path: ["roms", String(candidate.id)]).files
+            }
+            if files.contains(where: { $0.file_name == rom.name && $0.file_size_bytes == rom.size }) {
+                matches.append(artwork(id: candidate.id, title: candidate.name ?? candidate.fs_name, media: candidate.media))
+                if matches.count > 1 { return nil }
+            }
+        }
+        return matches.first
     }
 
     private func catalog(platformID: Int?, search: String, offset: Int) async throws -> RomMPage {
@@ -159,10 +216,47 @@ private struct RomMItem: Decodable {
     let fs_name: String
     let platform_id: Int
     let platform_display_name: String?
+    let files: [RomMFile]?
+    let media: RomMMedia
+
+    enum CodingKeys: CodingKey { case id, name, fs_name, platform_id, platform_display_name, files }
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(Int.self, forKey: .id)
+        name = try values.decodeIfPresent(String.self, forKey: .name)
+        fs_name = try values.decode(String.self, forKey: .fs_name)
+        platform_id = try values.decode(Int.self, forKey: .platform_id)
+        platform_display_name = try values.decodeIfPresent(String.self, forKey: .platform_display_name)
+        files = try values.decodeIfPresent([RomMFile].self, forKey: .files)
+        media = try RomMMedia(from: decoder)
+    }
 }
 private struct RomMDetail: Decodable {
     let id: Int
+    let name: String?
     let files: [RomMFile]
+    let media: RomMMedia
+    enum CodingKeys: CodingKey { case id, name, files }
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(Int.self, forKey: .id)
+        name = try values.decodeIfPresent(String.self, forKey: .name)
+        files = try values.decode([RomMFile].self, forKey: .files)
+        media = try RomMMedia(from: decoder)
+    }
+}
+private struct RomMMedia: Decodable {
+    let small: String?
+    let large: String?
+    let screenshots: [String]
+    enum CodingKeys: CodingKey { case path_cover_small, path_cover_large, merged_screenshots }
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        // Bad or missing artwork metadata must not make a ROM impossible to browse.
+        small = try? values.decode(String.self, forKey: .path_cover_small)
+        large = try? values.decode(String.self, forKey: .path_cover_large)
+        screenshots = (try? values.decode([String].self, forKey: .merged_screenshots)) ?? []
+    }
 }
 private struct RomMFile: Decodable {
     let id: Int
