@@ -23,11 +23,11 @@ def main():
         raise SystemExit("Upstream libultraship checkout has local changes")
     relative = Path("build/shipwright-metal/source")
     destination = root / relative
-    if destination == source or source in destination.parents:
+    if destination == source or source in destination.parents or destination in source.parents:
         raise SystemExit("The generated source directory must be outside the upstream checkout")
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns(".git"), dirs_exist_ok=True)
     command = ["git", "-C", str(root), "apply", f"--directory={relative}"]
-    for name in ("tvos.patch", "performance.patch", "rumble.patch"):
+    for name in ("tvos.patch", "rendering.patch", "performance.patch", "rumble.patch"):
         patch = root / "experiments/shipwright/metal" / name
         subprocess.run([*command, "--check", str(patch)], check=True)
         subprocess.run([*command, str(patch)], check=True)
