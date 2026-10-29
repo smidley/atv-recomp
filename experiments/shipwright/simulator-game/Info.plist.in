@@ -12,6 +12,9 @@
     <key>MinimumOSVersion</key><string>17.0</string>
     <key>UILaunchScreen</key><dict/>
     <key>UIApplicationSupportsIndirectInputEvents</key><true/>
+    <!-- The backup client independently requires explicit opt-in to HTTP. -->
+    <key>NSAppTransportSecurity</key><dict><key>NSAllowsArbitraryLoads</key><true/></dict>
+    <key>NSLocalNetworkUsageDescription</key><string>Back up your game saves to your local RomM server.</string>
     <key>UIApplicationSceneManifest</key><dict>
         <key>UIApplicationSupportsMultipleScenes</key><false/>
         <key>UISceneConfigurations</key><dict>
