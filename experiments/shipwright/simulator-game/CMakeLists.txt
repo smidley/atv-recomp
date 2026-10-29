@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
 project(RecompTVShipwrightGame VERSION 9.3.1 LANGUAGES C CXX OBJC OBJCXX)
+option(RECOMPTV_BUILD_RUNTIME_FRAMEWORK "Build the distributable Nativecade runtime framework" OFF)
 string(TOLOWER "${CMAKE_OSX_SYSROOT}" simulator_sdk)
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS" OR NOT simulator_sdk MATCHES "appletvsimulator")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS" OR
+   (NOT RECOMPTV_BUILD_RUNTIME_FRAMEWORK AND NOT simulator_sdk MATCHES "appletvsimulator"))
     message(FATAL_ERROR "This development game target is simulator-only")
 endif()
 set(CMAKE_C_STANDARD 23)
@@ -29,14 +31,25 @@ add_subdirectory(../metal metal)
 include(FetchContent)
 FetchContent_GetProperties(SDL2 SOURCE_DIR recomptv_sdl_source)
 set(scene_patch "${CMAKE_CURRENT_LIST_DIR}/sdl-scenes.patch")
+set(library_patch "${CMAKE_CURRENT_LIST_DIR}/sdl-nativecade.patch")
+execute_process(COMMAND git apply --reverse --check "${library_patch}"
+    WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE library_patch_applied
+    OUTPUT_QUIET ERROR_QUIET)
 execute_process(COMMAND git apply --reverse --check "${scene_patch}"
     WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE scene_patch_applied
     OUTPUT_QUIET ERROR_QUIET)
-if(NOT scene_patch_applied EQUAL 0)
+if(NOT scene_patch_applied EQUAL 0 AND NOT library_patch_applied EQUAL 0)
     execute_process(COMMAND git apply "${scene_patch}"
         WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
 endif()
 target_compile_definitions(SDL2-static PRIVATE RECOMPTV_TVOS_SCENES)
+if(RECOMPTV_BUILD_RUNTIME_FRAMEWORK)
+    if(NOT library_patch_applied EQUAL 0)
+        execute_process(COMMAND git apply "${library_patch}"
+            WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    target_compile_definitions(SDL2-static PRIVATE NATIVECADE_RUNTIME)
+endif()
 set(rumble_patch "${CMAKE_CURRENT_LIST_DIR}/sdl-rumble.patch")
 execute_process(COMMAND git apply --reverse --check "${rumble_patch}"
     WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE rumble_patch_applied
@@ -104,8 +117,18 @@ list(FILTER game EXCLUDE REGEX "/src/libultra/gu/(cosf|lookat|lookathil|perspect
 list(FILTER game EXCLUDE REGEX "/speechsynthesizer/(SAPI|ESpeak)")
 list(APPEND game "${ship}/src/libultra/libc/sprintf.c"
     "${ship}/soh/Enhancements/speechsynthesizer/DarwinSpeechSynthesizer.mm")
-add_executable(RecompTVShipwright MACOSX_BUNDLE ${game} SimulatorMain.mm AppleTVPerformance.cpp
-    AppleTVGameplay.cpp AppleTVSaveStore.mm AppleTVSaveUI.mm ControllerProbe.cpp SaveStoreTests.mm)
+if(RECOMPTV_BUILD_RUNTIME_FRAMEWORK)
+    add_library(RecompTVShipwright SHARED ${game} NativecadeRuntime.mm NativecadeRuntime.h AppleTVPerformance.cpp
+        AppleTVGameplay.cpp AppleTVSaveStore.mm AppleTVSaveUI.mm)
+    set_target_properties(RecompTVShipwright PROPERTIES FRAMEWORK TRUE OUTPUT_NAME NativecadeRuntime
+        PUBLIC_HEADER "NativecadeRuntime.h" MACOSX_FRAMEWORK_IDENTIFIER "com.smidley.nativecade.runtime"
+        MACOSX_FRAMEWORK_SHORT_VERSION_STRING "0.1.0" MACOSX_FRAMEWORK_BUNDLE_VERSION "1"
+        INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR TRUE
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
+else()
+    add_executable(RecompTVShipwright MACOSX_BUNDLE ${game} SimulatorMain.mm AppleTVPerformance.cpp
+        AppleTVGameplay.cpp AppleTVSaveStore.mm AppleTVSaveUI.mm ControllerProbe.cpp SaveStoreTests.mm)
+endif()
 set_source_files_properties("${ship}/src/code/main.c" PROPERTIES COMPILE_DEFINITIONS "main=RecompTVShipwrightMain")
 target_compile_definitions(RecompTVShipwright PRIVATE __IOS__ RECOMPTV_TVOS SDL_MAIN_HANDLED
     F3DEX_GBI_2 _CONSOLE UNICODE _UNICODE SPDLOG_ACTIVE_LEVEL=2 LOG_LEVEL_GAME_PRINTS=6)
@@ -120,6 +143,7 @@ target_include_directories(RecompTVShipwright PRIVATE "${ship}" "${ship}/include
     "${CMAKE_CURRENT_LIST_DIR}")
 target_link_libraries(RecompTVShipwright PRIVATE libultraship torch SDL2_net::SDL2_net-static
     vorbisfile recomptv_opusfile "-framework AVFoundation" "-framework Security" "-lz")
+if(NOT RECOMPTV_BUILD_RUNTIME_FRAMEWORK)
 # Match Xcode simulator builds: simulated entitlements are Mach-O sections,
 # not restricted host macOS code-signing entitlements on an ad-hoc signature.
 set(simulator_entitlements "${CMAKE_CURRENT_LIST_DIR}/Simulator.entitlements")
@@ -136,3 +160,4 @@ set_target_properties(RecompTVShipwright PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.smidley.RecompTVShipwrightExperiment"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "3"
     XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
+endif()

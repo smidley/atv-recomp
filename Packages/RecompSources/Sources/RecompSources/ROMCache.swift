@@ -10,7 +10,8 @@ public struct ImportedROM: Codable, Sendable, Identifiable, Equatable {
     public let size: Int64
     public let sourceID: UUID
     public var recognized: Bool { revision != nil }
-    // Identity is not launch eligibility. The game runtime is not bundled yet.
+    // Identity alone is not launch eligibility. The app must also provide a runtime
+    // and revalidate the cached file before handing it to that runtime.
     public var launchable: Bool { false }
 }
 
@@ -73,6 +74,14 @@ public actor ROMCache {
 
     public func all() throws -> [ImportedROM] {
         try records().filter(isValid)
+    }
+
+    /// Resolve only an indexed, supported ROM whose cached bytes still match its identity.
+    public func verifiedFileURL(for record: ImportedROM) throws -> URL {
+        guard try records().contains(record), isValid(record) else {
+            throw LibraryError.message("The cached ROM is missing or changed. Import it again from your server.")
+        }
+        return root.appendingPathComponent(record.sha256 + ".romdata")
     }
 
     public func acquire(_ entry: LibraryEntry, sourceID: UUID, provider: any LibraryProvider,

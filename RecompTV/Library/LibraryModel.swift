@@ -10,6 +10,8 @@ final class LibraryModel {
     private(set) var batchReport: BatchImportReport?
     private(set) var batchTitle = ""
     private(set) var isImporting = false
+    private(set) var isPreparingGame = false
+    private(set) var preparingTitle = ""
     private(set) var importStatus = ""
     private(set) var importFraction: Double?
     var error: String?
@@ -18,6 +20,7 @@ final class LibraryModel {
     @ObservationIgnored private var importID = UUID()
     @ObservationIgnored private var verifying = false
     @ObservationIgnored private var batchIndex = 0
+    @ObservationIgnored private let gamePreparation = GamePreparation()
     private let settingsKey = "library.sources.v1"
 
     init(cache: ROMCache? = nil) {
@@ -58,7 +61,7 @@ final class LibraryModel {
     }
 
     func acquire(_ entry: LibraryEntry, source: LibrarySource) {
-        guard !isImporting, let cache else { return }
+        guard !isImporting, !isPreparingGame, let cache else { return }
         isImporting = true; importStatus = "Connecting…"; importFraction = nil
         batchReport = nil
         let generation = UUID(); importID = generation; verifying = false
@@ -82,7 +85,7 @@ final class LibraryModel {
                 try Task.checkCancellation()
                 imported = result
                 if result.recognized { retain(result) }
-                importStatus = result.recognized ? "ROM verified. Game integration is still in progress." : "This ROM does not match a supported Shipwright revision. It was not cached."
+                importStatus = result.recognized ? "ROM verified and saved to your library." : "This ROM does not match a supported Shipwright revision. It was not cached."
             } catch {
                 importStatus = Task.isCancelled ? "Import cancelled." : "Import failed."
                 if !Task.isCancelled { self.error = userFacingNetworkError(error) }
@@ -91,7 +94,7 @@ final class LibraryModel {
     }
 
     func acquireAll(in location: LibraryLocation, title: String, source: LibrarySource) {
-        guard !isImporting, let cache else { return }
+        guard !isImporting, !isPreparingGame, let cache else { return }
         isImporting = true; importStatus = "Finding ROMs…"; importFraction = nil
         batchReport = BatchImportReport(); batchTitle = title; batchIndex = 0; verifying = false
         let generation = UUID(); importID = generation
@@ -161,8 +164,20 @@ final class LibraryModel {
     }
 
     func clearCache() async {
+        guard !isPreparingGame else { return }
         do { try await cache?.clear(); imported = nil; importedROMs = []; batchReport = nil; importStatus = "" }
         catch { self.error = error.localizedDescription }
+    }
+
+    func play(_ rom: ImportedROM) async {
+        guard GameRuntime.available, !isPreparingGame, !isImporting, let cache else { return }
+        isPreparingGame = true; preparingTitle = rom.name; error = nil
+        defer { isPreparingGame = false }
+        do {
+            try await gamePreparation.prepare(rom, cache: cache)
+            try Task.checkCancellation()
+            try GamePreparation.launch()
+        } catch { self.error = error.localizedDescription }
     }
 }
 

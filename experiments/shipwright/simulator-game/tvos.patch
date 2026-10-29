@@ -25,27 +25,30 @@
      }
      mCurrentRomPath = nameBuffer;
 +#elif defined(RECOMPTV_TVOS)
-+    return false; // Assets are prepared on the development Mac.
++    return false; // Nativecade prepares imported ROMs before entering the game.
  #else
      if (!pfd::settings::available()) {
          std::string msg =
 --- a/soh/soh/OTRGlobals.cpp
 +++ b/soh/soh/OTRGlobals.cpp
-@@ -419,6 +419,21 @@
+@@ -419,6 +419,24 @@
      OTRVersion mqVersion = DetectOTRVersion("oot-mq.o2r", true);
  
      bool shouldRegen = VerifyArchiveVersion(vanillaVersion) || VerifyArchiveVersion(mqVersion);
 +
 +#ifdef RECOMPTV_TVOS
-+    // This simulator-only target uses archives prepared and ROM-verified on the Mac.
-+    // Require the complete matching version, without opening the desktop extractor.
-+    if (!sohArchiveVersionMatch || vanillaVersion.major != gBuildVersionMajor ||
-+        vanillaVersion.minor != gBuildVersionMinor || vanillaVersion.patch != gBuildVersionPatch) {
-+        SPDLOG_ERROR("Prepared simulator archives do not match this Shipwright build.");
++    // Nativecade verifies and prepares archives before entering the runtime.
++    // Accept either supported game variant without opening the desktop extractor.
++    const auto matches = [](const OTRVersion& version) {
++        return version.major == gBuildVersionMajor && version.minor == gBuildVersionMinor &&
++               version.patch == gBuildVersionPatch;
++    };
++    if (!sohArchiveVersionMatch || (!matches(vanillaVersion) && !matches(mqVersion))) {
++        SPDLOG_ERROR("Prepared game archives do not match this Shipwright build.");
 +        exit(1);
 +    }
 +    CheckAndCreateModFolder();
-+    SPDLOG_INFO("Verified prepared simulator archives for Shipwright {}.{}.{}",
++    SPDLOG_INFO("Verified prepared game archives for Shipwright {}.{}.{}",
 +                gBuildVersionMajor, gBuildVersionMinor, gBuildVersionPatch);
 +    return;
 +#endif

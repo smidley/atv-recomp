@@ -1,8 +1,10 @@
 # Game saves, RomM backups, and controller vibration
 
-These features belong to the separate **Shipwright Test** simulator game. The
-RecompTV library launch flow is still pending; the game does not share credentials
-with the library app. No physical Apple TV deployment is enabled by this change.
+These features are included in **Nativecade** and the earlier standalone
+**Shipwright Test** simulator experiment. The integrated app uses separate opt-in
+credentials for save backups and ROM browsing. See
+[Nativecade build and TestFlight](NATIVECADE_TESTFLIGHT.md) for device packaging.
+Physical Xbox rumble and live RomM save backups still need device validation.
 
 ## Saving progress
 
