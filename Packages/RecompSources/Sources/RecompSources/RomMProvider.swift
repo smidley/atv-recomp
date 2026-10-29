@@ -115,10 +115,10 @@ struct RomMProvider: LibraryProvider {
         var matches = [RomMArtwork]()
         for candidate in candidates {
             try Task.checkCancellation()
-            // Catalog responses include files in current RomM; a missing field on
-            // an older server falls back to its detail endpoint.
+            // RomM 5.4.1 lists files only with with_files=true and otherwise sends an
+            // empty list; older servers omit the field. Both fall back to the detail endpoint.
             let files: [RomMFile]
-            if let included = candidate.files { files = included }
+            if let included = candidate.files, !included.isEmpty { files = included }
             else {
                 files = try await decode(RomMDetail.self, path: ["roms", String(candidate.id)]).files
             }
