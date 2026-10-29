@@ -161,6 +161,13 @@ the intended RomM server; the earlier single-ROM import verified the user's NTSC
 and reported both unsupported file formats as skipped. Full-library imports are
 not required for these checks.
 
+## Game save backups
+
+The separate Shipwright simulator game can now back up completed saves to RomM.
+It has its own Keychain setup and needs `assets.read` / `assets.write`; the library
+app's ROM browsing credentials are not copied across app containers. See
+[Game saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md).
+
 ## Third-party notices
 
 AMSMB2 is linked as its upstream dynamic Swift package product, unmodified.

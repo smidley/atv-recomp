@@ -1,0 +1,165 @@
+--- a/soh/soh/OTRGlobals.cpp
++++ b/soh/soh/OTRGlobals.cpp
+@@ -116,6 +116,7 @@
+ #include "soh/config/ConfigUpdaters.h"
+ #ifdef RECOMPTV_TVOS
+ #include "AppleTVPerformance.h"
++#include "AppleTVGameplay.h"
+ #endif
+ #include "soh/ShipInit.hpp"
+ #include "soh/SohGui/SohModals.h"
+@@ -291,6 +292,7 @@
+     context->InitConsoleVariables();
+ #ifdef RECOMPTV_TVOS
+     RecompTVInitializePerformanceDefaults();
++    RecompTVInitializeGameplayDefaults();
+ #endif
+
+     auto controlDeck = std::make_shared<LUS::ControlDeck>(std::vector<CONTROLLERBUTTONS_T>({
+@@ -1646,6 +1648,9 @@
+     // Restores settings left over from a run that never exited cleanly, so it must come after other setup.
+     Speedrun_Register();
+     ShipInit::InitAll();
++#ifdef RECOMPTV_TVOS
++    RecompTVInitializeGameplay();
++#endif
+     Rando::StaticData::InitHashMaps();
+     OTRGlobals::Instance->gRandoContext->AddExcludedOptions();
+ }
+@@ -1837,6 +1842,7 @@
+             (time == denom) ? std::unordered_map<Mtx*, MtxF>() : FrameInterpolation_Interpolate((float)time / denom);
+         intp->mInterpolationT = (float)time / denom;
+ #ifdef RECOMPTV_TVOS
++        RecompTVGameplayFrame();
+         RecompTVPrepareFrame(wnd->GetTargetFps());
+         if (wnd->DrawAndRunGraphicsCommands(Commands, mtx_replacements)) {
+             RecompTVRecordFrame(wnd->GetTargetFps());
+@@ -2226,6 +2232,9 @@
+ }
+
+ extern "C" void OTRControllerCallback(uint8_t rumble) {
++#ifdef RECOMPTV_TVOS
++    rumble = RecompTVRumbleCommand(rumble);
++#endif
+     // We call this every tick, SDL accounts for this use and prevents driver spam
+     // https://github.com/libsdl-org/SDL/blob/f17058b562c8a1090c0c996b42982721ace90903/src/joystick/SDL_joystick.c#L1114-L1144
+     Ship::Context::GetRawInstance()->GetControlDeck()->GetControllerByPort(0)->GetLED()->SetLEDColor(
+@@ -2315,6 +2324,9 @@
+ }
+
+ extern "C" int Controller_ShouldRumble(size_t slot) {
++#ifdef RECOMPTV_TVOS
++    return RecompTVControllerCanRumble(slot);
++#endif
+     // don't rumble if we don't have rumble mappings
+     if (Ship::Context::GetRawInstance()
+             ->GetControlDeck()
+--- a/soh/soh/SaveManager.cpp
++++ b/soh/soh/SaveManager.cpp
+@@ -12,6 +12,9 @@
+ #include <libultraship/bridge/consolevariablebridge.h>
+
+ #include "SaveManager.h"
++#ifdef RECOMPTV_TVOS
++#include "AppleTVGameplay.h"
++#endif
+ #include "OTRGlobals.h"
+ #include "Enhancements/game-interactor/GameInteractor.h"
+ #include "Enhancements/randomizer/SeedContext.h"
+@@ -97,6 +100,9 @@
+         std::filesystem::remove(tempFile, ec);
+         return false;
+     }
++#endif
++#ifdef RECOMPTV_TVOS
++    RecompTVSaveWritten(fileName, contents);
+ #endif
+     return true;
+ }
+@@ -2487,6 +2493,14 @@
+ }
+
+ void SaveManager::CopyZeldaFile(int from, int to) {
++#ifdef RECOMPTV_TVOS
++    ThreadPoolWait();
++    if (from == to) return;
++    std::ifstream input(GetFileName(from), std::ios::binary);
++    if (!input) return;
++    const std::string contents((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
++    if (input.bad() || !WriteFileSafely(GetFileName(to), contents)) return;
++#else
+     assert(std::filesystem::exists(GetFileName(from)));
+     DeleteZeldaFile(to);
+ #if defined(__WIIU__) || defined(__SWITCH__)
+@@ -2494,13 +2508,19 @@
+ #else
+     std::filesystem::copy_file(GetFileName(from), GetFileName(to));
+ #endif
++#endif
+     fileMetaInfo[to] = fileMetaInfo[from];
+ }
+
+ void SaveManager::DeleteZeldaFile(int fileNum) {
++#ifdef RECOMPTV_TVOS
++    ThreadPoolWait();
++    if (!RecompTVDeleteSave(GetFileName(fileNum))) return;
++#else
+     if (std::filesystem::exists(GetFileName(fileNum))) {
+         std::filesystem::remove(GetFileName(fileNum));
+     }
++#endif
+     fileMetaInfo[fileNum].valid = false;
+     fileMetaInfo[fileNum].quest = QUEST_NORMAL;
+     fileMetaInfo[fileNum].requiresMasterQuest = false;
+--- a/soh/soh/SohGui/SohMenuSettings.cpp
++++ b/soh/soh/SohGui/SohMenuSettings.cpp
+@@ -10,6 +10,7 @@
+ #include <ship/Context.h>
+ #ifdef RECOMPTV_TVOS
+ #include "AppleTVPerformance.h"
++#include "AppleTVGameplay.h"
+ #endif
+
+ extern "C" {
+@@ -286,6 +287,41 @@
+         AddWidget(path, GetGameVersionString(i), WIDGET_TEXT);
+     }
+
++#ifdef RECOMPTV_TVOS
++    path.sidebarName = "Saves and Controller";
++    path.column = SECTION_COLUMN_1;
++    AddSidebarEntry("Settings", "Saves and Controller", 2);
++    AddWidget(path, "Game saves", WIDGET_SEPARATOR_TEXT);
++    AddWidget(path, "Autosave", WIDGET_CVAR_CHECKBOX)
++        .CVar(CVAR_ENHANCEMENT("Autosave")).RaceDisable(false)
++        .Options(CheckboxOptions().DefaultValue(1).Tooltip("Save safely during play every three minutes. Normal in-game saving also works."));
++    AddWidget(path, "Set up RomM backups", WIDGET_BUTTON).RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVShowBackupSetup(); });
++    AddWidget(path, "Back up saved progress", WIDGET_BUTTON).RaceDisable(false)
++        .Options(ButtonOptions().Tooltip("Send completed saves to RomM. Unsaved progress must first be saved in the game."))
++        .Callback([](WidgetInfo&) { RecompTVBackupNow(); });
++    AddWidget(path, "Backup status", WIDGET_BUTTON).RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVShowBackupStatus(); });
++    AddWidget(path, "Restore from RomM", WIDGET_BUTTON).RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVShowRestoreBackups(); });
++    AddWidget(path, "Undo last restore", WIDGET_BUTTON).RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVShowUndoRestore(); });
++    AddWidget(path, "Disconnect RomM backups", WIDGET_BUTTON).RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVDisconnectBackups(); });
++    path.column = SECTION_COLUMN_2;
++    AddWidget(path, "Controller vibration", WIDGET_SEPARATOR_TEXT);
++    AddWidget(path, "Rumble", WIDGET_CVAR_CHECKBOX)
++        .CVar("gSettings.AppleTV.RumbleEnabled").RaceDisable(false)
++        .Options(CheckboxOptions().DefaultValue(1).Tooltip("Play the game's Rumble Pak effects on a compatible controller, including supported Xbox controllers."))
++        .Callback([](WidgetInfo&) { RecompTVStopRumble(); });
++    AddWidget(path, "Rumble strength: %d %%", WIDGET_CVAR_SLIDER_INT)
++        .CVar("gSettings.AppleTV.RumbleStrength").RaceDisable(false)
++        .Options(IntSliderOptions().Min(0).Max(100).DefaultValue(100).ShowButtons(true).Format(""))
++        .Callback([](WidgetInfo&) { RecompTVStopRumble(); });
++    AddWidget(path, "Test rumble", WIDGET_BUTTON).RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVTestRumble(); });
++#endif
++
+     // Audio Settings
+     path.sidebarName = "Audio";
+     path.column = SECTION_COLUMN_1;

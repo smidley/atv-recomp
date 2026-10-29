@@ -3,8 +3,10 @@
 This private development target boots the pinned Shipwright 9.3.1 runtime with a
 locally verified ROM on Apple TV Simulator. It is separate from the RecompTV launcher
 and rejects a physical-device SDK. The existing RomM connection and launcher cache
-are independent of this experiment. Integration of a Play action, return to the
-launcher, lifecycle handling and durable saves remains separate work.
+are independent of this experiment. Integration of a Play action and return to
+the launcher remains separate work. The game now has local save recovery, RomM
+backups, and controller vibration settings; see
+[Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md).
 
 ## Build the host asset tools
 
@@ -58,8 +60,17 @@ tvOS 27: it starts the game after scene activation, associates the SDL window wi
 that scene and forwards scene notifications to SDL's existing lifecycle handling.
 Assets are prepared on the development Mac; gameplay runs in the simulator.
 
-Copy the two private archives into the generated `.app` before ad-hoc signing and
-installing it on an Apple TV simulator. The app's identifier is
+Copy the two private archives into the generated `.app`, then sign it with its
+simulator-only Keychain identity before installing on an Apple TV simulator:
+
+```sh
+python3 scripts/sign-shipwright-simulator.py \
+  build/shipwright-game/simulator-arm64/RecompTVShipwright.app
+```
+
+Repeat signing after rebuilding or changing bundled assets. This helper refuses
+physical-device binaries and does not modify team signing or device profiles.
+The app's identifier is
 `com.smidley.RecompTVShipwrightExperiment`. On its first launch it stages those
 archives into its own data container. Its main function checks for both archives
 before entering the game. Existing saves and configuration are retained.
@@ -83,7 +94,7 @@ All upstream source and dependency notices remain in their pinned checkouts.
   with tvOS 27.0. It loaded both archives, rendered the opening game sequence and
   initialized stereo SDL audio at 32 kHz. Audible quality has not been evaluated.
 - The user confirmed that controls respond. A new game save was written inside
-  the test app's own container; persistence across app replacement is not yet tested.
+  the test app's own container and retained byte-for-byte across app replacements.
 
 The first launch exposed SDL2's legacy app lifecycle, which tvOS 27 rejects. The
 scene adapter fixes that startup crash. The next launch exposed an unconditional

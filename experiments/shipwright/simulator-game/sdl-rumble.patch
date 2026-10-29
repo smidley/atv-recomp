@@ -1,0 +1,62 @@
+--- a/src/joystick/iphoneos/SDL_mfijoystick.m
++++ b/src/joystick/iphoneos/SDL_mfijoystick.m
+@@ -1432,6 +1432,7 @@
+
+ - (int)setIntensity:(float)intensity
+ {
++    @synchronized(self) {
+     @autoreleasepool {
+         if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
+             NSError *error = nil;
+@@ -1450,6 +1451,9 @@
+             }
+
+             if (self.player == nil) {
++                // CoreHaptics stops engines on interruption. Restart only on demand.
++                [self.engine startAndReturnError:&error];
++                if (error != nil) return SDL_SetError("Couldn't restart haptics engine");
+                 CHHapticEventParameter *event_param = [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity value:1.0f];
+                 CHHapticEvent *event = [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous parameters:[NSArray arrayWithObjects:event_param, nil] relativeTime:0 duration:GCHapticDurationInfinite];
+                 CHHapticPattern *pattern = [[CHHapticPattern alloc] initWithEvents:[NSArray arrayWithObject:event] parameters:[[NSArray alloc] init] error:&error];
+@@ -1472,12 +1476,15 @@
+
+             if (!self.active) {
+                 [self.player startAtTime:0 error:&error];
++                if (error != nil) return SDL_SetError("Could not start haptics player");
+                 self.active = true;
+             }
+         }
+
+         return 0;
+     }
++}
++
+ }
+
+ - (id)initWithController:(GCController *)controller locality:(GCHapticsLocality)locality API_AVAILABLE(macos(10.16), ios(14.0), tvos(14.0))
+@@ -1506,8 +1513,10 @@
+               return;
+           }
+
+-          _this.player = nil;
+-          _this.engine = nil;
++          @synchronized(_this) {
++              _this.player = nil;
++              _this.active = false;
++          }
+         };
+         self.engine.resetHandler = ^{
+           SDL_RumbleMotor *_this = weakSelf;
+@@ -1515,8 +1524,10 @@
+               return;
+           }
+
+-          _this.player = nil;
+-          [_this.engine startAndReturnError:nil];
++          @synchronized(_this) {
++              _this.player = nil;
++              _this.active = false;
++          }
+         };
+
+         return self;

@@ -37,6 +37,14 @@ if(NOT scene_patch_applied EQUAL 0)
         WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
 endif()
 target_compile_definitions(SDL2-static PRIVATE RECOMPTV_TVOS_SCENES)
+set(rumble_patch "${CMAKE_CURRENT_LIST_DIR}/sdl-rumble.patch")
+execute_process(COMMAND git apply --reverse --check "${rumble_patch}"
+    WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE rumble_patch_applied
+    OUTPUT_QUIET ERROR_QUIET)
+if(NOT rumble_patch_applied EQUAL 0)
+    execute_process(COMMAND git apply "${rumble_patch}"
+        WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
+endif()
 
 FetchContent_Declare(dr_libs GIT_REPOSITORY https://github.com/mackron/dr_libs.git
     GIT_TAG da35f9d6c7374a95353fd1df1d394d44ab66cf01)
@@ -96,7 +104,8 @@ list(FILTER game EXCLUDE REGEX "/src/libultra/gu/(cosf|lookat|lookathil|perspect
 list(FILTER game EXCLUDE REGEX "/speechsynthesizer/(SAPI|ESpeak)")
 list(APPEND game "${ship}/src/libultra/libc/sprintf.c"
     "${ship}/soh/Enhancements/speechsynthesizer/DarwinSpeechSynthesizer.mm")
-add_executable(RecompTVShipwright MACOSX_BUNDLE ${game} SimulatorMain.mm AppleTVPerformance.cpp)
+add_executable(RecompTVShipwright MACOSX_BUNDLE ${game} SimulatorMain.mm AppleTVPerformance.cpp
+    AppleTVGameplay.cpp AppleTVSaveStore.mm AppleTVSaveUI.mm ControllerProbe.cpp SaveStoreTests.mm)
 set_source_files_properties("${ship}/src/code/main.c" PROPERTIES COMPILE_DEFINITIONS "main=RecompTVShipwrightMain")
 target_compile_definitions(RecompTVShipwright PRIVATE __IOS__ RECOMPTV_TVOS SDL_MAIN_HANDLED
     F3DEX_GBI_2 _CONSOLE UNICODE _UNICODE SPDLOG_ACTIVE_LEVEL=2 LOG_LEVEL_GAME_PRINTS=6)
@@ -110,7 +119,18 @@ target_include_directories(RecompTVShipwright PRIVATE "${ship}" "${ship}/include
     "${ship}/src" "${ship}/assets" "${dr_libs_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/include"
     "${CMAKE_CURRENT_LIST_DIR}")
 target_link_libraries(RecompTVShipwright PRIVATE libultraship torch SDL2_net::SDL2_net-static
-    vorbisfile recomptv_opusfile "-framework AVFoundation")
+    vorbisfile recomptv_opusfile "-framework AVFoundation" "-framework Security" "-lz")
+# Match Xcode simulator builds: simulated entitlements are Mach-O sections,
+# not restricted host macOS code-signing entitlements on an ad-hoc signature.
+set(simulator_entitlements "${CMAKE_CURRENT_LIST_DIR}/Simulator.entitlements")
+set(simulator_entitlements_der "${CMAKE_CURRENT_BINARY_DIR}/Simulator.entitlements.der")
+find_program(RECOMPTV_DERQ derq PATHS /usr/bin REQUIRED)
+execute_process(COMMAND "${RECOMPTV_DERQ}" query -f xml -i "${simulator_entitlements}"
+    -o "${simulator_entitlements_der}" --raw COMMAND_ERROR_IS_FATAL ANY)
+target_link_options(RecompTVShipwright PRIVATE
+    "LINKER:-sectcreate,__TEXT,__entitlements,${simulator_entitlements}"
+    "LINKER:-sectcreate,__TEXT,__ents_der,${simulator_entitlements_der}")
+set_property(TARGET RecompTVShipwright APPEND PROPERTY LINK_DEPENDS "${simulator_entitlements}")
 set_target_properties(RecompTVShipwright PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_LIST_DIR}/Info.plist.in"
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.smidley.RecompTVShipwrightExperiment"
