@@ -1,0 +1,247 @@
+--- a/include/fast/backends/gfx_metal.h
++++ b/include/fast/backends/gfx_metal.h
+@@ -29,6 +29,7 @@
+ class Function;
+ class Buffer;
+ class RenderPipelineState;
++class RenderPipelineDescriptor;
+ class ComputePipelineState;
+ class CommandQueue;
+ class Viewport;
+@@ -58,6 +59,11 @@
+ namespace Fast {
+ 
+ struct ShaderProgramMetal {
++    ShaderProgramMetal() = default;
++    ShaderProgramMetal(const ShaderProgramMetal&) = delete;
++    ShaderProgramMetal& operator=(const ShaderProgramMetal&) = delete;
++    ~ShaderProgramMetal();
++    MTL::RenderPipelineDescriptor* pipelineDescriptor = nullptr;
+     uint64_t shader_id0;
+     uint64_t shader_id1;
+ 
+@@ -67,7 +73,7 @@
+     bool markedForDeletion = false;
+ 
+     // hashed by msaa_level
+-    MTL::RenderPipelineState* pipeline_state_variants[9];
++    MTL::RenderPipelineState* pipeline_state_variants[9]{};
+ };
+ 
+ struct TextureDataMetal {
+@@ -128,7 +134,7 @@
+ 
+ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
+   public:
+-    ~GfxRenderingAPIMetal() override = default;
++    ~GfxRenderingAPIMetal() override;
+     const char* GetName() override;
+     int GetMaxTextureSize() override;
+     GfxClipParameters GetClipParameters() override;
+@@ -180,6 +186,7 @@
+     bool MetalInit(SDL_Renderer* renderer);
+ 
+   private:
++    MTL::RenderPipelineState* GetPipelineState(ShaderProgramMetal& program, uint32_t samples);
+     bool NonUniformThreadGroupSupported();
+     void SetupScreenFramebuffer(uint32_t width, uint32_t height);
+     // Elements that only need to be setup once
+@@ -208,6 +215,7 @@
+     MTL::Buffer* mDepthValueOutputBuffer;
+     size_t mCoordBufferSize;
+     MTL::Function* mDepthComputeFunction;
++    MTL::ComputePipelineState* mDepthComputePipelineState = nullptr;
+     MTL::Function* mConvertToRgb5a1Function;
+     MTL::ComputePipelineState* mConvertToRgb5a1PipelineState = nullptr;
+ 
+--- a/src/fast/backends/gfx_metal.cpp
++++ b/src/fast/backends/gfx_metal.cpp
+@@ -17,6 +17,10 @@
+ #include <time.h>
+ #include <math.h>
+ #include <cmath>
++#include <chrono>
++#include <cstdlib>
++#include <cstring>
++#include <stdexcept>
+ #include <stddef.h>
+ 
+ #ifndef _LANGUAGE_C
+@@ -45,6 +49,45 @@
+ 
+ // MARK: - Helpers
+ namespace Fast {
++
++// Pipeline objects are immutable and can be reused across frames.
++ShaderProgramMetal::~ShaderProgramMetal() {
++    for (auto* pipeline : pipeline_state_variants) {
++        if (pipeline) pipeline->release();
++    }
++    if (pipelineDescriptor) pipelineDescriptor->release();
++}
++
++GfxRenderingAPIMetal::~GfxRenderingAPIMetal() {
++    if (mDepthComputePipelineState) mDepthComputePipelineState->release();
++}
++
++MTL::RenderPipelineState* GfxRenderingAPIMetal::GetPipelineState(ShaderProgramMetal& program, uint32_t samples) {
++    if (samples == 0 || samples > METAL_MAX_MULTISAMPLE_SAMPLE_COUNT || !mMsaaNumQualityLevels[samples - 1]) {
++        throw std::runtime_error("Unsupported Metal sample count");
++    }
++    auto*& pipeline = program.pipeline_state_variants[samples];
++    if (!pipeline) {
++        NS::Error* error = nullptr;
++        program.pipelineDescriptor->setSampleCount(samples);
++        pipeline = mDevice->newRenderPipelineState(program.pipelineDescriptor, &error);
++        if (!pipeline) {
++            SPDLOG_ERROR("Metal pipeline creation failed: {}", error ? error->localizedDescription()->utf8String() : "unknown error");
++            throw std::runtime_error("Could not create Metal pipeline");
++        }
++    }
++    return pipeline;
++}
++
++// Simulator does not expose depth-clip-mode control, even when its host GPU does.
++// Leave the default clipping mode there and on older Apple GPU families.
++static void ConfigureDepthClipping(MTL::Device* device, MTL::RenderCommandEncoder* encoder) {
++#if !TARGET_OS_SIMULATOR
++    if (device->supportsFamily(MTL::GPUFamilyApple3) || device->supportsFamily(MTL::GPUFamilyMac2)) {
++        encoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    }
++#endif
++}
+ 
+ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
+     switch (val) {
+@@ -193,6 +236,9 @@
+ 
+     mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
+     mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
++    mDepthComputePipelineState = mDevice->newComputePipelineState(mDepthComputeFunction, &error);
++    if (!mDepthComputePipelineState) throw std::runtime_error("Could not create Metal depth pipeline");
++
+ 
+     library->release();
+     autorelease_pool->release();
+@@ -216,6 +262,7 @@
+ }
+ 
+ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
++    const auto compileStart = std::chrono::steady_clock::now();
+     CCFeatures cc_features;
+     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
+ 
+@@ -272,24 +319,14 @@
+     prg->numInputs = cc_features.numInputs;
+     prg->numFloats = numFloats;
+ 
+-    // Prepoluate pipeline state cache with program and available msaa levels
+-    for (int i = 0; i < ARRAY_COUNT(mMsaaNumQualityLevels); i++) {
+-        if (mMsaaNumQualityLevels[i] == 1) {
+-            int msaa_level = i + 1;
+-            pipeline_descriptor->setSampleCount(msaa_level);
+-            MTL::RenderPipelineState* pipeline_state = mDevice->newRenderPipelineState(pipeline_descriptor, &error);
+-
+-            if (!pipeline_state || error != nullptr) {
+-                // Pipeline State creation could fail if we haven't properly set up our pipeline descriptor.
+-                // If the Metal API validation is enabled, we can find out more information about what
+-                // went wrong.  (Metal API validation is enabled by default when a debug build is run
+-                // from Xcode)
+-                SPDLOG_ERROR("Failed to create pipeline state, error {}",
+-                             error->localizedDescription()->cString(NS::UTF8StringEncoding));
+-            }
+-
+-            prg->pipeline_state_variants[msaa_level] = pipeline_state;
+-        }
++    // Build only the variant needed now. Other sample counts are cached on first use,
++    // instead of compiling unused 2x/4x/8x variants during a new scene's first frame.
++    prg->pipelineDescriptor = pipeline_descriptor;
++    GetPipelineState(*prg, mFramebuffers[mCurrentFramebuffer].mMsaaLevel);
++    const char* perf = std::getenv("RECOMPTV_PERF_LOG");
++    if (perf && std::strcmp(perf, "1") == 0) {
++        SPDLOG_INFO("[RecompTVPerf] shader_ms={:.2f} initial_pipeline_variants=1",
++            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - compileStart).count());
+     }
+ 
+     LoadShader((struct ShaderProgram*)prg);
+@@ -297,7 +334,7 @@
+     vertexFunc->release();
+     fragmentFunc->release();
+     library->release();
+-    pipeline_descriptor->release();
++    // The shader owns its descriptor for later sample-count variants.
+     autorelease_pool->release();
+ 
+     return (struct ShaderProgram*)prg;
+@@ -543,7 +580,7 @@
+         current_framebuffer.mLastShaderProgram = mShaderProgram;
+ 
+         MTL::RenderPipelineState* pipeline_state =
+-            mShaderProgram->pipeline_state_variants[current_framebuffer.mMsaaLevel];
++            GetPipelineState(*mShaderProgram, current_framebuffer.mMsaaLevel);
+         current_framebuffer.mCommandEncoder->setRenderPipelineState(pipeline_state);
+     }
+ 
+@@ -693,7 +730,7 @@
+     mCurrentDrawable = nullptr;
+     mCurrentDrawable = mLayer->nextDrawable();
+ 
+-    bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
++    bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1) > 1;
+ 
+     FramebufferMetal& fb = mFramebuffers[0];
+     TextureDataMetal& tex = mTextures[fb.mTextureId];
+@@ -804,7 +841,7 @@
+ 
+             bool fb_msaa_enabled = (msaa_level > 1);
+             bool game_msaa_enabled =
+-                Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
++                Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1) > 1;
+ 
+             if (fb_msaa_enabled) {
+                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);
+@@ -905,7 +942,7 @@
+         fb.mCommandEncoder = fb.mCommandBuffer->renderCommandEncoder(fb.mRenderPassDescriptor);
+         std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
+         fb.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-        fb.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
++        ConfigureDepthClipping(mDevice, fb.mCommandEncoder);
+     }
+ 
+     if (noise_scale != 0.0f) {
+@@ -945,7 +982,7 @@
+ 
+     std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Clear", mCurrentFramebuffer);
+     framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-    framebuffer.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    ConfigureDepthClipping(mDevice, framebuffer.mCommandEncoder);
+     framebuffer.mCommandEncoder->setViewport(*framebuffer.mViewport);
+     framebuffer.mCommandEncoder->setScissorRect(*framebuffer.mScissorRect);
+ 
+@@ -1056,8 +1093,7 @@
+     auto command_buffer = mCommandQueue->commandBuffer();
+     command_buffer->setLabel(NS::String::string("Depth Shader Command Buffer", NS::UTF8StringEncoding));
+ 
+-    NS::Error* error = nullptr;
+-    MTL::ComputePipelineState* compute_pipeline_state = mDevice->newComputePipelineState(mDepthComputeFunction, &error);
++    MTL::ComputePipelineState* compute_pipeline_state = mDepthComputePipelineState;
+ 
+     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
+     compute_encoder->setComputePipelineState(compute_pipeline_state);
+@@ -1091,7 +1127,6 @@
+         }
+     }
+ 
+-    compute_pipeline_state->release();
+     autorelease_pool->release();
+ 
+     return res;
+@@ -1156,7 +1191,7 @@
+ 
+     std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
+     source_framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-    source_framebuffer.mCommandEncoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    ConfigureDepthClipping(mDevice, source_framebuffer.mCommandEncoder);
+     source_framebuffer.mCommandEncoder->setViewport(*source_framebuffer.mViewport);
+     source_framebuffer.mCommandEncoder->setScissorRect(*source_framebuffer.mScissorRect);
+ 

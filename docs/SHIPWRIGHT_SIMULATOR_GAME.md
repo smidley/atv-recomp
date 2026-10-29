@@ -97,4 +97,7 @@ the stick, arrows for C buttons, Z for Z, E for L and R for R. A game controller
 also be configured through Shipwright. Audio quality, sustained frame timing,
 background/resume and integration into RecompTV's Play flow remain unverified.
 
+Apple TV graphics presets, renderer optimizations, settings migration, and
+frame-time diagnostics are documented in [APPLE_TV_PERFORMANCE.md](APPLE_TV_PERFORMANCE.md).
+
 No physical Apple TV or performance claim follows from these checks.

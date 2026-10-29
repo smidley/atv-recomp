@@ -26,10 +26,11 @@ def main():
     if destination == source or source in destination.parents:
         raise SystemExit("The generated source must be outside the upstream checkout")
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns(".git"), dirs_exist_ok=True)
-    patch = root / "experiments/shipwright/simulator-game/tvos.patch"
     command = ["git", "-C", str(root), "apply", f"--directory={relative}"]
-    subprocess.run([*command, "--check", str(patch)], check=True)
-    subprocess.run([*command, str(patch)], check=True)
+    for name in ("tvos.patch", "performance.patch"):
+        patch = root / "experiments/shipwright/simulator-game" / name
+        subprocess.run([*command, "--check", str(patch)], check=True)
+        subprocess.run([*command, str(patch)], check=True)
     print(f"Prepared simulator game sources in {destination}")
 
 

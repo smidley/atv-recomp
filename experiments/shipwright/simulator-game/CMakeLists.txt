@@ -13,6 +13,14 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 add_compile_definitions(CONTROLLERBUTTONS_T=uint32_t)
+# The pinned game's CVar names are a config ABI. An earlier standalone Metal
+# configure may have cached generic libultraship names; do not reuse those.
+get_cmake_property(recomptv_cached_variables CACHE_VARIABLES)
+foreach(variable IN LISTS recomptv_cached_variables)
+    if(variable MATCHES "^CVAR_")
+        unset(${variable} CACHE)
+    endif()
+endforeach()
 include("${RECOMPTV_SHIPWRIGHT_SOURCE}/CMake/soh-cvars.cmake")
 include("${RECOMPTV_SHIPWRIGHT_SOURCE}/CMake/lus-cvars.cmake")
 add_compile_options(-fno-fast-math -ffp-contract=off)
@@ -88,7 +96,7 @@ list(FILTER game EXCLUDE REGEX "/src/libultra/gu/(cosf|lookat|lookathil|perspect
 list(FILTER game EXCLUDE REGEX "/speechsynthesizer/(SAPI|ESpeak)")
 list(APPEND game "${ship}/src/libultra/libc/sprintf.c"
     "${ship}/soh/Enhancements/speechsynthesizer/DarwinSpeechSynthesizer.mm")
-add_executable(RecompTVShipwright MACOSX_BUNDLE ${game} SimulatorMain.mm)
+add_executable(RecompTVShipwright MACOSX_BUNDLE ${game} SimulatorMain.mm AppleTVPerformance.cpp)
 set_source_files_properties("${ship}/src/code/main.c" PROPERTIES COMPILE_DEFINITIONS "main=RecompTVShipwrightMain")
 target_compile_definitions(RecompTVShipwright PRIVATE __IOS__ RECOMPTV_TVOS SDL_MAIN_HANDLED
     F3DEX_GBI_2 _CONSOLE UNICODE _UNICODE SPDLOG_ACTIVE_LEVEL=2 LOG_LEVEL_GAME_PRINTS=6)
@@ -99,7 +107,8 @@ target_compile_options(RecompTVShipwright PRIVATE -fblocks -Wno-narrowing
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/SDL2")
 configure_file("${sdl2_net_SOURCE_DIR}/SDL_net.h" "${CMAKE_CURRENT_BINARY_DIR}/include/SDL2/SDL_net.h" COPYONLY)
 target_include_directories(RecompTVShipwright PRIVATE "${ship}" "${ship}/include"
-    "${ship}/src" "${ship}/assets" "${dr_libs_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/include")
+    "${ship}/src" "${ship}/assets" "${dr_libs_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/include"
+    "${CMAKE_CURRENT_LIST_DIR}")
 target_link_libraries(RecompTVShipwright PRIVATE libultraship torch SDL2_net::SDL2_net-static
     vorbisfile recomptv_opusfile "-framework AVFoundation")
 set_target_properties(RecompTVShipwright PROPERTIES
