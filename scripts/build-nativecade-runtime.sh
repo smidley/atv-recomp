@@ -6,8 +6,7 @@ runtime_root=$(cd "$(dirname "$0")/.." && pwd)
 runtime_ship="$runtime_root/build/upstream/Shipwright"
 runtime_torch="$runtime_root/build/upstream/Torch"
 runtime_lus="$runtime_root/build/upstream/libultraship"
-[[ $(git -C "$runtime_torch" rev-parse HEAD) == 2ab12fe9660aec04e02ee89fe81baed304a1a1d6 &&
-   -z $(git -C "$runtime_torch" status --porcelain) ]] || { echo 'Use the clean pinned Torch checkout.' >&2; exit 2; }
+python3 "$runtime_root/scripts/upstream.py" fetch
 python3 "$runtime_root/scripts/prepare-shipwright-metal.py" "$runtime_lus"
 python3 "$runtime_root/scripts/prepare-shipwright-game.py" "$runtime_ship"
 python3 "$runtime_root/scripts/prepare-spaghettikart.py"

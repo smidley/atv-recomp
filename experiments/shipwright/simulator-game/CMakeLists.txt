@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
-project(RecompTVShipwrightGame VERSION 9.3.1 LANGUAGES C CXX OBJC OBJCXX)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../upstream/pins.cmake")
+project(RecompTVShipwrightGame VERSION ${RECOMPTV_SHIPWRIGHT_RELEASE} LANGUAGES C CXX OBJC OBJCXX)
 option(RECOMPTV_BUILD_RUNTIME_FRAMEWORK "Build the distributable Nativecade runtime framework" OFF)
 string(TOLOWER "${CMAKE_OSX_SYSROOT}" simulator_sdk)
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS" OR
@@ -113,14 +114,14 @@ if(RECOMPTV_SPAGHETTIKART_SOURCE)
 endif()
 
 set(ship "${RECOMPTV_SHIPWRIGHT_SOURCE}/soh")
-set(CMAKE_PROJECT_VERSION_MAJOR 9)
-set(CMAKE_PROJECT_VERSION_MINOR 3)
-set(CMAKE_PROJECT_VERSION_PATCH 1)
+set(CMAKE_PROJECT_VERSION_MAJOR ${RecompTVShipwrightGame_VERSION_MAJOR})
+set(CMAKE_PROJECT_VERSION_MINOR ${RecompTVShipwrightGame_VERSION_MINOR})
+set(CMAKE_PROJECT_VERSION_PATCH ${RecompTVShipwrightGame_VERSION_PATCH})
 set(PROJECT_BUILD_NAME "RecompTV Simulator")
 set(PROJECT_TEAM "HarbourMasters / RecompTV experiment")
-set(CMAKE_PROJECT_GIT_BRANCH "pinned-9.3.1")
-set(CMAKE_PROJECT_GIT_COMMIT_HASH "f0599f96")
-set(CMAKE_PROJECT_GIT_COMMIT_TAG "9.3.1")
+set(CMAKE_PROJECT_GIT_BRANCH "pinned-${RECOMPTV_SHIPWRIGHT_RELEASE}")
+string(SUBSTRING "${RECOMPTV_SHIPWRIGHT_REVISION}" 0 8 CMAKE_PROJECT_GIT_COMMIT_HASH)
+set(CMAKE_PROJECT_GIT_COMMIT_TAG "${RECOMPTV_SHIPWRIGHT_RELEASE}")
 configure_file("${ship}/src/boot/build.c.in" "${ship}/src/boot/build.c" @ONLY)
 configure_file("${ship}/properties.h.in" "${ship}/properties.h" @ONLY)
 file(GLOB_RECURSE game CONFIGURE_DEPENDS "${ship}/src/*.c" "${ship}/soh/*.c" "${ship}/soh/*.cpp")
@@ -147,6 +148,7 @@ if(RECOMPTV_BUILD_RUNTIME_FRAMEWORK AND RECOMPTV_SPAGHETTIKART_SOURCE)
 endif()
 set_source_files_properties("${ship}/src/code/main.c" PROPERTIES COMPILE_DEFINITIONS "main=RecompTVShipwrightMain")
 target_compile_definitions(RecompTVShipwright PRIVATE __IOS__ RECOMPTV_TVOS SDL_MAIN_HANDLED
+    NATIVECADE_SHIPWRIGHT_RELEASE="${RECOMPTV_SHIPWRIGHT_RELEASE}"
     F3DEX_GBI_2 _CONSOLE UNICODE _UNICODE SPDLOG_ACTIVE_LEVEL=2 LOG_LEVEL_GAME_PRINTS=6)
 target_compile_options(RecompTVShipwright PRIVATE -fblocks -Wno-narrowing
     -Wno-deprecated-enum-enum-conversion -Wno-unknown-pragmas

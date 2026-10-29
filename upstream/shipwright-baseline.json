@@ -25,6 +25,17 @@
     "file_sha256": "e76e156f8642deaf822bcb2171dde340f5d7eba11387dc94fc003ed88e99554b",
     "identity_algorithm": "sha1",
     "upstream_entry_count": 19,
-    "note": "Upstream reference hashes only; no real ROM was used to validate this host tool or a tvOS runtime."
-  }
+    "note": "Upstream reference hashes only; no real ROM was used to validate this host tool or a tvOS runtime.",
+    "app_copy": "Packages/RecompSources/Sources/RecompSources/Resources/shipwright-supported-roms.json"
+  },
+  "prepare": [
+    [
+      "scripts/prepare-shipwright-metal.py",
+      "build/upstream/libultraship"
+    ],
+    [
+      "scripts/prepare-shipwright-game.py",
+      "build/upstream/Shipwright"
+    ]
+  ]
 }

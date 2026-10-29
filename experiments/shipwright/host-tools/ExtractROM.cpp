@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
         if (rom[0] != 0x80 || rom[1] != 0x37 || rom[2] != 0x12 || rom[3] != 0x40)
             throw std::runtime_error("Use a verified, canonical big-endian ROM");
         std::filesystem::create_directories(argv[3]);
-        const auto archive = SohTorch::Extract(std::move(rom), argv[2], argv[3], "9.3.1", nullptr);
+        const auto archive = SohTorch::Extract(std::move(rom), argv[2], argv[3], RECOMPTV_SHIPWRIGHT_RELEASE, nullptr);
         if (archive.empty()) throw std::runtime_error("Asset extraction failed");
         std::cout << "Created " << archive << '\n';
         return 0;

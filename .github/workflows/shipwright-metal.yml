@@ -14,6 +14,8 @@ on:
       - scripts/ci-run-experiment.sh
       - upstream/shipwright-baseline.json
       - upstream/libultraship-simulator.json
+      - upstream/pins.cmake
+      - scripts/upstream.py
   push:
     branches: [main]
     paths:
@@ -27,6 +29,8 @@ on:
       - scripts/ci-run-experiment.sh
       - upstream/shipwright-baseline.json
       - upstream/libultraship-simulator.json
+      - upstream/pins.cmake
+      - scripts/upstream.py
   workflow_dispatch:
 
 permissions:
@@ -44,13 +48,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          repository: kenix3/libultraship
-          ref: da6daf1a50a5e46d6641408d52227e31e85e46df
-          path: build/upstream/libultraship
-          submodules: false
-          persist-credentials: false
+      - name: Fetch the pinned libultraship
+        run: python3 scripts/upstream.py fetch libultraship
       - name: Record Xcode and SDK
         id: host
         run: |

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ $# -ne 2 || ! ($1 == arm64 || $1 == x86_64) ]]; then
-    echo 'Usage: bash scripts/check-shipwright-metal.sh arm64|x86_64 LIBULTRASHIP_CHECKOUT' >&2
+if [[ $# -lt 2 || $# -gt 3 || ! ($1 == arm64 || $1 == x86_64) || ($# -eq 3 && $3 != --record-dependencies) ]]; then
+    echo 'Usage: bash scripts/check-shipwright-metal.sh arm64|x86_64 LIBULTRASHIP_CHECKOUT [--record-dependencies]' >&2
     exit 2
 fi
 [[ $(uname -s) == Darwin ]] || { echo 'This build requires macOS and the tvOS SDK.' >&2; exit 2; }
@@ -23,7 +23,7 @@ cmake --fresh -S "$probe_root/experiments/shipwright/metal" -B "$probe_build" \
     -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$probe_build" --target shipwright_metal_link shipwright_metal_render --parallel 3
-python3 "$probe_root/scripts/verify-shipwright-metal-build.py" "$probe_build"
+python3 "$probe_root/scripts/verify-shipwright-metal-build.py" "$probe_build" ${3:+--record}
 IFS= read -r probe_binary < "$probe_build/link-probe-path.txt"
 lipo "$probe_binary" -verify_arch "$probe_arch"
 otool -L "$probe_binary" > "$probe_build/dependencies.txt"
