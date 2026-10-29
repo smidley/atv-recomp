@@ -1,0 +1,12 @@
+--- a/src/fast/backends/gfx_sdl2.cpp
++++ b/src/fast/backends/gfx_sdl2.cpp
+@@ -813,7 +813,8 @@
+     SDL_GL_DeleteContext(mCtx);
+     SDL_DestroyWindow(mWnd);
+     SDL_DestroyRenderer(mRenderer);
+-    SDL_Quit();
++    // Nativecade quits SDL once the whole context is gone: ImGui and the control deck
++    // close their SDL game controllers after the window is destroyed.
+ }
+ 
+ bool GfxWindowBackendSDL2::IsFullscreen() {

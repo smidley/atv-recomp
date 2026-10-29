@@ -74,6 +74,10 @@ def adapt(relative, text):
         text = text.replace('wnd->DrawAndRunGraphicsCommands(pool, mtxStack);',
             'RecompTVPrepareFrame(wnd->GetTargetFps());\n'
             '        if (wnd->DrawAndRunGraphicsCommands(pool, mtxStack)) RecompTVRecordFrame(wnd->GetTargetFps());')
+    if relative == 'engine/tracks/Track.cpp':
+        # KartRestart.cpp clears this set when Nativecade restarts the game in one process.
+        text = text.replace('static std::unordered_set<std::string> gModifiedGfxSet;',
+            'std::unordered_set<std::string> gModifiedGfxSet;')
     return text
 
 

@@ -75,6 +75,11 @@ ignored. `python3 scripts/upstream.py releases` runs the same check locally.
 - [ ] Mario Kart passes its controller test:
   `SIMCTL_CHILD_NATIVECADE_KART_INPUT_PROBE=1 xcrun simctl launch --stderr=<log> <simulator> com.smidley.nativecade --nativecade-play-mario-kart`,
   then look for `PASS` in the log.
+- [ ] Games restart in one session:
+  `SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=oot,kart,oot,kart xcrun simctl launch <simulator> com.smidley.nativecade`
+  runs each game for 30 seconds and returns to the library between them. Then
+  `xcrun simctl spawn <simulator> log show --last 5m --predicate 'eventMessage CONTAINS "RestartProbe"'`
+  must end with `PASS`. New hooks or cached pointers upstream can break restarts.
 - [ ] The first launch prepares game assets again, because prepared assets are
   stored per release, and existing saves still load.
 - [ ] Save identifiers are unchanged unless the save format changed. RomM
@@ -86,6 +91,9 @@ ignored. `python3 scripts/upstream.py releases` runs the same check locally.
   List the upstream releases in the TestFlight notes.
 
 ## Adding a game
+
+A new game must also survive switching games in one app session; follow the
+checklist in [Switching games](GAME_SWITCHING.md).
 
 Add `upstream/<game>-baseline.json` with `release`, `sources` and `prepare`.
 `upstream.py fetch`, `update` and the weekly check pick it up automatically. A

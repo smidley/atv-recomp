@@ -85,8 +85,27 @@ void RecompTVGameplayFrame() {
     }
 }
 
+template <typename H> static void ClearHooks() {
+    using Hooks = GameInteractor::RegisteredGameHooks<H>;
+    using Pending = GameInteractor::HooksToUnregister<H>;
+    Hooks::functions.clear(); Hooks::functionsForID.clear(); Hooks::functionsForPtr.clear();
+    Hooks::functionsForFilter.clear(); Hooks::hookData.clear();
+    Pending::hooks.clear(); Pending::hooksForID.clear(); Pending::hooksForPtr.clear(); Pending::hooksForFilter.clear();
+}
+
+void RecompTVClearGameHooks() {
+    // Game hooks live in static tables and some capture objects of the run that registered them,
+    // such as GUI windows. Clear them as process exit would; the next start registers its own.
+#define DEFINE_HOOK(name, _) ClearHooks<GameInteractor::name>();
+#include "soh/Enhancements/game-interactor/GameInteractor_HookTable.h"
+#undef DEFINE_HOOK
+}
+
 void RecompTVInitializeGameplay() {
-    RecompTVInstallLifecycleObservers();
+    // Lifecycle observers outlive a start, and Nativecade can start the game again.
+    static bool observing = false;
+    if (!observing) RecompTVInstallLifecycleObservers();
+    observing = true;
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnExitGame>([](int32_t) {
         RecompTVStopRumble();
         SaveManager::Instance->ThreadPoolWait();
