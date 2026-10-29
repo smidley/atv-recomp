@@ -7,4 +7,4 @@ clang++ -std=c++20 -Wall -Wextra -Werror \
     "$perf_root/experiments/shipwright/simulator-game/PerformanceSettingsTests.cpp" \
     -o "$perf_build/performance-settings-tests"
 "$perf_build/performance-settings-tests"
-echo 'Performance defaults, preset switching, and custom-setting preservation passed.'
+echo 'Performance presets, settings preservation, adaptive resolution, and frame pacing passed.'

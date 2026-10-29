@@ -8,7 +8,7 @@
 #include <utility>
 
 namespace RecompTV {
-enum class PerformancePreset : int32_t { Performance = 1, Sharper = 2, LowLoad = 3 };
+enum class PerformancePreset : int32_t { Performance = 1, Sharper = 2, LowLoad = 3, Automatic = 4, Ultra = 5 };
 
 inline int RenderFrameTarget(int requested, int refreshRate, bool matchRefresh) {
     const int limit = refreshRate > 0 ? std::clamp(refreshRate, 20, 60) : 60;
@@ -19,6 +19,7 @@ inline int RenderFrameTarget(int requested, int refreshRate, bool matchRefresh) 
 inline constexpr const char* kPresetVersion = "gRecompTV.PerformancePresetVersion";
 inline constexpr const char* kPreset = "gRecompTV.PerformancePreset";
 inline constexpr const char* kNamespaceVersion = "gRecompTV.CVarNamespaceVersion";
+inline constexpr const char* kAutomaticResolution = "gRecompTV.AutomaticResolution";
 inline constexpr std::pair<std::string_view, std::string_view> kLegacyAliases[] = {
     {"gControllers", "gSettings.Controllers"}, {"gAdvancedResolution", "gSettings.AdvancedResolution"},
     {"gVsyncEnabled", "gSettings.VsyncEnabled"}, {"gZFightingMode", "gSettings.ZFightingMode"},
@@ -51,6 +52,7 @@ bool MigrateLegacySettings(Variables& vars, const Names& names) {
     return true;
 }
 inline constexpr std::array kGraphicsKeys = {
+    kAutomaticResolution,
     "gSettings.InterpolationFPS", "gSettings.MatchRefreshRate", "gSettings.MSAAValue",
     "gSettings.InternalResolution", "gSettings.TextureFilter", "gSettings.VsyncEnabled",
     "gSettings.LowResMode", "gSettings.AdvancedResolution.Enabled",
@@ -75,10 +77,12 @@ void ApplyPerformancePreset(Variables& vars, PerformancePreset preset) {
     vars.SetInteger("gSettings.AdvancedResolution.Enabled", 1);
     vars.SetInteger("gSettings.AdvancedResolution.VerticalResolutionToggle", 1);
     vars.SetInteger("gSettings.AdvancedResolution.VerticalPixelCount",
+                    preset == PerformancePreset::Automatic || preset == PerformancePreset::Ultra ? 2160 :
                     preset == PerformancePreset::Sharper ? 1080 : 720);
     vars.SetInteger("gSettings.AdvancedResolution.PixelPerfectMode", 0);
     vars.SetInteger(kPreset, static_cast<int32_t>(preset));
-    vars.SetInteger(kPresetVersion, 1);
+    vars.SetInteger(kAutomaticResolution, preset == PerformancePreset::Automatic ? 1 : 0);
+    vars.SetInteger(kPresetVersion, 2);
 }
 
 // Never overwrite an existing custom graphics setup, including legacy settings.
@@ -88,11 +92,11 @@ bool InitializePerformanceDefaults(Variables& vars) {
     if (vars.Get(kPresetVersion)) return false;
     for (const auto* key : kGraphicsKeys) {
         if (vars.Get(key)) {
-            vars.SetInteger(kPresetVersion, 1);
+            vars.SetInteger(kPresetVersion, 2);
             return true;
         }
     }
-    ApplyPerformancePreset(vars, PerformancePreset::Performance);
+    ApplyPerformancePreset(vars, PerformancePreset::Automatic);
     return true;
 }
 } // namespace RecompTV

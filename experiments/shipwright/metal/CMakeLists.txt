@@ -36,6 +36,7 @@ endforeach()
 
 add_subdirectory("${RECOMPTV_LUS_SOURCE}" libultraship)
 target_compile_options(libultraship PRIVATE -fblocks)
+target_include_directories(libultraship PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
 # The upstream mobile-mode flag is PRIVATE; the link fixture needs matching headers.
 add_executable(shipwright_metal_link LinkProbe.cpp SDKContract.mm)
 target_compile_definitions(shipwright_metal_link PRIVATE __IOS__ SDL_MAIN_HANDLED)

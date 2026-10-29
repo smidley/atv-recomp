@@ -1,8 +1,10 @@
 #include "AppleTVPerformance.h"
+#include "AdaptiveResolution.h"
 #include <ship/Context.h>
 #include <ship/config/ConsoleVariable.h>
 #include <ship/config/Config.h>
 #include <fast/Fast3dWindow.h>
+#include <fast/backends/gfx_metal.h>
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <array>
@@ -11,6 +13,26 @@
 #include <cstring>
 #include <cstdio>
 #include <vector>
+
+static RecompTV::AdaptiveResolution resolution;
+static bool automaticActive = false;
+static uint64_t lastGpuSequence = 0;
+static int lastAppliedHeight = 0;
+
+static bool PerformanceLoggingEnabled() {
+    static const bool enabled = [] {
+        const char* value = std::getenv("RECOMPTV_PERF_LOG");
+        return value && std::strcmp(value, "1") == 0;
+    }();
+    return enabled;
+}
+
+static Fast::GfxRenderingAPIMetal* MetalRenderer() {
+    auto window = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetRawInstance()->GetWindow());
+    if (!window) return nullptr;
+    auto interpreter = window->GetInterpreterWeak().lock();
+    return interpreter ? dynamic_cast<Fast::GfxRenderingAPIMetal*>(interpreter->GetCurrentRenderingAPI()) : nullptr;
+}
 
 static void CollectVariableNames(const nlohmann::json& value, const std::string& prefix,
                                  std::vector<std::string>& names) {
@@ -40,11 +62,16 @@ void RecompTVApplyPerformancePreset(RecompTV::PerformancePreset preset) {
     auto context = Ship::Context::GetRawInstance();
     auto vars = context->GetConsoleVariables();
     RecompTV::ApplyPerformancePreset(*vars, preset);
+    automaticActive = false;
     if (auto window = std::dynamic_pointer_cast<Fast::Fast3dWindow>(context->GetWindow())) {
         window->SetResolutionMultiplier(1.0f);
         window->SetMsaaLevel(1);
-        window->SetTextureFilter(Fast::FILTER_LINEAR);
-        if (auto interpreter = window->GetInterpreterWeak().lock()) interpreter->ShaderCacheClear();
+        if (auto interpreter = window->GetInterpreterWeak().lock()) {
+            if (interpreter->GetCurrentRenderingAPI()->GetTextureFilter() != Fast::FILTER_LINEAR) {
+                window->SetTextureFilter(Fast::FILTER_LINEAR);
+                interpreter->ShaderCacheClear();
+            }
+        }
     }
     vars->Save();
 }
@@ -63,12 +90,55 @@ int RecompTVGetFrameTarget(int requested, bool matchRefresh) {
     return RecompTV::RenderFrameTarget(requested, refreshRate, matchRefresh);
 }
 
+void RecompTVPrepareFrame(int targetFps) {
+    auto vars = Ship::Context::GetRawInstance()->GetConsoleVariables();
+    if (!vars->GetInteger(RecompTV::kAutomaticResolution, 0)) {
+        automaticActive = false;
+        return;
+    }
+    auto metal = MetalRenderer();
+    if (!metal) return;
+    uint32_t outputWidth = 0, outputHeight = 0;
+    metal->GetOutputSize(outputWidth, outputHeight);
+    const int ceiling = std::clamp(outputHeight > 0 ? int(outputHeight) : 1080, 240, 2160);
+    const int currentHeight = vars->GetInteger("gSettings.AdvancedResolution.VerticalPixelCount", 1080);
+    if (automaticActive && (currentHeight != lastAppliedHeight ||
+        !vars->GetInteger("gSettings.AdvancedResolution.Enabled", 0) ||
+        !vars->GetInteger("gSettings.AdvancedResolution.VerticalResolutionToggle", 0) ||
+        vars->GetInteger("gSettings.AdvancedResolution.PixelPerfectMode", 0) ||
+        vars->GetInteger("gSettings.LowResMode", 0) ||
+        vars->GetFloat("gSettings.InternalResolution", 1.0f) != 1.0f)) {
+        // A manual resolution edit takes ownership; do not fight the user's slider.
+        vars->SetInteger(RecompTV::kAutomaticResolution, 0);
+        vars->Save();
+        automaticActive = false;
+        return;
+    }
+    const bool reset = !automaticActive || resolution.Ceiling() != ceiling || resolution.TargetFps() != targetFps;
+    if (reset) {
+        resolution.Reset(ceiling, targetFps);
+        lastGpuSequence = 0;
+        automaticActive = true;
+    }
+    uint64_t sequence = 0;
+    double gpuMs = 0;
+    uint32_t renderedHeight = 0;
+    if (metal->GetLatestFrameTiming(sequence, gpuMs, renderedHeight) && sequence != lastGpuSequence) {
+        lastGpuSequence = sequence;
+        if (!reset) resolution.Observe(gpuMs, int(renderedHeight));
+    }
+    lastAppliedHeight = resolution.Height();
+    if (lastAppliedHeight != currentHeight) {
+        vars->SetInteger("gSettings.AdvancedResolution.VerticalPixelCount", lastAppliedHeight);
+    }
+    if ((reset || lastAppliedHeight != currentHeight) && PerformanceLoggingEnabled()) {
+        SPDLOG_INFO("[RecompTVPerf] automatic output={}x{} render_height={} target={}",
+                    outputWidth, outputHeight, lastAppliedHeight, targetFps);
+    }
+}
+
 void RecompTVRecordFrame(int targetFps) {
-    static const bool enabled = [] {
-        const char* value = std::getenv("RECOMPTV_PERF_LOG");
-        return value && std::strcmp(value, "1") == 0;
-    }();
-    if (!enabled) return;
+    if (!PerformanceLoggingEnabled()) return;
 
     using Clock = std::chrono::steady_clock;
     static auto previous = Clock::now();
@@ -102,7 +172,16 @@ void RecompTVRecordFrame(int targetFps) {
     if (auto window = std::dynamic_pointer_cast<Fast::Fast3dWindow>(Ship::Context::GetRawInstance()->GetWindow())) {
         if (auto interpreter = window->GetInterpreterWeak().lock()) interpreter->GetCurDimensions(&width, &height);
     }
-    SPDLOG_INFO("[RecompTVPerf] frames={} target={} render={}x{} avg_ms={:.2f} p95_ms={:.2f} max_ms={:.2f} over100ms={}",
-                count, targetFps, width, height, total / count, sorted[284], sorted.back(), stalls);
+    double gpuMs = 0;
+    uint64_t sequence = 0;
+    uint32_t gpuHeight = 0, outputWidth = 0, outputHeight = 0;
+    bool gpuAvailable = false;
+    if (auto metal = MetalRenderer()) {
+        gpuAvailable = metal->GetLatestFrameTiming(sequence, gpuMs, gpuHeight);
+        metal->GetOutputSize(outputWidth, outputHeight);
+    }
+    SPDLOG_INFO("[RecompTVPerf] frames={} target={} render={}x{} output={}x{} avg_ms={:.2f} p95_ms={:.2f} max_ms={:.2f} over100ms={} latest_gpu_ms={:.2f} gpu_available={} gpu_height={}",
+                count, targetFps, width, height, outputWidth, outputHeight, total / count, sorted[284], sorted.back(),
+                stalls, gpuMs, gpuAvailable, gpuHeight);
     count = 0;
 }

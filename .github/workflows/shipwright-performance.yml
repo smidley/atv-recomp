@@ -1,0 +1,32 @@
+name: Shipwright performance policy
+
+on:
+  pull_request:
+    branches: [main, feature/shipwright-rom-identification]
+    paths:
+      - .github/workflows/shipwright-performance.yml
+      - experiments/shipwright/simulator-game/**
+      - experiments/shipwright/metal/FramePacing.h
+      - scripts/test-shipwright-performance.sh
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/shipwright-performance.yml
+      - experiments/shipwright/simulator-game/**
+      - experiments/shipwright/metal/FramePacing.h
+      - scripts/test-shipwright-performance.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  performance-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test presets, adaptation, settings preservation, and frame pacing
+        run: bash scripts/test-shipwright-performance.sh
