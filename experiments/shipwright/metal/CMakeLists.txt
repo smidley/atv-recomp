@@ -74,3 +74,20 @@ add_custom_command(TARGET shipwright_metal_render POST_BUILD
     VERBATIM)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/render-probe-path.txt"
     CONTENT "$<TARGET_BUNDLE_DIR:shipwright_metal_render>\n")
+
+# tvOS 27 only launches apps that adopt the UIScene lifecycle. Standalone probe
+# builds reuse the game's SDL scene adapter; the game build, which includes this
+# file, applies that adapter itself together with its other SDL patches.
+if(PROJECT_IS_TOP_LEVEL)
+    include(FetchContent)
+    FetchContent_GetProperties(SDL2 SOURCE_DIR recomptv_sdl_source)
+    set(scene_patch "${CMAKE_CURRENT_LIST_DIR}/../simulator-game/sdl-scenes.patch")
+    execute_process(COMMAND git apply --reverse --check "${scene_patch}"
+        WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE scene_patch_applied
+        OUTPUT_QUIET ERROR_QUIET)
+    if(NOT scene_patch_applied EQUAL 0)
+        execute_process(COMMAND git apply "${scene_patch}"
+            WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    target_compile_definitions(SDL2-static PRIVATE RECOMPTV_TVOS_SCENES)
+endif()
