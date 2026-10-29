@@ -5,6 +5,231 @@
 	};
 	"objectVersion" = "56";
 	"objects" = {
+		"D707D4BA40161A156052FAA3" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "text.xml"; "path" = "RecompTV/PrivacyInfo.xcprivacy"; "sourceTree" = "SOURCE_ROOT"; };
+		"DA762B125923F75E1784D6E6" = { "isa" = "PBXBuildFile"; "fileRef" = "D707D4BA40161A156052FAA3"; };
+		"B2B76F7F2B842EF6765D18F3" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/Library/GamePreparation.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"EA829A7396CB3920F57BF365" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B2B76F7F2B842EF6765D18F3";
+		};
+		"4AA10BC40E62E3D068965E38" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"path" = "RecompTV/Native/NativecadeMain.m";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"2E6AE80773DC4E00F3DC608E" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4AA10BC40E62E3D068965E38";
+		};
+		"ACE0DADA218366F014BF7DCE" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "RecompTV/NativecadeApplication.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"6D5392D997D1771BDAC22183" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "ACE0DADA218366F014BF7DCE";
+		};
+		"66D8EE4E11926C83A32E4A50" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "wrapper.xcframework";
+			"path" = "build/nativecade-runtime/NativecadeRuntime.xcframework";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"5AFBC112E9A3BAF1BAD84613" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "66D8EE4E11926C83A32E4A50";
+		};
+		"0C3C65A71F7C1C796F3BD619" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "66D8EE4E11926C83A32E4A50";
+			"settings" = {
+				"ATTRIBUTES" = (
+					"CodeSignOnCopy",
+					"RemoveHeadersOnCopy",
+				);
+			};
+		};
+		"12AE288F75C9855D11BD72D4" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder";
+			"path" = "build/nativecade-runtime/NativecadeGame";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"E939C851D9C44F2A8F2C6D6B" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "12AE288F75C9855D11BD72D4";
+		};
+		"968A45D01C9A1A4722D3D384" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.assetcatalog";
+			"path" = "RecompTV/Assets.xcassets";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"B76BF8FA2396618DA4845EF6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "968A45D01C9A1A4722D3D384";
+		};
+		"5A31210B50E04F6E7F4D38D9" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"includeInIndex" = "0";
+			"path" = "Nativecade.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"FA9EF1CB96D92B0E5D481B90" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"F4709C3647840CA54D32F967",
+				"1B6F25A022A51EE411C28D71",
+				"370340BBE638A857F7D98094",
+				"95EF33CAB3CF68C9D5E86046",
+				"345EEB2158655CEA2A1E3271",
+				"9311C93244D6563B1CECA8EF",
+				"8634E04A453FACA8DA877D82",
+				"90017EA78B0FA222632655CA",
+				"A1ACFAA3759FD408E2039906",
+				"2E6AE80773DC4E00F3DC608E",
+				"6D5392D997D1771BDAC22183",
+				"EA829A7396CB3920F57BF365",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"94F468653846008DC234B64E" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"94EC04D104C8ADA5CD0495E7",
+				"F87A9D7ED4153DFDBEF2DF40",
+				"C9A551FDBAC72CE1B1BC88BF",
+				"8496E44D41268E4BF9E989B0",
+				"8ECA5D271EF0B3E2EB24EA50",
+				"5AFBC112E9A3BAF1BAD84613",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"B2196D317B71E1247AFFA1D5" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"DA762B125923F75E1784D6E6",
+				"E939C851D9C44F2A8F2C6D6B",
+				"B76BF8FA2396618DA4845EF6",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"8E88B401BD89505CF1B379F9" = {
+			"isa" = "PBXCopyFilesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"dstPath" = "";
+			"dstSubfolderSpec" = "10";
+			"files" = (
+				"0C3C65A71F7C1C796F3BD619",
+			);
+			"name" = "Embed Native Runtime";
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"E8447A2FF7A500C1F645E25D" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"MARKETING_VERSION" = "0.1.0";
+				"INFOPLIST_FILE" = "RecompTV/Nativecade-Info.plist";
+				"TARGETED_DEVICE_FAMILY" = "3";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
+				"TVOS_DEPLOYMENT_TARGET" = "17.0";
+				"INFOPLIST_KEY_CFBundleDisplayName" = "Nativecade";
+				"SUPPORTED_PLATFORMS" = "appletvos appletvsimulator";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"SWIFT_OBJC_BRIDGING_HEADER" = "$(SRCROOT)/RecompTV/Native/RecompTV-Bridging-Header.h";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.smidley.nativecade";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "$(inherited) NATIVECADE_RUNTIME";
+				"GCC_PREPROCESSOR_DEFINITIONS" = (
+					"$(inherited)",
+					"NATIVECADE_RUNTIME=1",
+				);
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "App Icon & Top Shelf Image";
+				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
+			};
+			"name" = "Debug";
+		};
+		"A67C4B0CEA8E7C31DE20D47F" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"MARKETING_VERSION" = "0.1.0";
+				"INFOPLIST_FILE" = "RecompTV/Nativecade-Info.plist";
+				"TARGETED_DEVICE_FAMILY" = "3";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
+				"TVOS_DEPLOYMENT_TARGET" = "17.0";
+				"INFOPLIST_KEY_CFBundleDisplayName" = "Nativecade";
+				"SUPPORTED_PLATFORMS" = "appletvos appletvsimulator";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"CODE_SIGN_STYLE[sdk=appletvos*]" = "Manual";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "Apple Distribution";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=appletvos*]" = "Nativecade tvOS App Store 2026-10-28";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"SWIFT_OBJC_BRIDGING_HEADER" = "$(SRCROOT)/RecompTV/Native/RecompTV-Bridging-Header.h";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.smidley.nativecade";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "$(inherited) NATIVECADE_RUNTIME";
+				"GCC_PREPROCESSOR_DEFINITIONS" = (
+					"$(inherited)",
+					"NATIVECADE_RUNTIME=1",
+				);
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "App Icon & Top Shelf Image";
+				"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = "AccentColor";
+			};
+			"name" = "Release";
+		};
+		"023B4F9311FFB05291EE83AB" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"E8447A2FF7A500C1F645E25D",
+				"A67C4B0CEA8E7C31DE20D47F",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"8A99B912290ADA2192D832A5" = {
+			"buildConfigurationList" = "023B4F9311FFB05291EE83AB";
+			"productReference" = "5A31210B50E04F6E7F4D38D9";
+			"productType" = "com.apple.product-type.application";
+			"packageProductDependencies" = (
+				"8A309769EE32B90A778A1E3A",
+			);
+			"productName" = "Nativecade";
+			"isa" = "PBXNativeTarget";
+			"buildPhases" = (
+				"FA9EF1CB96D92B0E5D481B90",
+				"94F468653846008DC234B64E",
+				"B2196D317B71E1247AFFA1D5",
+				"8E88B401BD89505CF1B379F9",
+			);
+			"dependencies" = (
+			);
+			"name" = "Nativecade";
+			"buildRules" = (
+			);
+		};
 		"0AC1ED71BD1B3593225BFF91" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Diagnostics/SourceSimulatorProbe.swift"; "sourceTree" = "SOURCE_ROOT"; };
 		"1B6F25A022A51EE411C28D71" = { "isa" = "PBXBuildFile"; "fileRef" = "0AC1ED71BD1B3593225BFF91"; };
 		"B52D1A2409C2DB2F3CED0193" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/LibraryModel.swift"; "sourceTree" = "SOURCE_ROOT"; };
@@ -151,6 +376,11 @@
 				"76BB66A49F649002C18D6EDA",
 				"7FF11B607BCD455313AD5078",
 				"5465037DAF7E39881307ADAE",
+				"4AA10BC40E62E3D068965E38",
+				"ACE0DADA218366F014BF7DCE",
+				"12AE288F75C9855D11BD72D4",
+				"968A45D01C9A1A4722D3D384",
+				"B2B76F7F2B842EF6765D18F3",
 			);
 			"name" = "RecompTV";
 			"sourceTree" = "<group>";
@@ -162,6 +392,7 @@
 				"CA619A0CDF2F833D8023D7D6",
 				"5306F739EC528626EE420E97",
 				"9DF588A2020631290E1793B8",
+				"66D8EE4E11926C83A32E4A50",
 			);
 			"name" = "Frameworks";
 			"sourceTree" = "<group>";
@@ -170,6 +401,7 @@
 			"isa" = "PBXGroup";
 			"children" = (
 				"A8792157CB4F27FB949C035F",
+				"5A31210B50E04F6E7F4D38D9",
 			);
 			"name" = "Products";
 			"sourceTree" = "<group>";
@@ -196,6 +428,7 @@
 				"8634E04A453FACA8DA877D82",
 				"90017EA78B0FA222632655CA",
 				"A1ACFAA3759FD408E2039906",
+				"EA829A7396CB3920F57BF365",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -440,6 +673,7 @@
 			"projectRoot" = "";
 			"targets" = (
 				"34A04005BCAF206EEC990BD9",
+				"8A99B912290ADA2192D832A5",
 			);
 		};
 	};

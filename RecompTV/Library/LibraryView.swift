@@ -11,7 +11,7 @@ struct LibraryView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text("Your games, on Apple TV").font(.largeTitle.bold())
+                    Text("Nativecade").font(.largeTitle.bold())
                     Text("Connect a server and import Ocarina of Time for Shipwright.")
                         .foregroundStyle(.secondary)
                     if !library.importedROMs.isEmpty {
@@ -41,9 +41,18 @@ struct LibraryView: View {
                                 .accessibilityLabel("Remove \(source.name)")
                         }
                     }
-                    Text("ROM import is available. Native gameplay and game asset preparation are still being integrated.")
+                    Text(GameRuntime.available ? "Connect a game controller, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
                         .font(.callout).foregroundStyle(.secondary)
-                    ForEach(library.importedROMs) { ROMResultView(rom: $0) }
+                    ForEach(library.importedROMs) { rom in
+                        VStack(alignment: .leading, spacing: 16) {
+                            ROMResultView(rom: rom)
+                            if GameRuntime.available {
+                                Button("Play") { Task { await library.play(rom) } }
+                                    .accessibilityLabel("Play \(rom.name)")
+                                    .disabled(library.isImporting)
+                            }
+                        }
+                    }
                     Button("Third-party notices") { showingNotices = true }
                 }
                 .padding(48)
@@ -54,13 +63,43 @@ struct LibraryView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         Button("Done") { showingNotices = false }
                         Text(SourceNotices.license).font(.caption)
+                        if let notices = Bundle.main.url(forResource: "ThirdPartyNotices", withExtension: "txt", subdirectory: "NativecadeGame"),
+                           let text = try? String(contentsOf: notices, encoding: .utf8) {
+                            Text(text).font(.caption)
+                        }
                     }.padding(64)
                 }
             }
-            .task { await library.restoreCache() }
+            .task {
+                await library.restoreCache()
+                #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
+                // Explicit local smoke test. Uses only an already verified cache;
+                // no game bytes, server addresses, or credentials enter the build.
+                if ProcessInfo.processInfo.arguments.contains("--nativecade-play-cached-rom"),
+                   let rom = library.importedROMs.first {
+                    await library.play(rom)
+                    if let error = library.error { print("Nativecade launch probe failed: \(error)") }
+                }
+                #endif
+            }
             .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
                 Button("OK") { library.error = nil }
             } message: { Text(library.error ?? "") }
+        }
+        .disabled(library.isPreparingGame)
+        .overlay {
+            if library.isPreparingGame {
+                ZStack {
+                    Color.black.opacity(0.85).ignoresSafeArea()
+                    VStack(spacing: 24) {
+                        ProgressView()
+                        Text("Preparing your game").font(.title)
+                        Text(library.preparingTitle).font(.headline)
+                        Text("The first launch can take a few minutes. Keep Nativecade open.")
+                            .foregroundStyle(.secondary)
+                    }.padding(64)
+                }
+            }
         }
     }
 }
@@ -292,7 +331,7 @@ private struct ROMResultView: View {
                 .font(.headline)
             Text(rom.name).font(.callout)
             if let revision = rom.revision {
-                Text("\(revision) · Native gameplay is not available in this build.")
+                Text(revision)
             } else { Text("These bytes do not match Shipwright's accepted ROM revisions. The file was not cached.") }
             Text("SHA-1: \(rom.sha1)").font(.caption.monospaced())
         }

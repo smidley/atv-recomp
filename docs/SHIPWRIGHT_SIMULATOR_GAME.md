@@ -3,8 +3,9 @@
 This private development target boots the pinned Shipwright 9.3.1 runtime with a
 locally verified ROM on Apple TV Simulator. It is separate from the RecompTV launcher
 and rejects a physical-device SDK. The existing RomM connection and launcher cache
-are independent of this experiment. Integration of a Play action and return to
-the launcher remains separate work. The game now has local save recovery, RomM
+are independent of this experiment. The newer [Nativecade target](NATIVECADE_TESTFLIGHT.md) integrates a Play action,
+on-device preparation, and device packaging without bundling ROM assets. Return
+to the library currently requires closing and reopening Nativecade. The game now has local save recovery, RomM
 backups, and controller vibration settings; see
 [Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md).
 

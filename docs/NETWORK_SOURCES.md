@@ -1,14 +1,16 @@
 # Connect a ROM server
 
 The Library tab connects to an existing SMB share or RomM instance, browses by
-platform, and verifies/imports individual ROMs or a whole platform. Development
-and execution checks remain simulator-only. Native gameplay
-and Torch/O2R asset preparation are not integrated yet.
+platform, and verifies/imports individual ROMs or a whole platform. The Nativecade
+scheme integrates native gameplay and on-device Torch/O2R preparation. See
+[Nativecade build and TestFlight](NATIVECADE_TESTFLIGHT.md) for its prerequisites;
+the RecompTV scheme remains the independent library/diagnostics harness.
 
 ## Try your server in Xcode
 
 1. Open `RecompTV.xcodeproj` and let Swift Package Manager resolve its dependencies.
-   Select the **RecompTV** scheme and an Apple TV simulator, then Run.
+   Select the **Nativecade** scheme after preparing its runtime/resources, or
+   **RecompTV** for the library-only harness, and an Apple TV simulator, then Run.
 2. Open **Library** and choose **Add SMB share** or **Add RomM**.
 3. Enter the connection details below and select **Connect and save**. This tests
    access before saving the connection. Passwords/tokens are stored in Keychain,
@@ -22,9 +24,10 @@ and Torch/O2R asset preparation are not integrated yet.
    items hidden by the current search. It never requests a multi-file ZIP.
 6. A matching Ocarina of Time ROM displays its revision and SHA-1. A different game
    or unsupported revision displays an explicit rejection and is not cached. The
-   app has no Play action yet: identifying data does not provide the native game runtime.
+   Nativecade app offers **Play** and prepares the assets on the device. The
+   RecompTV harness only verifies/imports; it does not link the game runtime.
 
-Use a server address reachable from the Mac running the simulator. There is no
+Use a server address reachable from the Apple TV, or from the Mac for simulator testing. There is no
 RecompTV server to install. No ROM or credential needs to be uploaded to GitHub or
 sent through chat. The first live-server test needs only the instance URL or share
 path for coordination; enter secrets directly in the app.
@@ -62,8 +65,8 @@ RomM's implemented contract is checked against **5.4.1** source:
 
 This is source-contract validation and fixture testing, not a claim that every
 RomM version or a live 5.4.1 deployment has been tested. Artwork, descriptions,
-device pairing, OAuth refresh, and save synchronization are later work. No write
-scope is needed. A 401/403 prompts reconnecting with a valid token and scope.
+device pairing and OAuth refresh are later work. The separate optional game-save
+backup setup is described below. ROM browsing needs no write scope. A 401/403 prompts reconnecting with a valid token and scope.
 
 HTTPS is the default. **Allow HTTP for this server** is an explicit per-source
 choice for local servers. HTTP sends the API token without transport encryption.
@@ -163,9 +166,10 @@ not required for these checks.
 
 ## Game save backups
 
-The separate Shipwright simulator game can now back up completed saves to RomM.
-It has its own Keychain setup and needs `assets.read` / `assets.write`; the library
-app's ROM browsing credentials are not copied across app containers. See
+Nativecade's integrated Shipwright game can back up completed saves to RomM.
+Backups have their own opt-in Keychain setup and need `assets.read` / `assets.write`;
+ROM browsing credentials are not automatically reused. The older standalone
+simulator experiment remains in its own container. See
 [Game saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md).
 
 ## Third-party notices
@@ -176,5 +180,6 @@ as LGPL 2.1. The full combined-library license is bundled in
 `Packages/RecompSources/Sources/RecompSources/Resources/AMSMB2-LICENSE.txt`.
 The pinned source, its dependency submodule references, build manifest, and
 rebuildable application sources are available from the links above and this
-repository. Distribution packaging and license obligations remain a release gate;
-this milestone is simulator development, not an App Store release.
+repository. Nativecade also bundles runtime dependency notices and buildable integration
+sources. Public App Store distribution and license review remain separate from
+the initial internal TestFlight test.

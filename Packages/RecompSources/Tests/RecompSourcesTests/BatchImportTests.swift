@@ -153,3 +153,22 @@ private func acceptedCache(in root: URL, bytes: [Data]) throws -> ROMCache {
     try Data([1, 2, 3]).write(to: cacheRoot.appendingPathComponent(second.sha256 + ".romdata"))
     #expect(try await cache.all() == [first])
 }
+
+@Test func gameHandoffRevalidatesCachedBytesAndRequiresIndexedRecord() async throws {
+    let root = try temporaryFolder()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let bytes = syntheticROM()
+    let cache = try acceptedCache(in: root, bytes: [bytes])
+    let provider = BatchFixtureProvider(pages: [:], bytes: ["first": bytes])
+    let rom = try await cache.acquire(file("first"), sourceID: UUID(), provider: provider, progress: { _ in })
+    let url = try await cache.verifiedFileURL(for: rom)
+    #expect(try Data(contentsOf: url) == bytes)
+    var damaged = bytes; damaged[48] ^= 1
+    try damaged.write(to: url)
+    await #expect(throws: (any Error).self) { try await cache.verifiedFileURL(for: rom) }
+    try bytes.write(to: url)
+    try Data("[]".utf8).write(to: root.appendingPathComponent("cache/library.json"))
+    await #expect(throws: (any Error).self) { try await cache.verifiedFileURL(for: rom) }
+    try FileManager.default.removeItem(at: url)
+    await #expect(throws: (any Error).self) { try await cache.verifiedFileURL(for: rom) }
+}
