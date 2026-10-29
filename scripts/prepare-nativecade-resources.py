@@ -31,13 +31,14 @@ definitions = output / "yml"
 if definitions.exists():
     shutil.rmtree(definitions)
 shutil.copytree(ship / "soh/assets/yml", definitions)
-notices = ["Nativecade uses Shipwright 9.3.1, Torch and libultraship.\n"
+notices = ["Nativecade uses Shipwright 9.3.1, SpaghettiKart 1.0.0, Torch and libultraship.\n"
            "https://github.com/HarbourMasters/Shipwright\n"
+           "https://github.com/HarbourMasters/SpaghettiKart\n"
            "https://github.com/HarbourMasters/Torch\n"
            "https://github.com/HarbourMasters/libultraship\n\n"
            "No game ROMs or extracted game content are included. Import a supported ROM to play.\n"]
 seen = set()
-for source in (ship, torch, lus, host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
+for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
                root / "build/nativecade-runtime/appletvos/_deps"):
     if not source.exists():
         continue
@@ -59,6 +60,6 @@ for source in (ship, torch, lus, host / "_deps", root / "build/nativecade-runtim
 (output / "ThirdPartyNotices.txt").write_text("\n".join(notices))
 for path in output.rglob("*"):
     if path.is_file() and (path.suffix.lower() in {".z64", ".v64", ".n64", ".rom", ".romdata", ".sav"} or
-                           path.name in {"oot.o2r", "oot-mq.o2r", "oot.otr", "oot-mq.otr"}):
+                           path.name in {"oot.o2r", "oot-mq.o2r", "oot.otr", "oot-mq.otr", "mk64.o2r", "mk64.otr"}):
         raise SystemExit(f"Refusing to distribute private game data: {path}")
 print(f"Prepared open-source game support files: {output}")

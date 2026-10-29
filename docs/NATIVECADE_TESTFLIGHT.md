@@ -1,7 +1,8 @@
 # Nativecade playable app and TestFlight
 
 The **Nativecade** scheme in `RecompTV.xcodeproj` combines the SwiftUI library,
-on-device Torch asset preparation, and Shipwright 9.3.1 with its Metal renderer.
+on-device Torch asset preparation, Shipwright 9.3.1, and SpaghettiKart 1.0.0
+with a shared Metal renderer.
 Its bundle identifier is `com.smidley.nativecade`; App Store Connect app ID is
 `6828252318`. The separate **RecompTV** scheme remains the lightweight diagnostics
 and network-source harness used by CI. It does not require the game framework.
@@ -11,18 +12,22 @@ and network-source harness used by CI. It does not require the game framework.
 Use a Mac with Xcode, the tvOS SDK, CMake 3.26 or newer, Ninja, and Python 3.
 Place clean checkouts at the exact revisions in `upstream/shipwright-baseline.json`
 under `build/upstream/Shipwright`, `build/upstream/Torch`, and
-`build/upstream/libultraship`. The preparation scripts patch generated copies;
+`build/upstream/libultraship`. Add the clean SpaghettiKart revision from
+`upstream/spaghettikart-baseline.json` at `build/upstream/SpaghettiKart`.
+The preparation scripts patch generated copies;
 they do not modify those checkouts or existing player data.
 
 ```sh
 bash scripts/build-nativecade-runtime.sh
 python3 scripts/prepare-nativecade-resources.py
+python3 scripts/prepare-spaghettikart-resources.py
 swift scripts/package-nativecade-icons.swift
 open RecompTV.xcodeproj
 ```
 
 The runtime script builds arm64 `appletvsimulator` and `appletvos` slices and
-matching debug symbols, then assembles `build/nativecade-runtime/NativecadeRuntime.xcframework`.
+matching debug symbols, then assembles `NativecadeRuntime.xcframework` and
+`NativecadeSpaghetti.xcframework` under `build/nativecade-runtime`.
 An explicit SDK argument builds just that slice. The resources script packs only
 the port's own support assets, extraction definitions, and third-party notices.
 It has no ROM argument and never reads `LocalData`. Both generated directories
@@ -41,9 +46,11 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
 
 1. Connect RomM or an SMB share reachable from the Apple TV. Follow
    [Network sources](NETWORK_SOURCES.md), including its token permissions.
-2. Browse a platform and import one supported Ocarina of Time ROM, or use the
+2. Browse a platform and import a supported Ocarina of Time ROM or Mario Kart 64
+   (USA), or use the
    platform's bulk verification/import action. RomM covers and screenshots appear
-   while browsing, and imported games retain their cover art. Other games are not playable yet.
+   while browsing, and imported games retain their cover art. Each playable game
+   has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md).
 3. Connect a compatible game controller and select **Play** on a verified ROM.
 4. Keep Nativecade open during its first preparation. It rechecks the cached
    ROM, extracts assets locally, checks the archive version and every entry's CRC,
@@ -81,9 +88,12 @@ remain part of the physical Apple TV test pass.
   App Store Connect processing and tester availability are separate checks.
 
 Build **0.1.0 (2)** adds RomM covers, screenshots, bounded offline artwork caching,
-and artwork refresh for earlier imports. Its simulator build, 25 host tests, and
-the tvOS source/artwork probe passed. Build 2 still needs a new signed archive and
-TestFlight upload; the already uploaded build 1 does not include this artwork work.
+artwork refresh for earlier imports, and Mario Kart 64 through SpaghettiKart.
+Its simulator build and 26 host tests passed; the earlier tvOS source/artwork
+probe also passed. Mario Kart's real menu and race input path passed an SDL
+virtual-controller test; [details and limitations](SPAGHETTIKART.md).
+Build 2 still needs a new signed archive and TestFlight upload; the already
+uploaded build 1 does not include artwork or Mario Kart.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks

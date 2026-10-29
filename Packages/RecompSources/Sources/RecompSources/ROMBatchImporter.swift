@@ -96,7 +96,7 @@ public enum ROMBatchImporter {
                         }
                         result = BatchImportResult(id: entry.id, name: entry.name,
                             outcome: rom.recognized ? .imported : .unsupported,
-                            message: rom.revision ?? "Does not match a supported Ocarina of Time revision. Not cached.",
+                            message: rom.revision ?? "Does not match a supported game revision. Not cached.",
                             rom: rom.recognized ? rom : nil)
                     } catch {
                         if Task.isCancelled || error is CancellationError { throw CancellationError() }

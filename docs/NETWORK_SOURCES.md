@@ -90,7 +90,7 @@ app does not use browser cookies or persist tokens in URLs or catalog records.
   on the server first. SMB browsing shows folders and candidate ROM files.
 - The file's magic bytes determine byte order; the extension does not prove identity.
   Streamed canonicalization checks the N64 header, size/alignment, SHA-1 against
-  all 19 pinned Shipwright revisions, and SHA-256 for local integrity.
+  all 19 pinned Shipwright revisions plus Mario Kart 64 (USA), and SHA-256 for local integrity.
 - Transfers reject changed sizes, partial bodies, paths that escape the selected
   share folder, and ROMs larger than 64 MiB. HTTP catalog bodies are limited to 8 MiB.
   SMB compares size and modification time before/after transfer. A content change
