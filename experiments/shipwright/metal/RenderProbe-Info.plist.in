@@ -12,5 +12,14 @@
   <key>UIDeviceFamily</key><array><integer>3</integer></array>
   <key>LSRequiresIPhoneOS</key><true/>
   <key>UILaunchScreen</key><dict/>
+  <key>UIApplicationSceneManifest</key><dict>
+    <key>UIApplicationSupportsMultipleScenes</key><false/>
+    <key>UISceneConfigurations</key><dict>
+      <key>UIWindowSceneSessionRoleApplication</key><array><dict>
+        <key>UISceneConfigurationName</key><string>Probe</string>
+        <key>UISceneDelegateClassName</key><string>RecompTVGameSceneDelegate</string>
+      </dict></array>
+    </dict>
+  </dict>
   <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
 </dict></plist>

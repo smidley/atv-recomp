@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/shipwright-metal.yml
       - experiments/shipwright/metal/**
+      - experiments/shipwright/simulator-game/sdl-scenes.patch
       - scripts/check-shipwright-metal.sh
       - scripts/prepare-shipwright-metal.py
       - scripts/verify-shipwright-metal-build.py
@@ -18,6 +19,7 @@ on:
     paths:
       - .github/workflows/shipwright-metal.yml
       - experiments/shipwright/metal/**
+      - experiments/shipwright/simulator-game/sdl-scenes.patch
       - scripts/check-shipwright-metal.sh
       - scripts/prepare-shipwright-metal.py
       - scripts/verify-shipwright-metal-build.py
