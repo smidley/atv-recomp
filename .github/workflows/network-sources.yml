@@ -9,6 +9,7 @@ on:
       - scripts/network-fixtures.py
       - scripts/test-network-sources.sh
       - scripts/run-source-simulator-probe.py
+      - scripts/ci-build-tvos.sh
       - RecompTV.xcodeproj/**
       - .github/workflows/network-sources.yml
   push:
@@ -18,6 +19,7 @@ on:
       - scripts/network-fixtures.py
       - scripts/test-network-sources.sh
       - scripts/run-source-simulator-probe.py
+      - scripts/ci-build-tvos.sh
       - RecompTV/**
       - RecompTV.xcodeproj/**
       - .github/workflows/network-sources.yml

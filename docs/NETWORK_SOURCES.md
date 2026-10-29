@@ -188,10 +188,12 @@ observable platform-batch UI model, and saves fresh per-launch JSON plus launche
 screenshots. Its opt-in code is excluded
 from device and Release builds.
 
-The runner ad-hoc signs only the disposable `AppleTVSimulator` build, with a
-test-only application identifier and default Keychain group, then verifies that
-signature before installation. Normal Xcode development signing supplies the app
-identifier automatically. This does not modify the user's team or device profile.
+The runner installs only an `AppleTVSimulator` build, unchanged.
+`scripts/ci-build-tvos.sh simulator` keeps Xcode's ad hoc "Sign to Run Locally"
+signature, whose simulated application identifier supplies the default Keychain
+group; no certificate, team account or device profile is involved. Re-signing that
+identifier into an ad hoc code signature stops the app from launching on both the
+tvOS 26.5 and 27.0 simulators.
 
 The `Network sources` workflow runs the protocol and simulator checks. The
 `Foundation harness` workflow also builds Simulator Debug and device Release;

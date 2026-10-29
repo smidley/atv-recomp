@@ -34,24 +34,12 @@ def main():
         with (args.app / "Info.plist").open("rb") as info_file:
             info = plistlib.load(info_file)
         if info.get("CFBundleIdentifier") != bundle or "AppleTVSimulator" not in info.get("CFBundleSupportedPlatforms", []):
-            raise RuntimeError("This runner only signs the RecompTV tvOS Simulator app")
+            raise RuntimeError("This runner only installs the RecompTV tvOS Simulator app")
         run("xcrun", "simctl", "boot", udid)
         run("xcrun", "simctl", "bootstatus", udid, "-b")
-        run("codesign", "--force", "--deep", "--sign", "-", str(args.app))
-        # CODE_SIGNING_ALLOWED=NO omits Xcode's normal application-identifier claim.
-        # Give this disposable simulator build its own default Keychain group. Do not
-        # change the project, a user's signing team, or any device provisioning profile.
-        test_app_id = "RECOMPTV01." + bundle
-        entitlements = args.output / "simulator-entitlements.plist"
-        entitlements.write_bytes(plistlib.dumps({
-            "application-identifier": test_app_id,
-            "keychain-access-groups": [test_app_id],
-        }))
-        run("codesign", "--force", "--sign", "-", "--entitlements", str(entitlements), str(args.app))
-        # The colon strips the binary entitlement-blob header, leaving a parseable plist.
-        signature = subprocess.check_output(["codesign", "--display", "--entitlements", ":-", str(args.app)])
-        if plistlib.loads(signature).get("keychain-access-groups") != [test_app_id]:
-            raise RuntimeError("The simulator app's Keychain entitlement was not signed")
+        # Install Xcode's Simulator signature unchanged. Its simulated application
+        # identifier supplies the default Keychain group; re-signing that claim into
+        # an ad hoc code signature stops the app from launching.
         run("xcrun", "simctl", "install", udid, str(args.app))
         container = pathlib.Path(run("xcrun", "simctl", "get_app_container", udid, bundle, "data"))
         report_file = container / "Documents" / "source-probe.json"
