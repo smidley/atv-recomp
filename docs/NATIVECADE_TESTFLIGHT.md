@@ -33,7 +33,19 @@ It has no ROM argument and never reads `LocalData`. Both generated directories
 are required before building Nativecade; neither belongs in Git.
 
 Select **Nativecade** and an Apple TV simulator, resolve Swift packages, and Run.
-For TestFlight, choose **Any tvOS Device (arm64)** and **Product → Archive**.
+For TestFlight, choose **Any tvOS Device (arm64)** and **Product → Archive**, or
+archive and upload from Terminal with the Apple ID signed in to Xcode:
+
+```sh
+archive="$HOME/Library/Developer/Xcode/Archives/$(date +%F)/Nativecade.xcarchive"
+xcodebuild -project RecompTV.xcodeproj -scheme Nativecade -configuration Release \
+    -destination 'generic/platform=tvOS' -archivePath "$archive" archive
+xcodebuild -exportArchive -archivePath "$archive" -exportPath build/testflight \
+    -exportOptionsPlist scripts/testflight-export-options.plist -allowProvisioningUpdates
+```
+
+Raise `CURRENT_PROJECT_VERSION` before each upload; App Store Connect rejects a
+reused build number.
 The tvOS Release configuration uses the existing team's Apple Distribution
 certificate and **Nativecade tvOS App Store 2026-10-28** profile. A different
 developer must select their own signing team/profile. Provisioning profiles,
@@ -91,8 +103,10 @@ artwork refresh for earlier imports, and Mario Kart 64 through SpaghettiKart.
 Its simulator build and 26 host tests passed; the earlier tvOS source/artwork
 probe also passed. Mario Kart's real menu and race input path passed an SDL
 virtual-controller test; [details and limitations](SPAGHETTIKART.md).
-Build 2 still needs a new signed archive and TestFlight upload; the already
-uploaded build 1 does not include artwork or Mario Kart.
+On 2026-10-29, build 2 was archived from commit `469bfda` (merged with `main`)
+and uploaded to App Store Connect. Its embedded runtime frameworks match their
+debug symbols, and the archive contains no ROMs, extracted game archives, saves,
+or debug launch options. Build 1 does not include artwork or Mario Kart.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
