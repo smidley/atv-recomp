@@ -129,8 +129,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/roms":
             query = parse_qs(url.query)
             offset = int(query.get("offset", ["0"])[0])
+            # RomM 5.4.1 sends "files": [] unless with_files=true; ROM 4 omits it like older servers.
             rows = [
-                {"id": 3, "name": "Synthetic Ocarina fixture", "fs_name": "Fixture", "platform_id": 1, "platform_display_name": "Nintendo 64", **MEDIA},
+                {"id": 3, "name": "Synthetic Ocarina fixture", "fs_name": "Fixture", "platform_id": 1, "platform_display_name": "Nintendo 64", "files": [], **MEDIA},
                 {"id": 4, "name": "Second N64 fixture", "fs_name": "Second", "platform_id": 1, "platform_display_name": "Nintendo 64"},
                 {"id": 5, "name": "SNES fixture", "fs_name": "Other", "platform_id": 2, "platform_display_name": "SNES"},
             ]
