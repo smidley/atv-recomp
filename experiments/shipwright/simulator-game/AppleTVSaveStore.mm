@@ -191,9 +191,6 @@ static NSData *Request(NSDictionary *config, NSString *token, NSString *method, 
     delegate.done = dispatch_semaphore_create(0);
     NSURLSession *session = [NSURLSession sessionWithConfiguration:options delegate:delegate delegateQueue:nil];
     NSURLSessionDataTask *task = [session dataTaskWithRequest:request];
-#ifdef RECOMPTV_SAVE_TEST_MAIN
-    fprintf(stderr, "Save fixture request: %s %s\n", method.UTF8String, url.URL.absoluteString.UTF8String);
-#endif
     [task resume];
     // This function runs exclusively on the store's background operation queue.
     if (dispatch_semaphore_wait(delegate.done, dispatch_time(DISPATCH_TIME_NOW, 30 * NSEC_PER_SEC))) {
