@@ -26,6 +26,7 @@ actor GamePreparation {
                 case .ocarinaOfTime: NativecadePrepareGame(path, hash, &message, 512)
                 case .marioKart64: NativecadePrepareMarioKart(path, hash, &message, 512)
                 case .starFox64: NativecadePrepareStarFox(path, hash, &message, 512)
+                case .superMario64: NativecadePrepareSuperMario(path, hash, &message, 512)
                 }
             }
         }

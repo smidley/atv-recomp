@@ -4,12 +4,14 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
     case ocarinaOfTime
     case marioKart64
     case starFox64
+    case superMario64
 
     public var title: String {
         switch self {
         case .ocarinaOfTime: "The Legend of Zelda: Ocarina of Time"
         case .marioKart64: "Mario Kart 64"
         case .starFox64: "Star Fox 64"
+        case .superMario64: "Super Mario 64"
         }
     }
 
@@ -23,6 +25,7 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         case .ocarinaOfTime: "Ocarina of Time"
         case .marioKart64: "Mario Kart 64"
         case .starFox64: "Star Fox 64"
+        case .superMario64: "Super Mario 64"
         }
     }
 
@@ -31,6 +34,7 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         case .ocarinaOfTime: "shipwright-supported-roms"
         case .marioKart64: "spaghettikart-supported-roms"
         case .starFox64: "starship-supported-roms"
+        case .superMario64: "ghostship-supported-roms"
         }
     }
 

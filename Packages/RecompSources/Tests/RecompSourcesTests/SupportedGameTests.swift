@@ -11,6 +11,8 @@ import Testing
     // Star Fox 64 (U) 1.0 and 1.1, as listed in upstream/starship-baseline.json.
     #expect(SupportedGame.identify(sha1: "d8b1088520f7c5f81433292a9258c1184afa1457") == .starFox64)
     #expect(SupportedGame.identify(sha1: "09f0d105f476b00efa5303a3ebc42e60a7753b7a") == .starFox64)
+    // Super Mario 64 (U), as listed in upstream/ghostship-baseline.json.
+    #expect(SupportedGame.identify(sha1: "9bef1128717f958171a4afac3ed78ee2bb4e86ce") == .superMario64)
     #expect(SupportedGame.identify(sha1: String(repeating: "0", count: 40)) == nil)
     let record = ImportedROM(name: "Mario Kart 64.z64", revision: "NTSC 1.0 US", sha1: zelda,
         sha256: String(repeating: "a", count: 64), size: 33554432, sourceID: UUID())

@@ -3,4 +3,5 @@
 #include <NativecadeRuntime/NativecadeRuntime.h>
 #include <NativecadeSpaghetti/SpaghettiRuntime.h>
 #include <NativecadeStarship/StarshipRuntime.h>
+#include <NativecadeGhostship/GhostshipRuntime.h>
 #endif
