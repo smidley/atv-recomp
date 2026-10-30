@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
+#import <GameController/GameController.h>
 #include <SDL.h>
 #include <SDL_main.h>
 #include <zip.h>
@@ -11,6 +12,8 @@
 #include <cstring>
 #include <filesystem>
 #include <map>
+#include <chrono>
+#include <thread>
 #include <vector>
 #include <unistd.h>
 #include <mach/mach.h>
@@ -233,6 +236,74 @@ static void ResetGameGlobals() {
     }
 }
 
+// Holding a controller's View button, or the Siri Remote's Play/Pause, for 1.5 seconds ends any
+// game and returns to the library, as each game's own Quit does, whatever its menus offer. A press
+// of View alone still opens the menus of the games that have one.
+static id ControllerObserver;
+static std::atomic<unsigned> QuitPresses{0};
+
+static GCControllerButtonInput *QuitButton(GCController *controller) {
+    return controller.extendedGamepad ? controller.extendedGamepad.buttonOptions : controller.microGamepad.buttonX;
+}
+
+static void ArmQuitButton(GCController *controller) {
+    QuitButton(controller).pressedChangedHandler = ^(GCControllerButtonInput *button, float, BOOL pressed) {
+        const unsigned press = ++QuitPresses;
+        if (!pressed) return;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (press != QuitPresses.load() || !button.isPressed) return;
+            SDL_Event quit = {};
+            quit.type = SDL_QUIT;
+            SDL_PushEvent(&quit);
+        });
+    };
+}
+
+static void ArmQuitButtons(bool armed) {
+    if (armed) {
+        for (GCController *controller in GCController.controllers) ArmQuitButton(controller);
+        ControllerObserver = [NSNotificationCenter.defaultCenter addObserverForName:GCControllerDidConnectNotification
+            object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) { ArmQuitButton(note.object); }];
+    } else {
+        if (ControllerObserver) [NSNotificationCenter.defaultCenter removeObserver:ControllerObserver];
+        ControllerObserver = nil;
+        for (GCController *controller in GCController.controllers) QuitButton(controller).pressedChangedHandler = nil;
+    }
+}
+
+#if TARGET_OS_SIMULATOR
+// Simulator-only menu check: with NATIVECADE_MENU_PROBE set, a virtual controller presses View 12
+// seconds into the game, then moves through its menu with the D-pad (docs/GAME_SWITCHING.md).
+static void StartMenuProbe() {
+    if (!getenv("NATIVECADE_MENU_PROBE") || SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) return;
+    SDL_VirtualJoystickDesc desc{};
+    desc.version = SDL_VIRTUAL_JOYSTICK_DESC_VERSION;
+    desc.type = SDL_JOYSTICK_TYPE_GAMECONTROLLER;
+    desc.naxes = SDL_CONTROLLER_AXIS_MAX;
+    desc.nbuttons = SDL_CONTROLLER_BUTTON_MAX;
+    desc.axis_mask = (1u << SDL_CONTROLLER_AXIS_MAX) - 1;
+    desc.button_mask = (1u << SDL_CONTROLLER_BUTTON_MAX) - 1;
+    desc.name = "Nativecade menu probe";
+    const int index = SDL_JoystickAttachVirtualEx(&desc);
+    SDL_Joystick *pad = index >= 0 ? SDL_JoystickOpen(index) : nullptr;
+    if (!pad) return;
+    std::thread([pad] {
+        const auto start = std::chrono::steady_clock::now();
+        auto press = [&](SDL_GameControllerButton button, int at) {
+            std::this_thread::sleep_until(start + std::chrono::milliseconds(at));
+            SDL_JoystickSetVirtualButton(pad, button, 1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            SDL_JoystickSetVirtualButton(pad, button, 0);
+            NSLog(@"[MenuProbe] pressed %s", SDL_GameControllerGetStringForButton(button));
+        };
+        press(SDL_CONTROLLER_BUTTON_BACK, 12000);
+        for (int i = 0; i < 3; ++i) press(SDL_CONTROLLER_BUTTON_DPAD_DOWN, 15000 + i * 1000);
+        press(SDL_CONTROLLER_BUTTON_DPAD_RIGHT, 18000);
+        press(SDL_CONTROLLER_BUTTON_DPAD_DOWN, 19000);
+    }).detach();
+}
+#endif
+
 static int RunApplication(int argc, char **argv) {
     @autoreleasepool {
         if (!ShowLibrary || !HideLibrary) return 2;
@@ -253,6 +324,10 @@ static int RunApplication(int argc, char **argv) {
 #endif
             // libultraship otherwise uses Documents; Apple TV apps keep files in Caches (GameFolder).
             setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
+            ArmQuitButtons(true);
+#if TARGET_OS_SIMULATOR
+            StartMenuProbe();
+#endif
             if (GameRunner) {
                 status = GameRunner(argc, argv);
             } else {
@@ -260,6 +335,7 @@ static int RunApplication(int argc, char **argv) {
                 status = RecompTVShipwrightMain(argc, argv);
             }
         }
+        ArmQuitButtons(false);
         // A game's main loop ends when its menu's Quit button closes the window. The ports
         // expect the process to exit next, so release libultraship's process-wide context
         // before another game creates one. SDL keeps UIKit running for the library.

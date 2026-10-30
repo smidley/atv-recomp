@@ -5,6 +5,8 @@ import re
 import shutil
 import subprocess
 
+import tvos_menus
+
 root = Path(__file__).resolve().parent.parent
 pin = json.loads((root / "upstream/lighthouse-baseline.json").read_text())
 source = root / "build/upstream/Lighthouse"
@@ -110,4 +112,5 @@ build = re.sub(r"@(\w+)@", lambda match: values[match[1]], (source / "src/port/b
 target = destination / "src/port/build.c"
 if not target.exists() or target.read_text() != build:
     target.write_text(build)
+tvos_menus.flatten_file(destination / "src/port/UI/Menu.cpp", "prepare-lighthouse.py")
 print(f"Prepared Lighthouse {pin['release']} in {destination}")

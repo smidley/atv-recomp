@@ -4,6 +4,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+import tvos_menus
+
 root = Path(__file__).resolve().parent.parent
 pin = json.loads((root / "upstream/spaghettikart-baseline.json").read_text())
 source = root / "build/upstream/SpaghettiKart"
@@ -127,4 +129,5 @@ decoder = decoder.replace('size_t decodedSize = decoded->size - offset;',
 target = destination.parent / "torch-compat/Decompressor.cpp"
 if not target.exists() or target.read_text() != decoder:
     target.write_text(decoder)
+tvos_menus.flatten_file(destination / "src/port/ui/Menu.cpp", "prepare-spaghettikart.py")
 print(f"Prepared SpaghettiKart {pin['release']} in {destination}")

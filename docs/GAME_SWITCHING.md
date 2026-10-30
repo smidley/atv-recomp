@@ -18,7 +18,9 @@ check a new game. Expect a new game to hit some of the same cases.
    `NativecadeRunSuperMario` for Super Mario 64, `NativecadeRunBanjoKazooie` for
    Banjo-Kazooie, `NativecadeRunShadowsOfTheEmpire` for Shadows of the Empire,
    `NativecadeRunEpisodeOneRacer` for Racer, `NativecadeRunSuperSmashBros` for Super Smash Bros.).
-3. The red power button (Quit) in the game's menu closes libultraship's window.
+3. The red power button (Quit) in the game's menu closes libultraship's window, or
+   holding View (or the Siri Remote's Play/Pause) for 1.5 seconds sends SDL's quit
+   event, which every game handles (`ArmQuitButtons` in `NativecadeRuntime.mm`).
    The game's main loop ends, and its `main` returns.
 4. `RunApplication` cleans up (below) and shows the library again. SDL keeps
    UIKit running, so nothing else needs restarting.
@@ -84,7 +86,7 @@ are 139 KB and 2.8 MB.
 ### Restart check
 
 Debug simulator builds start each game listed in `NATIVECADE_RESTART_PROBE`
-(`oot`, `kart`, `fox`, `mario` or `banjo`), one each time the library appears, and end each game
+(`oot`, `kart`, `fox`, `mario`, `banjo`, `sote`, `racer` or `smash`), one each time the library appears, and end each game
 after 30 seconds as Quit does. The timer applies to every game started in that
 app session, including one started with Play:
 
@@ -96,6 +98,10 @@ xcrun simctl spawn <simulator> log show --last 5m --predicate 'eventMessage CONT
 The log ends with `[RestartProbe] PASS` when every game started and returned to
 the library. To capture standard error, `simctl launch --stderr=<file>` works when
 the file is inside the app's data container.
+
+With `NATIVECADE_MENU_PROBE=1`, a virtual controller presses View 12 seconds into each
+game and then moves through its menu with the D-pad (down three times, right, down),
+so screenshots taken meanwhile show the menu opening and the focus moving.
 
 Mario Kart's controller test (`NATIVECADE_KART_INPUT_PROBE=1`) only runs when SDL
 sees no other joystick. After another game has run, SDL already knows the Siri

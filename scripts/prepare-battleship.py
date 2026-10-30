@@ -15,6 +15,8 @@ import shutil
 import struct
 import subprocess
 import sys
+
+import tvos_menus
 import tempfile
 import zipfile
 import zlib
@@ -108,6 +110,19 @@ def adapt(relative, text):
                               text, flags=re.M)
         if not count:
             raise SystemExit(f"prepare-battleship.py: setDepthClipMode is no longer in {relative}")
+    if relative == "libultraship/src/ship/window/gui/Gui.cpp":
+        # As the shared libultraship's metal/menus.patch: on Apple TV the View button opens the menu
+        # and the controller moves through it. ImGui also reads every controller, as the shared
+        # libultraship's RefreshImGuiGamepads does, not only the first one found at startup.
+        text = swap(text, "    mImGuiIo->LogFilename = mImGuiLogPath.c_str();\n",
+                    "    mImGuiIo->LogFilename = mImGuiLogPath.c_str();\n#ifdef __IOS__\n"
+                    "    Ship::Context::GetInstance()->GetConsoleVariables()->SetInteger(CVAR_IMGUI_CONTROLLER_NAV, 1);\n"
+                    "#endif\n", relative)
+        text = swap(text, "ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));",
+                    "ImGui_ImplSDL2_InitForMetal(static_cast<SDL_Window*>(mImpl.Metal.Window));\n"
+                    "            ImGui_ImplSDL2_SetGamepadMode(ImGui_ImplSDL2_GamepadMode_AutoAll, nullptr, 0);", relative)
+    if relative == "port/gui/Menu.cpp":
+        text = tvos_menus.flatten(text, relative, "prepare-battleship.py")
     if relative == "port/port.cpp":
         # Nativecade prepares BattleShip.o2r before Play (BattleShipRuntime.mm), so the first-run
         # extractor and its wizard, which run Torch as a separate process, are left out.

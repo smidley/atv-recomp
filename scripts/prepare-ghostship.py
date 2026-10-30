@@ -5,6 +5,8 @@ import re
 import shutil
 import subprocess
 
+import tvos_menus
+
 root = Path(__file__).resolve().parent.parent
 pin = json.loads((root / "upstream/ghostship-baseline.json").read_text())
 source = root / "build/upstream/Ghostship"
@@ -217,4 +219,5 @@ build = re.sub(r"@(\w+)@", lambda match: values[match[1]], (source / "src/port/b
 target = destination / "src/port/build.c"
 if not target.exists() or target.read_text() != build:
     target.write_text(build)
+tvos_menus.flatten_file(destination / "src/port/ui/Menu.cpp", "prepare-ghostship.py")
 print(f"Prepared Ghostship {pin['release']} in {destination}")

@@ -96,6 +96,16 @@ SWAPS = {
          "    void* layer=SDL_Metal_GetLayer(view);\n"
          "    return {layer,layer};\n"),
     ],
+    # On Apple TV the Siri Remote is a game controller too, and often the first one; SotE reads
+    # only one controller, so it takes a gamepad when there is one.
+    "src/frontend.cpp": [
+        ("""    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+        if (SDL_IsGameController(i)) {""",
+         """    for (int pass = 0; pass < 2 && controller == nullptr; ++pass)
+    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+        const char* name = SDL_GameControllerNameForIndex(i);
+        if (SDL_IsGameController(i) && (pass == 1 || name == nullptr || std::strstr(name, "Remote") == nullptr)) {"""),
+    ],
     # SotE sends the process's output to its own log files; in Nativecade that would capture every
     # later game's output too, so it only does that when asked.
     "src/main.cpp#logging": [

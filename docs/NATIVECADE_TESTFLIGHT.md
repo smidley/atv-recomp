@@ -99,11 +99,21 @@ RomM backups are separate from the ROM cache. See
 [Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md) and
 [Apple TV performance](APPLE_TV_PERFORMANCE.md).
 
-To return to the library, open the game's menu with the controller's View button
-and select its red power button (Quit). Progress since the last save or autosave
-is lost, as when switching off a console. Any game can then be started again in
-the same session. Quitting with a physical controller and sustained hardware
-performance remain part of the physical Apple TV test pass.
+To return to the library from any game, hold the controller's View button (on a
+PlayStation controller, Create), or the Siri Remote's Play/Pause, for 1.5 seconds.
+Progress since the last save or autosave is lost, as when switching off a console.
+Any game can then be started again in the same session.
+
+A press of View opens the settings menu of the games built on libultraship
+(Ocarina of Time, Mario Kart 64, Star Fox 64's menu bar, Super Mario 64,
+Banjo-Kazooie, Super Smash Bros.) and of Racer. The D-pad moves through it, A
+selects and B goes back; its red power button (Quit) also returns to the library.
+In Star Fox 64, View shows the menu bar and X moves into it, as ImGui's controller
+layout does for menu bars.
+Shadows of the Empire keeps its settings in the game's own Options screen (Start).
+Before build 9, only Ocarina's menu opened, and it couldn't be navigated: the
+menus' regions stopped the D-pad at their borders. Quitting and the menus on a
+physical Apple TV remain part of the hardware test pass.
 
 Neither port was written to start twice in one process.
 [Switching games](GAME_SWITCHING.md) explains what Nativecade resets between games,
