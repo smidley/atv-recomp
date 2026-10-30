@@ -71,6 +71,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Test the prepared-asset cleanup
+        run: |
+          clang++ -std=c++20 -fobjc-arc -Wall -Wextra -Werror -DNATIVECADE_PREPARED_ASSETS_TEST \
+            experiments/shipwright/simulator-game/PreparedAssets.mm -framework Foundation -o "$RUNNER_TEMP/prepared-assets"
+          "$RUNNER_TEMP/prepared-assets"
       - name: Install CMake and Ninja
         run: |
           python3 -m venv "$RUNNER_TEMP/build-tools"

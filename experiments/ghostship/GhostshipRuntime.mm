@@ -78,6 +78,8 @@ bool NativecadePrepareSuperMario(const char *romPath, const char *expectedSHA1, 
         if (!ValidArchive(port, 1) || ![files fileExistsAtPath:[support stringByAppendingPathComponent:@"config.yml"]])
             return Fail(error, capacity, "This app build is missing its Super Mario 64 support files.");
         NSString *caches = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
+        NativecadeRemoveOutdatedPreparations([caches stringByAppendingPathComponent:@"Nativecade/Prepared"].fileSystemRepresentation,
+            NATIVECADE_MARIO_PREPARED);
         NSString *cache = [[caches stringByAppendingPathComponent:@"Nativecade/Prepared/" NATIVECADE_MARIO_PREPARED]
             stringByAppendingPathComponent:@(hash)];
         // Apple TV apps keep files in Library/Caches, like NativecadeRuntime.mm's game folders.

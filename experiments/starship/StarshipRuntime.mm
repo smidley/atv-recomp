@@ -84,6 +84,8 @@ bool NativecadePrepareStarFox(const char *romPath, const char *expectedSHA1, cha
         NSString *port = [support stringByAppendingPathComponent:@"starship.o2r"];
         if (!ValidArchive(port, 1) || ![files fileExistsAtPath:[support stringByAppendingPathComponent:@"config.yml"]])
             return Fail(error, capacity, "This app build is missing its Star Fox support files.");
+        NativecadeRemoveOutdatedPreparations([NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+            stringByAppendingPathComponent:@"Nativecade/Prepared"].fileSystemRepresentation, NATIVECADE_FOX_PREPARED);
         // Each ROM revision extracts its own assets.
         NSString *cache = [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
             stringByAppendingPathComponent:@"Nativecade/Prepared/" NATIVECADE_FOX_PREPARED]
