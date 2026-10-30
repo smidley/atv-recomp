@@ -222,6 +222,19 @@ the shared runtime. The SotE framework contains the interpreters and none of the
 generated code. In the simulator SotE plays only headless, so its picture, speed
 and controls need this build on the Apple TV.
 
+Build **0.1.0 (9)** adds Star Wars Episode I: Racer, through the same N64
+interpreter ([Racer](RACER.md)), and Super Smash Bros. through BattleShip
+([Super Smash Bros.](BATTLESHIP.md)). It also makes every game's settings menu
+reachable and navigable with a controller, and lets holding View (or the Siri
+Remote's Play/Pause) for 1.5 seconds quit any game; in build 8 only Ocarina's
+menu opened, it couldn't be navigated, and no game could be quit without it. On
+2026-10-30 it was archived with Xcode 27.2 (27B52). Besides the usual checks, every
+binary in the archive was compared with the Shadows of the Empire and Racer ROMs:
+the only shared 32-byte runs are counting sequences and SotE-Recomp's copy of the
+game's legal notice. Its upload stopped before sending anything, because Xcode's
+Apple Account needs signing in again (Accounts settings). Super Smash Bros. hasn't
+run with a ROM yet.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
