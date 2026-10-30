@@ -50,15 +50,17 @@ notices = [f"Nativecade uses Shipwright {release}, SpaghettiKart {kart_release},
            "https://github.com/HarbourMasters/libultraship\n"
            "https://github.com/JeodC/libultraship\n\n"
            "No game ROMs or extracted game content are included. Import a supported ROM to play.\n"
-           "\nNativecade also uses Shadows of the Empire: Recompiled, with N64ModernRuntime (GPL-3.0),\n"
-           "N64Recomp and RT64.\n"
+           "\nNativecade also uses Shadows of the Empire: Recompiled and Star Wars Episode I: Racer, with\n"
+           "N64ModernRuntime (GPL-3.0), N64Recomp and RT64.\n"
            "https://github.com/GTTeancum/SotE-Recomp\n"
+           "https://github.com/sp00nznet/racer\n"
            "https://github.com/N64Recomp/N64ModernRuntime\n"
            "https://github.com/N64Recomp/N64Recomp\n"
            "https://github.com/rt64/rt64\n"]
 seen = set()
 for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "build/upstream/Starship",
                root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse", root / "build/upstream/SotE-Recomp",
+               root / "build/upstream/racer", root / "build/upstream/racer-toolkits",
                host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
                root / "build/nativecade-runtime/appletvos/_deps"):
     if not source.exists():

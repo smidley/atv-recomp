@@ -6,4 +6,5 @@
 #include <NativecadeGhostship/GhostshipRuntime.h>
 #include <NativecadeLighthouse/LighthouseRuntime.h>
 #include <NativecadeSote/SoteRuntime.h>
+#include <NativecadeRacer/RacerRuntime.h>
 #endif

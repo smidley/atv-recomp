@@ -16,7 +16,8 @@ check a new game. Expect a new game to hit some of the same cases.
    library and runs the game's `main` (`RecompTVShipwrightMain` for Ocarina,
    `NativecadeRunMarioKart` for Mario Kart, `NativecadeRunStarFox` for Star Fox,
    `NativecadeRunSuperMario` for Super Mario 64, `NativecadeRunBanjoKazooie` for
-   Banjo-Kazooie, `NativecadeRunShadowsOfTheEmpire` for Shadows of the Empire).
+   Banjo-Kazooie, `NativecadeRunShadowsOfTheEmpire` for Shadows of the Empire,
+   `NativecadeRunEpisodeOneRacer` for Racer).
 3. The red power button (Quit) in the game's menu closes libultraship's window.
    The game's main loop ends, and its `main` returns.
 4. `RunApplication` cleans up (below) and shows the library again. SDL keeps

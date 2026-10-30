@@ -62,6 +62,8 @@ The fifth, **Banjo-Kazooie** (all four retail releases) with **Lighthouse 1.2.2*
 
 A sixth, **Star Wars: Shadows of the Empire** with the **SotE-Recomp** recompilation, is in progress. A recompilation's code is generated from a ROM, which no build that leaves this Mac may contain, so Nativecade runs the game's code from the player's ROM with an [N64 interpreter](docs/N64_INTERPRETER.md) instead. It plays headless in the simulator, where its RT64 renderer can't draw, and needs Apple TV testing. See [Shadows of the Empire](docs/SOTE.md).
 
+A seventh, **Star Wars Episode I: Racer** with **Racer** v0.3.0, runs the same way and is in progress: headless in the simulator it plays, makes sound and returns to the library. See [Racer](docs/RACER.md).
+
 The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
 ## Intended technology stack
@@ -97,6 +99,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Super Mario 64](docs/GHOSTSHIP.md) | Ghostship integration, its adaptations to the shared runtime, supported ROM, and simulator evidence |
 | [Banjo-Kazooie](docs/LIGHTHOUSE.md) | Lighthouse integration, the shared libraries it brought, supported ROMs, and simulator evidence |
 | [Shadows of the Empire](docs/SOTE.md) | SotE-Recomp, in progress: its game code run by the N64 interpreter, tvOS changes, and simulator limits |
+| [Racer](docs/RACER.md) | Star Wars Episode I: Racer, in progress: the same interpreter, its own runtime versions, and simulator checks |
 | [N64 interpreter](docs/N64_INTERPRETER.md) | Runs a recompiled game's code and audio microcode from the player's ROM, so builds contain nothing from it |
 | [Updating game runtimes](docs/UPDATING_UPSTREAM.md) | Pinned upstream releases, the weekly release check, update steps, and the release checklist |
 | [Switching games](docs/GAME_SWITCHING.md) | What carries over between game starts, how each case is reset, and how to check a new game |
