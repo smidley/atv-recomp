@@ -11,6 +11,7 @@
 | Star Fox 64 | N64 | Starship v2.0.0 | USA 1.0 and 1.1, [SHA-1s](upstream/starship-baseline.json); 1.1 imported | Experimental; RomM import, extraction, and startup verified in tvOS Simulator; switches with the other games. [Evidence and limits](docs/STARSHIP.md) |
 | Super Mario 64 | N64 | Ghostship 3.0.0 | USA, SHA-1 `9bef1128717f958171a4afac3ed78ee2bb4e86ce` | Experimental; import, extraction, and title screen verified in tvOS Simulator; switches with the other games. [Evidence and limits](docs/GHOSTSHIP.md) |
 | Banjo-Kazooie | N64 | Lighthouse 1.2.2 | USA 1.0 and 1.1, Europe, Japan, [SHA-1s](upstream/lighthouse-baseline.json); USA 1.1 imported | Experimental; RomM import, extraction, and opening scene verified in tvOS Simulator; switches with the other games. [Evidence and limits](docs/LIGHTHOUSE.md) |
+| Star Wars: Shadows of the Empire | N64 | SotE-Recomp 0.9.7 (upstream `main` after the tag) with N64ModernRuntime and RT64 | USA Rev 2, SHA-1 `9ab85626c27372ee614b7c5301c2c4eb187fd9f6`; imported | In progress; built only for the simulator on a Mac that generated its code from the ROM, never for Apple TV or TestFlight. Starts, plays audio and processes its first frames in tvOS Simulator, where RT64 can't draw (needs tier-2 argument buffers). Apple TV untested. [Details](docs/SOTE.md) |
 | The Legend of Zelda: Majora's Mask | N64 | Zelda 64: Recompiled | Earlier audit only | Deferred candidate; isolated core/RT64 builds do not establish gameplay |
 
 Do not interpret upstream desktop support as RecompTV support. Add other titles only with their own runtime integration and test evidence.
@@ -28,8 +29,9 @@ The index warns that automatically collected rows can be misclassified.
 Record upstream progress separately from RecompTV progress. A decompilation
 can supply groundwork without supplying a playable native port; a released
 desktop port still needs a tvOS integration. No index row should automatically
-become a bundled runtime or a Ready library entry. Shipwright and SpaghettiKart
-are integrated; other N64 projects remain in the investigation queue.
+become a bundled runtime or a Ready library entry. Five ports are integrated;
+[Nintendo 64 games](docs/N64_GAMES.md) shows each game's state and the next
+candidates.
 
 ## What makes a game launchable
 

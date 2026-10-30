@@ -16,7 +16,7 @@ check a new game. Expect a new game to hit some of the same cases.
    library and runs the game's `main` (`RecompTVShipwrightMain` for Ocarina,
    `NativecadeRunMarioKart` for Mario Kart, `NativecadeRunStarFox` for Star Fox,
    `NativecadeRunSuperMario` for Super Mario 64, `NativecadeRunBanjoKazooie` for
-   Banjo-Kazooie).
+   Banjo-Kazooie, `NativecadeRunShadowsOfTheEmpire` for Shadows of the Empire).
 3. The red power button (Quit) in the game's menu closes libultraship's window.
    The game's main loop ends, and its `main` returns.
 4. `RunApplication` cleans up (below) and shows the library again. SDL keeps
@@ -43,6 +43,17 @@ Sizes measured in the simulator build: Ocarina's game globals are 377 KB of
 initialized data and 101 MB of zeroed data; Mario Kart's are 826 KB and 277 MB;
 Star Fox's are 252 KB and 9.5 MB; Super Mario 64's are 283 KB and 3.7 MB; Banjo-Kazooie's
 are 139 KB and 2.8 MB.
+
+## Known issues
+
+- Shadows of the Empire hasn't been through the restart check: in the simulator its
+  renderer can't draw, so it never reaches Quit ([Shadows of the Empire](SOTE.md)).
+  N64ModernRuntime, its runtime, also expects a new process for each start.
+- On 2026-10-30, the sequence `banjo,oot,kart,fox,mario,banjo` stalled in two of
+  three runs: Banjo-Kazooie's second start waited in `osRecvMesg` for a controller
+  message during `game_init`. The third run passed, as did one run with the
+  stand-in Shadows of the Empire framework, and `banjo,banjo` plus Banjo-Kazooie
+  around each other game on its own. The cause isn't known yet.
 
 ## Adding a game
 

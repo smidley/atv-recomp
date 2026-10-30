@@ -1,0 +1,23 @@
+{
+  "release": "0.9.7",
+  "recorded_on": "2026-10-30",
+  "sources": {
+    "sote": {
+      "repository": "GTTeancum/SotE-Recomp",
+      "revision": "bfab37bd1e28ccfb8c6491d9d42a12c4bfb3e141"
+    }
+  },
+  "catalog": "https://github.com/GTTeancum/SotE-Recomp",
+  "roms": [
+    {
+      "name": "Star Wars - Shadows of the Empire (USA) (Rev 2)",
+      "sha1": "9ab85626c27372ee614b7c5301c2c4eb187fd9f6"
+    }
+  ],
+  "integration": "Pinned to upstream main after the 0.9.7 tag: those commits add the SDL host code of the Linux 0.9.7 package, while the tag itself only builds for Windows. Its runtime, renderer and recompiler are that commit's submodules. The game code is generated from the player's ROM on the build Mac (scripts/generate-sote-code.sh) and never committed.",
+  "prepare": [
+    [
+      "scripts/prepare-sote.py"
+    ]
+  ]
+}

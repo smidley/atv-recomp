@@ -29,7 +29,7 @@ struct LibraryView: View {
                         CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
                     }
                     if shelf.platforms.isEmpty {
-                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64 or Banjo-Kazooie.")
+                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie or Shadows of the Empire.")
                             .foregroundStyle(.secondary)
                     } else {
                         Text("Platforms").font(.title2.bold())
@@ -284,7 +284,7 @@ private struct SourceBrowserView: View {
                         Text("Includes every page and subfolder, even when search is active.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA) and Banjo-Kazooie ROMs are saved. Other games and compressed files appear in the results.")
+                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie and Shadows of the Empire (USA Rev 2) ROMs are saved. Other games and compressed files appear in the results.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if library.isImporting {
@@ -338,7 +338,7 @@ private struct SourceBrowserView: View {
                     }
                 } }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64 or Banjo-Kazooie ROMs found here."
+                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie or Shadows of the Empire ROMs found here."
                          : "No matching ROMs in this folder.")
                         .foregroundStyle(.secondary)
                 }
@@ -736,6 +736,7 @@ struct ArtworkFixturePreview: View {
                 case "fox": .starFox64
                 case "mario": .superMario64
                 case "banjo": .banjoKazooie
+                case "sote": .shadowsOfTheEmpire
                 default: .ocarinaOfTime
                 }
             } }

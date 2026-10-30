@@ -23,6 +23,7 @@ Each game has one version file, `upstream/<game>-baseline.json`:
 | Star Fox 64 | [Starship](https://github.com/HarbourMasters/Starship) (`starship`) | |
 | Super Mario 64 | [Ghostship](https://github.com/HarbourMasters/Ghostship) (`ghostship`) | |
 | Banjo-Kazooie | [Lighthouse](https://github.com/HarbourMasters/Lighthouse) (`lighthouse`) | libultraship and Torch, shared with the other games |
+| Star Wars: Shadows of the Empire | [SotE-Recomp](https://github.com/GTTeancum/SotE-Recomp) (`sote`) | Its own N64ModernRuntime, RT64 and N64Recomp, from the pinned commit's submodules |
 
 All games build against one libultraship and one Torch, so exactly one game's
 release supplies them (`scripts/UpstreamTests.py` checks this). That is
@@ -33,6 +34,10 @@ ships). Updating Lighthouse therefore moves the libraries for every game. If
 another game's release needs a newer library first, move both `gitlink`
 sources to that game's version file and change the readers that name
 `lighthouse-baseline.json` (`upstream/pins.cmake` and the prepare scripts).
+
+SotE-Recomp is pinned to a commit on upstream's `main` after its 0.9.7 tag (see
+`integration` in its version file), and `update sote` pins a tag, so check that a
+new release still has the SDL host code before updating ([Shadows of the Empire](SOTE.md)).
 
 Everything else reads these files: the build scripts, CMake through
 `upstream/pins.cmake`, the app's prepared-asset folders and extraction version,

@@ -28,6 +28,7 @@ actor GamePreparation {
                 case .starFox64: NativecadePrepareStarFox(path, hash, &message, 512)
                 case .superMario64: NativecadePrepareSuperMario(path, hash, &message, 512)
                 case .banjoKazooie: NativecadePrepareBanjoKazooie(path, hash, &message, 512)
+                case .shadowsOfTheEmpire: NativecadePrepareShadowsOfTheEmpire(path, hash, &message, 512)
                 }
             }
         }

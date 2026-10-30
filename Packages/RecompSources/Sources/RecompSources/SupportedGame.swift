@@ -6,6 +6,7 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
     case starFox64
     case superMario64
     case banjoKazooie
+    case shadowsOfTheEmpire
 
     public var title: String {
         switch self {
@@ -14,6 +15,7 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         case .starFox64: "Star Fox 64"
         case .superMario64: "Super Mario 64"
         case .banjoKazooie: "Banjo-Kazooie"
+        case .shadowsOfTheEmpire: "Star Wars: Shadows of the Empire"
         }
     }
 
@@ -29,6 +31,7 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         case .starFox64: "Star Fox 64"
         case .superMario64: "Super Mario 64"
         case .banjoKazooie: "Banjo-Kazooie"
+        case .shadowsOfTheEmpire: "Shadows of the Empire"
         }
     }
 
@@ -39,6 +42,7 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         case .starFox64: "starship-supported-roms"
         case .superMario64: "ghostship-supported-roms"
         case .banjoKazooie: "lighthouse-supported-roms"
+        case .shadowsOfTheEmpire: "sote-supported-roms"
         }
     }
 
