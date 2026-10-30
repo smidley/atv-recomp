@@ -8,6 +8,26 @@ The [branding preview](docs/branding/nativecade/nativecade-brand-preview.png), [
 
 **Status: Nativecade integrates RomM/SMB browsing, verified ROM import, on-device asset preparation, and playable Ocarina of Time and Mario Kart 64 ports, with Star Fox 64, Super Mario 64 and Banjo-Kazooie running in the simulator.** Both Apple TV and simulator runtimes build; Mario Kart's menu navigation and race acceleration have passed a simulator controller test. Physical Apple TV validation remains pending. See [Nativecade build and TestFlight](docs/NATIVECADE_TESTFLIGHT.md), [Mario Kart integration](docs/SPAGHETTIKART.md), and the [Shipwright baseline](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
 
+## Screenshots
+
+From the tvOS 27 Apple TV 4K simulator. Game images belong to their publishers. No game data is included in this repository; each game is prepared on the device from the player's own ROM.
+
+| Home screen with Favorites | A platform's games in cover flow |
+| --- | --- |
+| ![Nativecade home screen with a Favorites cover flow and a Search button](docs/images/home.jpg) | ![Nintendo 64 games in a cover flow, Star Fox 64 selected](docs/images/cover-flow.jpg) |
+
+| A game's page | Search finds games despite typos |
+| --- | --- |
+| ![Banjo-Kazooie's page with Play and Add to Favorites](docs/images/game-page.jpg) | ![Searching "mraio" finds Mario Kart 64 and Super Mario 64](docs/images/search.jpg) |
+
+| Banjo-Kazooie (Lighthouse) | Super Mario 64 (Ghostship) | Mario Kart 64 (SpaghettiKart) |
+| --- | --- | --- |
+| ![Banjo in Spiral Mountain](docs/images/banjo-kazooie.jpg) | ![Super Mario 64 title screen](docs/images/super-mario-64.jpg) | ![Mario Kart 64 title screen](docs/images/mario-kart-64.jpg) |
+
+| The Legend of Zelda: Ocarina of Time (Shipwright) | Star Fox 64 (Starship) |
+| --- | --- |
+| ![Link riding Epona across Hyrule Field at night](docs/images/ocarina-of-time.jpg) | ![The Great Fox near Corneria as General Pepper calls for Star Fox](docs/images/star-fox-64.jpg) |
+
 ## Run the launcher
 
 Prepare the native runtime and support resources using [Nativecade build instructions](docs/NATIVECADE_TESTFLIGHT.md), then open `RecompTV.xcodeproj`, resolve Swift packages, select **Nativecade** and an Apple TV simulator, and Run. The **RecompTV** scheme remains a standalone diagnostics/library harness without gameplay. In **Library**, add an SMB share or RomM connection and import an uncompressed N64 ROM. See [Network sources](docs/NETWORK_SOURCES.md) for connection details and testing. No project-generation tool is required.
