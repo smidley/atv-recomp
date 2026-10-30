@@ -7,6 +7,7 @@ struct LibraryView: View {
     @State private var library = LibraryModel()
     @State private var editing: LibrarySource?
     @State private var showingNotices = false
+    @State private var favorite = 0
 
     var body: some View {
         NavigationStack {
@@ -16,11 +17,7 @@ struct LibraryView: View {
                     let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
                     if !favorites.isEmpty {
                         Text("Favorites").font(.title2.bold())
-                        ScrollView(.horizontal) {
-                            LazyHStack(spacing: 32) {
-                                ForEach(favorites) { rom in GameCard(rom: rom, library: library) }
-                            }.padding(12)
-                        }.scrollClipDisabled()
+                        CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
                     }
                     let platforms = Set(library.importedROMs.compactMap { $0.game?.platform }).sorted()
                     if platforms.isEmpty {
@@ -431,43 +428,134 @@ private extension ImportedROM {
 private struct PlatformView: View {
     let platform: String
     let library: LibraryModel
+    @State private var selected = 0
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                Text(platform).font(.title.bold())
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
-                          alignment: .leading, spacing: 36) {
-                    ForEach(library.importedROMs.filter { $0.game?.platform == platform }.sorted { $0.title < $1.title }) { rom in
-                        GameCard(rom: rom, library: library)
-                    }
-                }
-            }
-            .padding(48)
+        let roms = library.importedROMs.filter { $0.game?.platform == platform }.sorted { $0.title < $1.title }
+        VStack(alignment: .leading, spacing: 40) {
+            Text(platform).font(.title.bold())
+            if !roms.isEmpty { CoverFlow(roms: roms, selected: $selected, library: library) }
+            Spacer(minLength: 0)
         }
+        .padding(48)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background { if let rom = roms[safe: selected] { CoverBackdrop(rom: rom, library: library) } }
     }
 }
 
+/// The game's cover, blurred, tinting the whole screen.
 @MainActor
-private struct GameCard: View {
+private struct CoverBackdrop: View {
     let rom: ImportedROM
     let library: LibraryModel
 
     var body: some View {
-        NavigationLink { GameView(rom: rom, library: library) } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork,
-                    sourceID: rom.sourceID, library: library, width: 290, height: 220)
-                Text(rom.title).font(.headline).lineLimit(2)
-                    .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                    .frame(width: 290, height: 72, alignment: .topLeading)
-                Text(rom.revision ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    .frame(width: 290, alignment: .leading)
+        GameArtworkView(path: rom.artwork?.coverLarge ?? rom.artwork?.cover, artwork: rom.artwork,
+            sourceID: rom.sourceID, library: library, width: 1920, height: 1080, title: rom.title, fill: true)
+            .blur(radius: 60).opacity(0.4).ignoresSafeArea()
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
+}
+
+/// Cover Flow: the selected game faces the viewer, and its neighbors fan out to each side, turned
+/// toward it. Left and right on the remote move the selection; select opens the game's page.
+@MainActor
+private struct CoverFlow: View {
+    let roms: [ImportedROM]
+    @Binding var selected: Int
+    let library: LibraryModel
+    var cover = CGSize(width: 520, height: 380)
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        let index = min(max(selected, 0), roms.count - 1)
+        let rom = roms[index]
+        let move = { (step: Int) in selected = min(max(index + step, 0), roms.count - 1) }
+        VStack(spacing: 24) {
+            NavigationLink { GameView(rom: rom, library: library) } label: {
+                ZStack {
+                    ForEach(Array(roms.enumerated()), id: \.element.id) { position, item in
+                        let distance = position - index
+                        if abs(distance) <= 5 {
+                            let side = Double(distance.signum())
+                            CoverFlowCover(rom: item, library: library, size: cover, highlighted: distance == 0 && focused)
+                                .rotation3DEffect(.degrees(side * -55), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                                .scaleEffect(distance == 0 ? 1 : 0.8)
+                                .offset(x: side * (cover.width * 0.6 + Double(abs(distance) - 1) * cover.width * 0.2))
+                                .brightness(distance == 0 ? 0 : -0.3)
+                                .zIndex(-Double(abs(distance)))
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: cover.height * 1.35, alignment: .top)
             }
-            .padding(20)
+            .buttonStyle(CoverFlowButtonStyle())
+            .focused($focused)
+            .onMoveCommand { direction in
+                if direction == .left { move(-1) } else if direction == .right { move(1) }
+            }
+            .accessibilityLabel(rom.title)
+            .accessibilityAdjustableAction { direction in
+                if direction == .decrement { move(-1) } else if direction == .increment { move(1) }
+            }
+            VStack(spacing: 8) {
+                Text(rom.title).font(.title2.bold()).lineLimit(1)
+                Text(rom.revision ?? " ").font(.callout).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.card)
-        .accessibilityLabel(rom.title)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: index)
+    }
+}
+
+/// No system focus effect: the cover flow highlights its selected cover instead.
+private struct CoverFlowButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.scaleEffect(configuration.isPressed ? 0.98 : 1)
+    }
+}
+
+/// One cover above a fading reflection.
+@MainActor
+private struct CoverFlowCover: View {
+    let rom: ImportedROM
+    let library: LibraryModel
+    let size: CGSize
+    let highlighted: Bool
+
+    var body: some View {
+        let art = GameArtworkView(path: rom.artwork?.coverLarge ?? rom.artwork?.cover, artwork: rom.artwork,
+            sourceID: rom.sourceID, library: library, width: size.width, height: size.height, title: rom.title)
+        VStack(spacing: 6) {
+            art
+                .shadow(color: highlighted ? .white.opacity(0.45) : .black.opacity(0.5), radius: highlighted ? 28 : 14)
+                .scaleEffect(highlighted ? 1.06 : 1)
+            art.scaleEffect(y: -1)
+                .frame(height: size.height * 0.3, alignment: .top)
+                .clipped()
+                .mask { LinearGradient(colors: [.white.opacity(0.5), .clear], startPoint: .top, endPoint: .bottom) }
+        }
+    }
+}
+
+/// Cover art for a game without artwork: its title on a color chosen from the title.
+private struct TitleArt: View {
+    let title: String
+
+    var body: some View {
+        // String's hashValue changes per launch; this keeps each game's color stable.
+        let hue = Double(title.unicodeScalars.reduce(0) { ($0 * 31 + Int($1.value)) % 360 }) / 360
+        ZStack {
+            LinearGradient(colors: [Color(hue: hue, saturation: 0.55, brightness: 0.6),
+                                    Color(hue: hue, saturation: 0.8, brightness: 0.25)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            Text(title).font(.title2.bold()).multilineTextAlignment(.center)
+                .minimumScaleFactor(0.5).padding(28)
+        }
     }
 }
 
@@ -493,13 +581,16 @@ private struct GameView: View {
                 if let artwork = rom.artwork {
                     GameScreenshotGallery(artwork: artwork, sourceID: rom.sourceID, library: library)
                 } else {
-                    GameArtworkView(path: nil, artwork: nil, sourceID: rom.sourceID, library: library, width: 260, height: 240)
+                    GameArtworkView(path: nil, artwork: nil, sourceID: rom.sourceID, library: library, width: 260, height: 240,
+                        title: rom.title)
                 }
                 if let revision = rom.revision { Text(revision).font(.headline) }
                 Text(rom.name).font(.caption).foregroundStyle(.secondary)
             }
             .padding(48)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background { CoverBackdrop(rom: rom, library: library) }
     }
 }
 
@@ -512,6 +603,10 @@ private struct GameArtworkView: View {
     let library: LibraryModel
     let width: CGFloat
     let height: CGFloat
+    /// Shown as generated cover art when there is no image.
+    var title: String? = nil
+    /// Fills the frame, cropping the image, instead of fitting it.
+    var fill = false
     @State private var image: UIImage?
     @State private var loading = false
 
@@ -526,7 +621,9 @@ private struct GameArtworkView: View {
         ZStack {
             Color.white.opacity(0.05)
             if let image {
-                Image(uiImage: image).resizable().scaledToFit()
+                Image(uiImage: image).resizable().aspectRatio(contentMode: fill ? .fill : .fit)
+            } else if let title {
+                TitleArt(title: title)
             } else {
                 VStack(spacing: 10) {
                     Image(systemName: "gamecontroller").font(.title)
