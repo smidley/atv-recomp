@@ -81,8 +81,8 @@ The controls are Lighthouse's defaults on libultraship's N64 mapping.
 
 ## Verification on 2026-10-30
 
-- The framework compiled and linked for the tvOS simulator (arm64). The device
-  slice has not been built yet.
+- The framework compiled and linked for the tvOS simulator and for Apple TV
+  (arm64); the Apple TV slice is in TestFlight build 7.
 - A Banjo-Kazooie (USA) (Rev 1) ROM from the user's RomM was imported and
   verified. The first preparation took a few seconds in the simulator and
   produced a 26 MB `bk.o2r`, which Lighthouse identified as US 1.1.
