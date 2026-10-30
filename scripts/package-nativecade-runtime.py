@@ -1,9 +1,20 @@
 """Package locally built frameworks. Never include ROMs or derived ROM assets."""
+import os
 from pathlib import Path
 import plistlib
 import shutil
 
 root = Path(__file__).resolve().parent.parent
+
+
+def link_or_copy(source, destination):
+    """Debug symbols are large and never edited here, so the package links them where it can."""
+    try:
+        os.link(source, destination)
+    except OSError:
+        shutil.copy2(source, destination)
+
+
 build = root / "build/nativecade-runtime"
 frameworks = (
     ("NativecadeRuntime", Path("."), "experiments/shipwright/simulator-game/NativecadeRuntime.h"),
@@ -50,7 +61,7 @@ for name, folder, header in frameworks:
             symbol_destination = output / identifier / "dSYMs" / symbols.name
             if symbol_destination.exists():
                 shutil.rmtree(symbol_destination)
-            shutil.copytree(symbols, symbol_destination)
+            shutil.copytree(symbols, symbol_destination, copy_function=link_or_copy)
             entry["DebugSymbolsPath"] = "dSYMs"
         libraries.append(entry)
     if not libraries:
