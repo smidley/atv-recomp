@@ -11,6 +11,15 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         }
     }
 
+    /// Words in both the RomM metadata title and the No-Intro filename. Browsing uses
+    /// them to hide other games; an import still verifies the exact revision.
+    var searchTerm: String {
+        switch self {
+        case .ocarinaOfTime: "Ocarina of Time"
+        case .marioKart64: "Mario Kart 64"
+        }
+    }
+
     var manifest: String {
         switch self {
         case .ocarinaOfTime: "shipwright-supported-roms"

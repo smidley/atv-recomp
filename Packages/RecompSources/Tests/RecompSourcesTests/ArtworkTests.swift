@@ -15,7 +15,9 @@ import UniformTypeIdentifiers
         #expect(result.host == "example.test")
         #expect(URLComponents(url: result, resolvingAgainstBaseURL: false)?.queryItems?.first?.name == "ts")
     }
+    #expect(try server.artworkURL("/assets/platforms/n64.ico").path == "/library/assets/platforms/n64.ico")
     for path in ["https://outside.test/assets/romm/resources/a.png", "//outside.test/assets/romm/resources/a.png",
+                 "/assets/platforms", "/assets/platforms/n64/../../../api/users/me", "/assets/platforms/%2e%2e",
                  "http://example.test/assets/romm/resources/a.png", "/api/users/me",
                  "https://secret@example.test/assets/romm/resources/a.png",
                  "/assets/romm/resources/%2e%2e/private.png", "/assets/romm/resources/%252e%252e/private.png",

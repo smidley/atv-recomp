@@ -30,11 +30,14 @@ struct RecompTVRootView: View {
         #endif
     }
     private var tabs: some View {
+        #if DEBUG
         TabView(selection: $selectedTab) {
             LibraryView().tabItem { Label("Library", systemImage: "books.vertical") }.tag(0)
-            #if DEBUG
             FoundationView().tabItem { Label("Diagnostics", systemImage: "waveform.path.ecg") }.tag(1)
-            #endif
         }
+        #else
+        // A one-tab bar only catches focus, and Menu pressed on it leaves the app.
+        LibraryView()
+        #endif
     }
 }
