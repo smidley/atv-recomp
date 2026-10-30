@@ -121,6 +121,17 @@ returns to the library so any game can start again
 runtime frameworks match their debug symbols, and the archive contains no ROMs,
 extracted game archives, saves, or simulator test options.
 
+Build **0.1.0 (4)** shows only what Nativecade can play: RomM lists the platforms
+that hold a supported game, with RomM's platform icon, and one card per game
+([Network sources](NETWORK_SOURCES.md)). Each platform and game opens its own
+screen, and Release builds no longer show a one-tab bar that caught focus. On
+2026-10-29 it was archived from commit `5bd89b7` with the build number raised to
+4, and uploaded to App Store Connect.
+Its runtime frameworks are build 3's (identical apart from code signatures) and
+match their debug symbols; the archive contains no ROMs, extracted game archives,
+saves, or simulator test options. Back on the Siri Remote still needs a check on
+the Apple TV, because the simulator tools cannot press Menu.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
