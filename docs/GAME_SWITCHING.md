@@ -3,7 +3,7 @@
 Quit in a game's menu returns to the Nativecade library, and any game can then be
 started again in the same app session. This was hard because every port assumes
 it owns the process: on a PC, quitting a game ends the program, so nothing in
-Shipwright, SpaghettiKart or libultraship cleans up for a second start. This page
+Shipwright, SpaghettiKart, Starship or libultraship cleans up for a second start. This page
 records what carried over between starts, how each case is handled, and how to
 check a new game. Expect a new game to hit some of the same cases.
 
@@ -14,7 +14,7 @@ check a new game. Expect a new game to hit some of the same cases.
 2. Play calls `NativecadeLaunchPreparedGame`. SDL's `postFinishLaunch` then calls
    `RunApplication` in `simulator-game/NativecadeRuntime.mm`, which hides the
    library and runs the game's `main` (`RecompTVShipwrightMain` for Ocarina,
-   `NativecadeRunMarioKart` for Mario Kart).
+   `NativecadeRunMarioKart` for Mario Kart, `NativecadeRunStarFox` for Star Fox).
 3. The red power button (Quit) in the game's menu closes libultraship's window.
    The game's main loop ends, and its `main` returns.
 4. `RunApplication` cleans up (below) and shows the library again. SDL keeps
@@ -28,27 +28,34 @@ check a new game. Expect a new game to hit some of the same cases.
 | SDL shutdown order | The window backend called `SDL_Quit()` while ImGui and the control deck still had game controllers open. They then closed freed controllers, corrupting the heap; the crash came later, in SwiftUI. | `metal/restart.patch` removes that call; the runtime calls `SDL_Quit()` after the context is destroyed. | `metal/restart.patch`, `NativecadeRuntime.mm` |
 | spdlog logger names | libultraship registers its logger under the game's name, so a second start could not register it. `Context::Init` chains its steps with `&&` and stopped there: no window, GUI or audio. Mario Kart crashed loading its fonts. | Drop the logger and set a plain default logger after each game. | `NativecadeRuntime.mm` |
 | The game data folder (`NATIVECADE_GAME_DIRECTORY`) | libultraship reads it as the game's data folder on Apple TV. It stayed set after Mario Kart, so Ocarina's settings and saves went into Mario Kart's folder. | Unset it after each game. | `NativecadeRuntime.mm` |
-| The original game code's C globals | They kept their values. For example, `gPlayState` still pointed at freed memory and a startup hook walked it. | `GameStateSection.h` is force-included in each game's C files, which puts their globals in `__DATA,__game_data` and `__DATA,__game_bss`. Before each start, `ResetGameGlobals` restores the first from a copy taken before the game first ran, and maps fresh zero pages over the second, which costs no memory until used. | `GameStateSection.h`, both games' `CMakeLists.txt`, `NativecadeRuntime.mm` |
+| The original game code's C globals | They kept their values. For example, `gPlayState` still pointed at freed memory and a startup hook walked it. | `GameStateSection.h` is force-included in each game's C files, which puts their globals in `__DATA,__game_data` and `__DATA,__game_bss`. Before each start, `ResetGameGlobals` restores the first from a copy taken before the game first ran, and maps fresh zero pages over the second, which costs no memory until used. | `GameStateSection.h`, each game's `CMakeLists.txt`, `NativecadeRuntime.mm` |
 | Shipwright's game hooks | Hooks live in static tables, one per hook type. GUI windows register hooks that capture `this` and never remove them, so old hooks wrote into freed windows on the next scene load. | `RecompTVClearGameHooks()` empties every table after each game. `restart.patch` makes hook IDs unique across starts, so an old ID held by a `COND_HOOK` cannot remove a new hook. | `AppleTVGameplay.cpp`, `simulator-game/restart.patch` |
 | Pointers cached in function-local statics | `GraveHoleJumps.cpp` cached a collision header from the first run. `CosmeticsEditor.cpp` caches the player twice. | `restart.patch` removes those `static` keywords. | `simulator-game/restart.patch` |
 | Mario Kart's C++ globals that its startup does not rebuild | The world (cups, track, actors), the track editor's objects, item registry IDs, and the set that records which display lists mirror mode already flipped. | `NativecadeRunMarioKart` rebuilds them after Mario Kart ends, while its context still exists. `prepare-spaghettikart.py` makes `gModifiedGfxSet` visible to it. | `spaghettikart/KartRestart.cpp`, `scripts/prepare-spaghettikart.py` |
+| Star Fox's event listeners | Starship v2.0.0 has its own process-wide event system, so the listeners registered at each start would pile up. | `prepare-starship.py` switches Star Fox to libultraship's event system, which the context owns, so `DestroyInstance` clears it. The event IDs are C globals and are restored with the others. | `scripts/prepare-starship.py` |
+| Star Fox's C++ timer list and audio pacing counters | A timer still pending at Quit, such as the logo screen's, would fire during the next start and change a game variable at the wrong moment. | `NativecadeRunStarFox` calls `NativecadeStarshipReset`, which `prepare-starship.py` adds to `Engine.cpp`. | `starship/StarshipRestart.cpp`, `scripts/prepare-starship.py` |
 | Nativecade's own observers and hooks | The app-lifecycle observers and the save-backup hook were added again on every start. | Observers are installed once per app session. The hook is registered each start, since the tables are cleared. | `AppleTVGameplay.cpp` |
 
 Sizes measured in the simulator build: Ocarina's game globals are 377 KB of
-initialized data and 101 MB of zeroed data; Mario Kart's are 826 KB and 277 MB.
+initialized data and 101 MB of zeroed data; Mario Kart's are 826 KB and 277 MB;
+Star Fox's are 252 KB and 9.5 MB.
 
 ## Adding a game
 
-- Compile the game's original C sources with `GameStateSection.h`, as both
-  `CMakeLists.txt` files do.
+- Compile the game's original C sources with `GameStateSection.h`, as each game's
+  `CMakeLists.txt` does.
 - Wrap its `main` like `NativecadeRunMarioKart` to rebuild C++ state that its own
   startup does not. Look for:
   - global C++ objects, such as `World sWorldInstance;` or `Registry<...> gItems;`;
+  - timer or task lists that hold pointers into game globals, such as Starship's
+    `gTimerTasks`;
   - function-local statics that cache pointers, such as
     `static T* x = GetResource(...);`;
   - static tables of callbacks or hooks that capture objects;
   - static "already done" sets tied to loaded resources;
   - singletons created with `new` at startup and never freed.
+- If the port carries its own copy of something libultraship now provides, such
+  as Starship's event system, use libultraship's: it belongs to the context.
 - Remember that one failed step in libultraship's `Context::Init` skips all
   later steps.
 - Set the game's data folder for its own run only.
@@ -60,8 +67,9 @@ initialized data and 101 MB of zeroed data; Mario Kart's are 826 KB and 277 MB.
 ### Restart check
 
 Debug simulator builds start each game listed in `NATIVECADE_RESTART_PROBE`
-(`oot` or `kart`), one each time the library appears, and end each game after
-30 seconds as Quit does:
+(`oot`, `kart` or `fox`), one each time the library appears, and end each game
+after 30 seconds as Quit does. The timer applies to every game started in that
+app session, including one started with Play:
 
 ```sh
 SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=oot,kart,oot,kart,kart,oot xcrun simctl launch <simulator> com.smidley.nativecade
@@ -121,7 +129,8 @@ Two reports are not restart bugs:
 - Crash reports: `~/Library/Logs/DiagnosticReports/Nativecade-*.ips`. macOS
   stops writing them after many crashes in one day; the sanitizer still reports.
 - Each game's libultraship log is in its data folder: `Documents/logs` for
-  Ocarina and `Documents/MarioKart64/logs` for Mario Kart.
+  Ocarina, `Documents/MarioKart64/logs` for Mario Kart and
+  `Documents/StarFox64/logs` for Star Fox.
 - Builds can be killed (exit code 137) when the Mac runs low on memory and swap.
   Shutting down the simulator during builds and running `ninja` directly, rather
   than `cmake --build`, helped.
@@ -130,6 +139,8 @@ Two reports are not restart bugs:
 
 - Quitting with a physical controller, controller input after a restart, and
   restarts on a physical Apple TV.
+- Star Fox under Address Sanitizer. The restart check passed on 2026-10-29 with
+  Star Fox three times among the other games (`fox,oot,fox,kart,fox`).
 - Memory use after many restarts. Shipwright's startup creates new singletons
   each time without freeing the old ones; the amount has not been measured.
 - Ocarina asks before quitting; Mario Kart quits at once. Either way, progress
