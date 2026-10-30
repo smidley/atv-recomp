@@ -38,7 +38,7 @@ struct RomMProvider: LibraryProvider {
             guard offset == 0 else { throw LibraryError.message("Invalid platform page.") }
             // Only platforms that hold a game Nativecade plays.
             let entries = Dictionary(grouping: try await playable(platformID: nil), by: \.platform_id)
-                .map { id, roms in
+                .map { id, roms -> LibraryEntry in
                     let name = roms[0].platform_display_name ?? "Platform \(id)"
                     return LibraryEntry(id: "platform-\(id)", name: name,
                                         detail: roms.count == 1 ? "1 game" : "\(roms.count) games", size: nil,

@@ -474,7 +474,7 @@ struct ArtworkFixturePreview: View {
         if games == nil {
             let arguments = ProcessInfo.processInfo.arguments
             games = restart.map { $0.split(separator: ",").map {
-                $0 == "kart" ? .marioKart64 : $0 == "fox" ? .starFox64 : .ocarinaOfTime
+                $0 == "kart" ? SupportedGame.marioKart64 : $0 == "fox" ? .starFox64 : .ocarinaOfTime
             } }
                 ?? (arguments.contains("--nativecade-play-mario-kart") ? [.marioKart64]
                     : arguments.contains("--nativecade-play-cached-rom") ? [.ocarinaOfTime] : [])
