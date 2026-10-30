@@ -18,14 +18,14 @@ None has been tested on a physical Apple TV yet.
 
 | Game | Runs through | Accepted ROMs | Checked in the simulator | Still to check | TestFlight |
 | --- | --- | --- | --- | --- | --- |
-| The Legend of Zelda: Ocarina of Time | [Shipwright](https://github.com/HarbourMasters/Shipwright) 9.3.1 | [19 revisions](../upstream/shipwright-supported-roms.json) | Rendering in the app; gameplay and controls confirmed earlier by the maintainer | Apple TV | Builds 1 to 4 |
-| Mario Kart 64 | [SpaghettiKart](https://github.com/HarbourMasters/SpaghettiKart) 1.0.0 | USA | Title, demo, menus and a race with a virtual controller | Full cups and time-trial saves, Apple TV | Builds 2 to 4 |
-| Star Fox 64 | [Starship](https://github.com/HarbourMasters/Starship) v2.0.0 | USA 1.0 and 1.1 | Startup and opening | Controller play, Apple TV | Build 5 onward, not yet accepted |
-| Super Mario 64 | [Ghostship](https://github.com/HarbourMasters/Ghostship) 3.0.0 | USA | Title screen | Controller play, Apple TV | Build 7, not yet accepted |
-| Banjo-Kazooie | [Lighthouse](https://github.com/HarbourMasters/Lighthouse) 1.2.2 | USA 1.0 and 1.1, Europe, Japan | Opening scene | Controller play, Apple TV | Build 7, not yet accepted |
+| The Legend of Zelda: Ocarina of Time | [Shipwright](https://github.com/HarbourMasters/Shipwright) 9.3.1 | [19 revisions](../upstream/shipwright-supported-roms.json) | Rendering in the app; gameplay and controls confirmed earlier by the maintainer | Apple TV | Build 1 |
+| Mario Kart 64 | [SpaghettiKart](https://github.com/HarbourMasters/SpaghettiKart) 1.0.0 | USA | Title, demo, menus and a race with a virtual controller | Full cups and time-trial saves, Apple TV | Build 2 |
+| Star Fox 64 | [Starship](https://github.com/HarbourMasters/Starship) v2.0.0 | USA 1.0 and 1.1 | Startup and opening | Controller play, Apple TV | Build 7 |
+| Super Mario 64 | [Ghostship](https://github.com/HarbourMasters/Ghostship) 3.0.0 | USA | Title screen | Controller play, Apple TV | Build 7 |
+| Banjo-Kazooie | [Lighthouse](https://github.com/HarbourMasters/Lighthouse) 1.2.2 | USA 1.0 and 1.1, Europe, Japan | Opening scene | Controller play, Apple TV | Build 7 |
 
-App Store Connect currently rejects builds made with Xcode 27.2, so builds 5 to 7
-haven't reached TestFlight; see [Nativecade and TestFlight](NATIVECADE_TESTFLIGHT.md).
+The TestFlight column is the first uploaded build with each game. Build 7, uploaded
+on 2026-10-30, has all five; see [Nativecade and TestFlight](NATIVECADE_TESTFLIGHT.md).
 Each game has its own page: [Ocarina of Time](SHIPWRIGHT_PORT.md),
 [Mario Kart 64](SPAGHETTIKART.md), [Star Fox 64](STARSHIP.md),
 [Super Mario 64](GHOSTSHIP.md) and [Banjo-Kazooie](LIGHTHOUSE.md).

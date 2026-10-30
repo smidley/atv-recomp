@@ -185,10 +185,11 @@ outdated prepared assets first. On 2026-10-30 it was archived from commit
 `91de927` with Xcode 27.2 (27B52) and the tvOS 27.2 SDK. All five runtime
 frameworks match their debug symbols, and the archive contains no ROMs,
 extracted game archives, saves, or simulator test options. App Store Connect
-rejected the upload ("Unsupported SDK or Xcode version"). Apple's
-[releases page](https://developer.apple.com/news/releases/) lists Xcode 27.2 RC
-(27B48) as the newest Xcode, not 27B52, so App Store Connect probably accepts
-only the RC until Apple lists 27B52. The upload is retried every 30 minutes.
+first rejected the upload ("Unsupported SDK or Xcode version"), probably because
+Apple's [releases page](https://developer.apple.com/news/releases/) still listed
+Xcode 27.2 RC (27B48) as the newest Xcode. The same archive was uploaded again
+every 30 minutes, and on 2026-10-30 at 10:35 App Store Connect accepted it and
+began processing it. Builds 5 and 6 were never accepted; build 7 replaces them.
 In the tvOS simulator, every game started and switched in one session, and
 Banjo-Kazooie played its opening.
 
