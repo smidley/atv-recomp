@@ -13,7 +13,7 @@ struct LibraryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     Text("Nativecade").font(.largeTitle.bold())
-                    Text("Connect a server and import Ocarina of Time or Mario Kart 64.")
+                    Text("Connect a server and import Ocarina of Time, Mario Kart 64 or Star Fox 64.")
                         .foregroundStyle(.secondary)
                     if !library.importedROMs.isEmpty {
                         Text(library.importedROMs.count == 1 ? "1 verified ROM saved locally" : "\(library.importedROMs.count) verified ROMs saved locally").font(.headline)
@@ -247,7 +247,7 @@ private struct SourceBrowserView: View {
                         Text("Includes every page and subfolder, even when search is active.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("Supported Ocarina of Time and Mario Kart 64 (USA) ROMs are saved. Other games and compressed files appear in the results.")
+                    Text("Supported Ocarina of Time, Mario Kart 64 (USA) and Star Fox 64 (USA) ROMs are saved. Other games and compressed files appear in the results.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if library.isImporting {
@@ -301,7 +301,7 @@ private struct SourceBrowserView: View {
                     }
                 } }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text(browser.source.kind == .romm ? "No Ocarina of Time or Mario Kart 64 ROMs found here."
+                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64 or Star Fox 64 ROMs found here."
                          : "No matching ROMs in this folder.")
                         .foregroundStyle(.secondary)
                 }
@@ -463,7 +463,7 @@ struct ArtworkFixturePreview: View {
 }
 
 /// Games the simulator smoke tests start, one each time the library appears. A game that
-/// quits brings the library back, so NATIVECADE_RESTART_PROBE (such as "oot,oot,kart,oot")
+/// quits brings the library back, so NATIVECADE_RESTART_PROBE (such as "oot,fox,kart,oot")
 /// checks that games restart in one session; the runtime ends each one after 30 seconds.
 @MainActor enum SimulatorLaunchProbe {
     private static var games: [SupportedGame]?
@@ -473,7 +473,9 @@ struct ArtworkFixturePreview: View {
         let restart = ProcessInfo.processInfo.environment["NATIVECADE_RESTART_PROBE"]
         if games == nil {
             let arguments = ProcessInfo.processInfo.arguments
-            games = restart.map { $0.split(separator: ",").map { $0 == "kart" ? .marioKart64 : .ocarinaOfTime } }
+            games = restart.map { $0.split(separator: ",").map {
+                $0 == "kart" ? .marioKart64 : $0 == "fox" ? .starFox64 : .ocarinaOfTime
+            } }
                 ?? (arguments.contains("--nativecade-play-mario-kart") ? [.marioKart64]
                     : arguments.contains("--nativecade-play-cached-rom") ? [.ocarinaOfTime] : [])
         }

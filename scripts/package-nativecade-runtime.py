@@ -8,6 +8,7 @@ build = root / "build/nativecade-runtime"
 frameworks = (
     ("NativecadeRuntime", Path("."), "experiments/shipwright/simulator-game/NativecadeRuntime.h"),
     ("NativecadeSpaghetti", Path("spaghettikart"), "experiments/spaghettikart/SpaghettiRuntime.h"),
+    ("NativecadeStarship", Path("starship"), "experiments/starship/StarshipRuntime.h"),
 )
 for name, folder, header in frameworks:
     output = build / f"{name}.xcframework"

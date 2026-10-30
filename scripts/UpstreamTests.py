@@ -17,13 +17,13 @@ class UpstreamTests(unittest.TestCase):
         self.games = upstream.load_games(ROOT)
 
     def test_each_tracked_game_names_its_own_repository(self):
-        self.assertEqual(set(self.games), {"shipwright", "spaghettikart"})
+        self.assertEqual(set(self.games), {"shipwright", "spaghettikart", "starship"})
         self.assertEqual(upstream.game_source(self.games["shipwright"])[1]["repository"], "HarbourMasters/Shipwright")
         self.assertEqual(upstream.game_source(self.games["spaghettikart"])[1]["repository"], "HarbourMasters/SpaghettiKart")
 
     def test_checkouts_list_each_tvos_source_once(self):
         pins = upstream.checkouts(self.games)
-        self.assertEqual(sorted(pin.path.name for pin in pins), ["Shipwright", "SpaghettiKart", "Torch", "libultraship"])
+        self.assertEqual(sorted(pin.path.name for pin in pins), ["Shipwright", "SpaghettiKart", "Starship", "Torch", "libultraship"])
         for pin in pins:
             self.assertRegex(pin.revision, r"^[0-9a-f]{40}$")
             self.assertEqual(pin.path.parent, ROOT / "build/upstream")
