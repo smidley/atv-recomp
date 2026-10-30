@@ -44,6 +44,32 @@ final class LibraryModel {
             imported = importedROMs.last
         }
         catch { self.error = "The cached ROM could not be verified. Import it again from your server." }
+        #if DEBUG && targetEnvironment(simulator)
+        // Local stress test: NATIVECADE_SYNTHETIC_LIBRARY=5000 adds that many unplayable games to browse.
+        if let count = ProcessInfo.processInfo.environment["NATIVECADE_SYNTHETIC_LIBRARY"].flatMap(Int.init) {
+            importedROMs += SyntheticLibrary.games(count)
+        }
+        #endif
+    }
+
+    /// Playable games by platform, sorted by title, with a search index. Browsing reads this on every
+    /// swipe, so it is rebuilt only when the imported games change.
+    struct Shelf {
+        var platforms = [String]()
+        var games = [String: [ImportedROM]]()
+        var search = FuzzySearch([ImportedROM](), title: \.title)
+    }
+
+    @ObservationIgnored private var shelfCache: (games: [ImportedROM], shelf: Shelf)?
+
+    var shelf: Shelf {
+        if let shelfCache, shelfCache.games == importedROMs { return shelfCache.shelf }
+        let playable = importedROMs.filter { $0.game != nil }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        let games = Dictionary(grouping: playable) { $0.game?.platform ?? "" }
+        let shelf = Shelf(platforms: games.keys.sorted(), games: games, search: FuzzySearch(playable, title: \.title))
+        shelfCache = (importedROMs, shelf)
+        return shelf
     }
 
     func artworkData(at path: String, artwork: RomMArtwork, sourceID: UUID,
@@ -297,3 +323,27 @@ final class SourceBrowserModel {
         }
     }
 }
+
+extension ImportedROM {
+    /// RomM's title when the game came from RomM, otherwise the supported game's name.
+    var title: String { artwork?.title ?? game?.title ?? name }
+}
+
+#if DEBUG && targetEnvironment(simulator)
+/// Fake library entries for browsing and search stress tests. They have no ROM file, so Play fails.
+enum SyntheticLibrary {
+    static func games(_ count: Int) -> [ImportedROM] {
+        let first = ["Super", "Turbo", "Mega", "Hyper", "Star", "Pocket", "Retro", "Galaxy", "Crystal", "Shadow"]
+        let second = ["Kart", "Quest", "Racer", "Legends", "Party", "Tennis", "Golf", "Odyssey", "Fighters", "Island"]
+        let ocarina = "ad69c91157f6705e8ab06c79fe08aad47bb57ba7" // files under Nintendo 64
+        let records = (0..<max(count, 0)).map { index -> [String: Any] in
+            let title = "\(first[index % first.count]) \(second[index / first.count % second.count]) \(index)"
+            return ["name": "\(title).z64", "revision": "Synthetic", "sha1": ocarina,
+                    "sha256": String(format: "%064x", index + 1), "size": 0, "sourceID": UUID().uuidString,
+                    "artwork": ["romID": index + 1, "server": "synthetic", "title": title, "screenshots": [String]()]]
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: records) else { return [] }
+        return (try? JSONDecoder().decode([ImportedROM].self, from: data)) ?? []
+    }
+}
+#endif

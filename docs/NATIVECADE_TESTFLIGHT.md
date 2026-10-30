@@ -71,7 +71,9 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
 3. Connect a compatible game controller. On the home screen, open the game's
    platform (or **Favorites**), choose the game, and select **Play**. The game's
    page can also add it to Favorites. A RomM game page shows **Play** once that
-   game is imported.
+   game is imported. **Search**, at the top right of the home screen, finds an
+   imported game by title. It ignores case, accents and word order, and accepts
+   one typo in longer words or initials such as "sm64".
 4. Keep Nativecade open during its first preparation. It rechecks the cached
    ROM, extracts assets locally, checks the archive version and every entry's CRC,
    then enters the native game. Later launches reuse that ROM's prepared archive.
@@ -95,6 +97,15 @@ performance remain part of the physical Apple TV test pass.
 Neither port was written to start twice in one process.
 [Switching games](GAME_SWITCHING.md) explains what Nativecade resets between games,
 the small upstream changes this needed, and how to check a new game.
+
+Large libraries stay smooth: a platform page draws only the covers near the
+selected game, and the library is sorted and indexed for search once per change,
+not on every swipe. To try thousands of games, Debug simulator builds add that
+many placeholder games (titles only, no ROM, kept in memory):
+
+```sh
+SIMCTL_CHILD_NATIVECADE_SYNTHETIC_LIBRARY=5000 xcrun simctl launch <simulator> com.smidley.nativecade
+```
 
 ## Verification recorded on 2026-10-28
 

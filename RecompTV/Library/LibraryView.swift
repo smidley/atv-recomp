@@ -13,22 +13,30 @@ struct LibraryView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text("Nativecade").font(.largeTitle.bold())
+                    HStack {
+                        Text("Nativecade").font(.largeTitle.bold())
+                        Spacer()
+                        if !library.importedROMs.isEmpty {
+                            NavigationLink { GameSearchView(library: library) } label: {
+                                Label("Search", systemImage: "magnifyingglass")
+                            }
+                        }
+                    }
+                    let shelf = library.shelf
                     let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
                     if !favorites.isEmpty {
                         Text("Favorites").font(.title2.bold())
                         CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
                     }
-                    let platforms = Set(library.importedROMs.compactMap { $0.game?.platform }).sorted()
-                    if platforms.isEmpty {
+                    if shelf.platforms.isEmpty {
                         Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64 or Super Mario 64.")
                             .foregroundStyle(.secondary)
                     } else {
                         Text("Platforms").font(.title2.bold())
                         ScrollView(.horizontal) {
                             LazyHStack(spacing: 32) {
-                                ForEach(platforms, id: \.self) { platform in
-                                    let count = library.importedROMs.filter { $0.game?.platform == platform }.count
+                                ForEach(shelf.platforms, id: \.self) { platform in
+                                    let count = shelf.games[platform]?.count ?? 0
                                     let games = count == 1 ? "1 game" : "\(count) games"
                                     NavigationLink { PlatformView(platform: platform, library: library) } label: {
                                         VStack(spacing: 16) {
@@ -419,11 +427,6 @@ private struct ROMResultView: View {
     }
 }
 
-private extension ImportedROM {
-    /// RomM's title when the game came from RomM, otherwise the supported game's name.
-    var title: String { artwork?.title ?? game?.title ?? name }
-}
-
 @MainActor
 private struct PlatformView: View {
     let platform: String
@@ -431,7 +434,7 @@ private struct PlatformView: View {
     @State private var selected = 0
 
     var body: some View {
-        let roms = library.importedROMs.filter { $0.game?.platform == platform }.sorted { $0.title < $1.title }
+        let roms = library.shelf.games[platform] ?? []
         VStack(alignment: .leading, spacing: 40) {
             Text(platform).font(.title.bold())
             if !roms.isEmpty { CoverFlow(roms: roms, selected: $selected, library: library) }
@@ -473,21 +476,23 @@ private struct CoverFlow: View {
     var body: some View {
         let index = min(max(selected, 0), roms.count - 1)
         let rom = roms[index]
-        let move = { (step: Int) in selected = min(max(index + step, 0), roms.count - 1) }
+        // Fast swipes send several moves before the next redraw, so each move starts from the binding.
+        let move = { (step: Int) in
+            let current = min(max(selected, 0), roms.count - 1)
+            selected = min(max(current + step, 0), roms.count - 1)
+        }
         VStack(spacing: 24) {
             NavigationLink { GameView(rom: rom, library: library) } label: {
                 ZStack {
-                    ForEach(Array(roms.enumerated()), id: \.element.id) { position, item in
-                        let distance = position - index
-                        if abs(distance) <= 5 {
-                            let side = Double(distance.signum())
-                            CoverFlowCover(rom: item, library: library, size: cover, highlighted: distance == 0 && focused)
-                                .rotation3DEffect(.degrees(side * -55), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                                .scaleEffect(distance == 0 ? 1 : 0.8)
-                                .offset(x: side * (cover.width * 0.6 + Double(abs(distance) - 1) * cover.width * 0.2))
-                                .brightness(distance == 0 ? 0 : -0.3)
-                                .zIndex(-Double(abs(distance)))
-                        }
+                    // Only the covers near the selection exist, however large the library.
+                    ForEach(max(index - 5, 0)...min(index + 5, roms.count - 1), id: \.self) { position in
+                        let distance = position - index, side = Double(distance.signum())
+                        CoverFlowCover(rom: roms[position], library: library, size: cover, highlighted: distance == 0 && focused)
+                            .rotation3DEffect(.degrees(side * -55), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                            .scaleEffect(distance == 0 ? 1 : 0.8)
+                            .offset(x: side * (cover.width * 0.6 + Double(abs(distance) - 1) * cover.width * 0.2))
+                            .brightness(distance == 0 ? 0 : -0.3)
+                            .zIndex(-Double(abs(distance)))
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -594,6 +599,47 @@ private struct GameView: View {
     }
 }
 
+/// Searches every imported game as you type, best match first (FuzzyMatch).
+@MainActor
+private struct GameSearchView: View {
+    let library: LibraryModel
+    @State private var query = ""
+
+    var body: some View {
+        let results = library.shelf.search.rank(query)
+        ScrollView {
+            if results.isEmpty {
+                Text("No games match “\(query)”.").foregroundStyle(.secondary).padding(48)
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
+                      alignment: .leading, spacing: 36) {
+                ForEach(results) { rom in GameTile(rom: rom, library: library) }
+            }
+            .padding(48)
+        }
+        .searchable(text: $query, prompt: "Game title")
+    }
+}
+
+@MainActor
+private struct GameTile: View {
+    let rom: ImportedROM
+    let library: LibraryModel
+
+    var body: some View {
+        NavigationLink { GameView(rom: rom, library: library) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork, sourceID: rom.sourceID,
+                    library: library, width: 290, height: 220, title: rom.title)
+                Text(rom.title).font(.headline).lineLimit(2).frame(width: 290, alignment: .leading)
+            }
+            .padding(20)
+        }
+        .buttonStyle(.card)
+        .accessibilityLabel(rom.title)
+    }
+}
+
 @MainActor
 private struct GameArtworkView: View {
     let path: String?
@@ -641,7 +687,8 @@ private struct GameArtworkView: View {
             guard let path, let artwork,
                   let bytes = await library.artworkData(at: path, artwork: artwork, sourceID: sourceID, sourceOverride: source),
                   !Task.isCancelled else { return }
-            image = UIImage(data: bytes)
+            // Decode off the main thread, so covers appearing during a swipe don't stall it.
+            image = await UIImage(data: bytes)?.byPreparingForDisplay()
         }
     }
 }
