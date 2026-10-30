@@ -34,7 +34,7 @@ Each game has its own page: [Ocarina of Time](SHIPWRIGHT_PORT.md),
 
 | Game | Project | Kind | What it would take |
 | --- | --- | --- | --- |
-| Star Wars: Shadows of the Empire | [SotE-Recomp](https://github.com/GTTeancum/SotE-Recomp) 0.9.7 | Recompilation (N64Recomp and RT64) | Work started 2026-10-30; nothing runs yet. Its game code is generated from the player's ROM when Nativecade is built, so it can only be built on a Mac that has the ROM, not in CI. Its runtime library, [N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime), is GPL-3.0, and its renderer, [RT64](https://github.com/rt64/rt64), hasn't run on Apple TV yet. |
+| Star Wars: Shadows of the Empire | [SotE-Recomp](https://github.com/GTTeancum/SotE-Recomp) 0.9.7 | Recompilation (N64Recomp and RT64) | In progress ([details](SOTE.md)). It builds for tvOS on a Mac that generated its code from the player's ROM, and in the simulator the game starts, plays audio and processes its first frames, but RT64 can't draw there: it needs tier-2 argument buffers, which the A15 Apple TV has and the simulator doesn't. Next is a test on the Apple TV. Its runtime library, [N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime), is GPL-3.0. |
 | The Legend of Zelda: Majora's Mask | [2 Ship 2 Harkinian](https://github.com/2ship2harkinian/2ship2harkinian) 5.0.1 | Source port (libultraship) | Builds on the same graphics library as the other ports; its asset extractor (ZAPD) would need to run on Apple TV. |
 | Paper Mario | [PaperBoat](https://github.com/HarbourMasters/PaperBoat) 1.0.3 | Source port (libultraship and Torch) | Uses the same asset extractor, but a branch of the graphics library that has diverged from the shared one. |
 

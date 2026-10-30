@@ -18,6 +18,8 @@ import Testing
                  "bb359a75941df74bf7290212c89fbc6e2c5601fe", "90726d7e7cd5bf6cdfd38f45c9acbf4d45bd9fd8"] {
         #expect(SupportedGame.identify(sha1: sha1) == .banjoKazooie)
     }
+    // Shadows of the Empire (USA) (Rev 2), the No-Intro dump SotE-Recomp accepts (CRC32 E8727549).
+    #expect(SupportedGame.identify(sha1: "9ab85626c27372ee614b7c5301c2c4eb187fd9f6") == .shadowsOfTheEmpire)
     #expect(SupportedGame.identify(sha1: String(repeating: "0", count: 40)) == nil)
     let record = ImportedROM(name: "Mario Kart 64.z64", revision: "NTSC 1.0 US", sha1: zelda,
         sha256: String(repeating: "a", count: 64), size: 33554432, sourceID: UUID())

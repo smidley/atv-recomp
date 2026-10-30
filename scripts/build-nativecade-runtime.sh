@@ -13,6 +13,16 @@ python3 "$runtime_root/scripts/prepare-spaghettikart.py"
 python3 "$runtime_root/scripts/prepare-starship.py"
 python3 "$runtime_root/scripts/prepare-ghostship.py"
 python3 "$runtime_root/scripts/prepare-lighthouse.py"
+# Shadows of the Empire's code exists only on a Mac that generated it from the player's ROM
+# (scripts/generate-sote-code.sh); elsewhere its framework only reports the game unavailable.
+runtime_sote_generated=false
+if [[ -f "$runtime_root/build/sote/source/generated/aspMain.cpp" ]]; then
+    runtime_sote_generated=true
+    python3 "$runtime_root/scripts/prepare-sote.py"
+    cmake -S "$runtime_root/experiments/sote/host-tools" -B "$runtime_root/build/sote/rt64-host-tools" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DRECOMPTV_SOTE_SOURCE="$runtime_root/build/sote/source"
+    cmake --build "$runtime_root/build/sote/rt64-host-tools"
+fi
 for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
     # The default contains both SDKs; explicit arguments can build one at a time.
     for runtime_platform in $runtime_sdk; do
@@ -23,6 +33,11 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
         esac
         runtime_build="$runtime_root/build/nativecade-runtime/$runtime_platform"
         runtime_sdk_path="$(xcode-select -p)/Platforms/$runtime_platform_folder.platform/Developer/SDKs/$runtime_platform_folder.sdk"
+        # Apple TV builds, which TestFlight archives use, include Shadows of the Empire only on request.
+        runtime_sote=
+        if $runtime_sote_generated && [[ $runtime_platform == appletvsimulator || ${NATIVECADE_INCLUDE_SOTE:-0} == 1 ]]; then
+            runtime_sote="$runtime_root/build/sote/source"
+        fi
         # CMake caches framework and zlib paths inside the versioned SDK, which an Xcode update replaces.
         runtime_fresh=
         if [[ -f "$runtime_build/CMakeCache.txt" ]] &&
@@ -40,12 +55,13 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
             -DRECOMPTV_SPAGHETTIKART_SOURCE="$runtime_root/build/spaghettikart/source" \
             -DRECOMPTV_STARSHIP_SOURCE="$runtime_root/build/starship/source" \
             -DRECOMPTV_GHOSTSHIP_SOURCE="$runtime_root/build/ghostship/source" \
-            -DRECOMPTV_LIGHTHOUSE_SOURCE="$runtime_root/build/lighthouse/source"
+            -DRECOMPTV_LIGHTHOUSE_SOURCE="$runtime_root/build/lighthouse/source" \
+            -DRECOMPTV_SOTE_SOURCE="$runtime_sote" -DRECOMPTV_SOTE_HOST_TOOLS="$runtime_root/build/sote/rt64-host-tools"
         cmake --build "$runtime_build" --target NativecadeSpaghetti NativecadeStarship NativecadeGhostship \
-            NativecadeLighthouse --parallel "${NATIVECADE_BUILD_JOBS:-4}"
+            NativecadeLighthouse NativecadeSote --parallel "${NATIVECADE_BUILD_JOBS:-4}"
         for runtime_relative in NativecadeRuntime.framework spaghettikart/NativecadeSpaghetti.framework \
                 starship/NativecadeStarship.framework ghostship/NativecadeGhostship.framework \
-                lighthouse/NativecadeLighthouse.framework; do
+                lighthouse/NativecadeLighthouse.framework sote/NativecadeSote.framework; do
         runtime_framework="$runtime_build/$runtime_relative"
         runtime_name=$(basename "$runtime_framework" .framework)
         lipo "$runtime_framework/$runtime_name" -verify_arch arm64

@@ -5,4 +5,5 @@
 #include <NativecadeStarship/StarshipRuntime.h>
 #include <NativecadeGhostship/GhostshipRuntime.h>
 #include <NativecadeLighthouse/LighthouseRuntime.h>
+#include <NativecadeSote/SoteRuntime.h>
 #endif

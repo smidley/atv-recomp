@@ -50,9 +50,19 @@ notices = [f"Nativecade uses Shipwright {release}, SpaghettiKart {kart_release},
            "https://github.com/HarbourMasters/libultraship\n"
            "https://github.com/JeodC/libultraship\n\n"
            "No game ROMs or extracted game content are included. Import a supported ROM to play.\n"]
+# Only a Mac that generated Shadows of the Empire's code builds it (scripts/generate-sote-code.sh).
+sote = root / "build/sote/source"
+sote_built = (sote / "generated/aspMain.cpp").is_file()
+if sote_built:
+    notices[0] += ("\nThis build of Nativecade may also include Shadows of the Empire: Recompiled, with\n"
+                   "N64ModernRuntime (GPL-3.0), N64Recomp and RT64.\n"
+                   "https://github.com/GTTeancum/SotE-Recomp\n"
+                   "https://github.com/N64Recomp/N64ModernRuntime\n"
+                   "https://github.com/N64Recomp/N64Recomp\n"
+                   "https://github.com/rt64/rt64\n")
 seen = set()
 for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "build/upstream/Starship",
-               root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse",
+               root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse", *([sote] if sote_built else []),
                host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
                root / "build/nativecade-runtime/appletvos/_deps"):
     if not source.exists():

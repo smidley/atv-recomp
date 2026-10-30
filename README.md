@@ -60,6 +60,8 @@ The fourth, **Super Mario 64 (USA)** with **Ghostship 3.0.0**, reaches its title
 
 The fifth, **Banjo-Kazooie** (all four retail releases) with **Lighthouse 1.2.2**, plays its opening in the simulator and switches with the other games; controller play and Apple TV testing are still to come. Every game now shares the newer libultraship and Torch that Lighthouse ships. See [Banjo-Kazooie](docs/LIGHTHOUSE.md).
 
+A sixth, **Star Wars: Shadows of the Empire** with the **SotE-Recomp** recompilation, is in progress. Its code is generated from the player's ROM on the Mac that builds the app, so only that Mac's builds include it. It starts in the simulator, but its RT64 renderer needs the Apple TV's GPU to draw. See [Shadows of the Empire](docs/SOTE.md).
+
 The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
 ## Intended technology stack
@@ -94,6 +96,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Star Fox 64](docs/STARSHIP.md) | Starship integration, its adaptations to the shared runtime, supported ROMs, and simulator evidence |
 | [Super Mario 64](docs/GHOSTSHIP.md) | Ghostship integration, its adaptations to the shared runtime, supported ROM, and simulator evidence |
 | [Banjo-Kazooie](docs/LIGHTHOUSE.md) | Lighthouse integration, the shared libraries it brought, supported ROMs, and simulator evidence |
+| [Shadows of the Empire](docs/SOTE.md) | SotE-Recomp, in progress: game code generated from the player's ROM on the build Mac, tvOS changes, and simulator limits |
 | [Updating game runtimes](docs/UPDATING_UPSTREAM.md) | Pinned upstream releases, the weekly release check, update steps, and the release checklist |
 | [Switching games](docs/GAME_SWITCHING.md) | What carries over between game starts, how each case is reset, and how to check a new game |
 | [Shipwright Metal build](docs/SHIPWRIGHT_METAL_BUILD.md) | Complete libultraship services and renderer link checks for tvOS Simulator |
