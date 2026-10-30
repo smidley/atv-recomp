@@ -1,13 +1,18 @@
 cmake_minimum_required(VERSION 3.20)
 project(NativecadeSoteHostTools LANGUAGES C CXX)
-# RT64's build runs these on the Mac while it cross-compiles for tvOS (scripts/prepare-sote.py
-# points RT64 at them). Sources come from the prepared copy, which targets tvOS's MSL dialect.
+# RT64's build runs these on the Mac while it cross-compiles for tvOS (scripts/rt64_tvos.py points
+# RT64 at them). Sources come from the prepared copy, which targets tvOS's MSL dialect: SotE's, or
+# with RECOMPTV_RT64_SOURCE another game's RT64 (Racer's).
 if(CMAKE_CROSSCOMPILING)
     message(FATAL_ERROR "RT64's shader tools must run on the build Mac")
 endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(rt64 "${RECOMPTV_SOTE_SOURCE}/third_party/rt64")
+if(RECOMPTV_RT64_SOURCE)
+    set(rt64 "${RECOMPTV_RT64_SOURCE}")
+else()
+    set(rt64 "${RECOMPTV_SOTE_SOURCE}/third_party/rt64")
+endif()
 set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
 set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)

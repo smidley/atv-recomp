@@ -91,24 +91,19 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
     uint64_t count = 0;
     ctx->r31 = (gpr)(int32_t)kSentinel;
     uint32_t pc = vram, npc = vram + 4;
-    // A jump or call lands on a function entry, where a native replacement may take over.
-    bool landed = true;
-    int land_after = 0;
 
     for (;;) {
         if (pc == kSentinel) break;
-        if (landed) {
-            landed = false;
-            if (marked(replacement_bits, pc)) {
-                // Like the C call it stands for, a replacement returns to its caller even if it
-                // ran game code on this context, which moves $ra.
-                const uint32_t return_to = (uint32_t)r[31];
-                replacements.find(pc)->second(rdram, ctx);
-                pc = return_to;
-                npc = pc + 4;
-                landed = true;
-                continue;
-            }
+        // A function the runtime replaces runs natively however it is reached: called, jumped to,
+        // or entered from the function before it, which Racer's tools/fix_fallthroughs.py makes its
+        // recompiled code call. Like the C call it stands for, it returns to $ra, even if it ran
+        // game code on this context, which moves $ra. A taken jump's delay slot is never an entry.
+        if (npc == pc + 4 && marked(replacement_bits, pc)) {
+            const uint32_t return_to = (uint32_t)r[31];
+            replacements.find(pc)->second(rdram, ctx);
+            pc = return_to;
+            npc = pc + 4;
+            continue;
         }
         if (marked(hook_bits, pc)) {
             const uint32_t return_to = (uint32_t)r[31];
@@ -116,7 +111,6 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
             if (action == N64INTERP_RETURN) {
                 pc = return_to;
                 npc = pc + 4;
-                landed = true;
                 continue;
             }
             if (action != 0) {
@@ -138,7 +132,7 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
             if (taken) next2 = branch_target;
             else { next = npc + 4; next2 = npc + 8; }
         };
-        auto jump = [&](uint32_t target) { next2 = target; land_after = 2; };
+        auto jump = [&](uint32_t target) { next2 = target; };
 
         switch (op) {
         case 0x00: // SPECIAL
@@ -224,7 +218,6 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
                 const bool taken = (rt & 1) ? SIGNED(r[rs]) >= 0 : SIGNED(r[rs]) < 0;
                 r[31] = (gpr)(int32_t)(pc + 8);
                 if (rt & 2) branch_likely(taken); else branch(taken);
-                if (taken) land_after = 2;
                 break;
             }
             case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0E:
@@ -407,7 +400,6 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
         ++count;
         pc = next;
         npc = next2;
-        if (land_after && --land_after == 0) landed = true;
     }
     executed.fetch_add(count, std::memory_order_relaxed);
 }
