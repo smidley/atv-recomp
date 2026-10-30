@@ -18,9 +18,10 @@ Each game has one version file, `upstream/<game>-baseline.json`:
 
 | Game | Upstream | Also supplies |
 |------|----------|---------------|
-| Ocarina of Time | [Shipwright](https://github.com/HarbourMasters/Shipwright) (`shipwright`) | libultraship and Torch, shared with Mario Kart and Star Fox |
+| Ocarina of Time | [Shipwright](https://github.com/HarbourMasters/Shipwright) (`shipwright`) | libultraship and Torch, shared with the other games |
 | Mario Kart 64 | [SpaghettiKart](https://github.com/HarbourMasters/SpaghettiKart) (`spaghettikart`) | |
 | Star Fox 64 | [Starship](https://github.com/HarbourMasters/Starship) (`starship`) | |
+| Super Mario 64 | [Ghostship](https://github.com/HarbourMasters/Ghostship) (`ghostship`) | |
 
 Everything else reads these files: the build scripts, CMake through
 `upstream/pins.cmake`, the app's prepared-asset folders and extraction version,
@@ -56,16 +57,18 @@ ignored. `python3 scripts/upstream.py releases` runs the same check locally.
 2. Fix each failing patch, keeping it limited to what tvOS needs. For a
    `.patch` file, commit the old upstream copy in a scratch Git repository, apply
    and commit the patch, cherry-pick it onto the new upstream copy, resolve the
-   conflicts, and save the diff. Mario Kart's and Star Fox's adapters are the text
-   substitutions in `scripts/prepare-spaghettikart.py` and `scripts/prepare-starship.py`;
-   update the anchors that moved.
+   conflicts, and save the diff. Mario Kart's, Star Fox's and Super Mario 64's adapters are the text
+   substitutions in `scripts/prepare-spaghettikart.py`, `scripts/prepare-starship.py` and
+   `scripts/prepare-ghostship.py`; update the anchors that moved. `prepare-ghostship.py` stops
+   with an error when one of its anchors is gone.
 3. If libultraship changed, run
    `bash scripts/check-shipwright-metal.sh arm64 build/upstream/libultraship --record-dependencies`,
    review what changed in `upstream/libultraship-simulator.json`, and commit it.
 4. Run `bash scripts/build-nativecade-runtime.sh`,
    `python3 scripts/prepare-nativecade-resources.py`,
-   `python3 scripts/prepare-spaghettikart-resources.py`, and
-   `python3 scripts/prepare-starship-resources.py`, then build the
+   `python3 scripts/prepare-spaghettikart-resources.py`,
+   `python3 scripts/prepare-starship-resources.py`, and
+   `python3 scripts/prepare-ghostship-resources.py`, then build the
    **Nativecade** scheme.
 5. Open a pull request. CI builds both game runtimes for Apple TV and
    Simulator, the Metal renderer test, and the version-file and ROM-list tests.
