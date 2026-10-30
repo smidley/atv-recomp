@@ -123,7 +123,9 @@ def fetch(pin):
     if not (path / ".git").exists():
         path.mkdir(parents=True, exist_ok=True)
         run("git", "init", "-q", cwd=path)
-    if run("git", "status", "--porcelain", cwd=path):
+    # A game's submodules can be pinned as checkouts of their own inside it (BattleShip's); they
+    # don't count as the game checkout's changes.
+    if run("git", "status", "--porcelain", "--ignore-submodules=all", cwd=path):
         raise SystemExit(f"{path} has local changes; upstream checkouts must stay clean")
     if run("git", "rev-parse", "-q", "--verify", "HEAD", cwd=path, check=False) != pin.revision:
         missing = subprocess.run(["git", "cat-file", "-e", f"{pin.revision}^{{commit}}"], cwd=path,

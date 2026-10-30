@@ -30,6 +30,7 @@ actor GamePreparation {
                 case .banjoKazooie: NativecadePrepareBanjoKazooie(path, hash, &message, 512)
                 case .shadowsOfTheEmpire: NativecadePrepareShadowsOfTheEmpire(path, hash, &message, 512)
                 case .episodeOneRacer: NativecadePrepareEpisodeOneRacer(path, hash, &message, 512)
+                case .superSmashBros: NativecadePrepareSuperSmashBros(path, hash, &message, 512)
                 }
             }
         }

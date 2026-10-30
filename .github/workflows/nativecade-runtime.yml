@@ -11,6 +11,10 @@ on:
       - experiments/starship/**
       - experiments/ghostship/**
       - experiments/lighthouse/**
+      - experiments/sote/**
+      - experiments/racer/**
+      - experiments/battleship/**
+      - experiments/n64interp/**
       - scripts/upstream.py
       - scripts/UpstreamTests.py
       - scripts/build-nativecade-runtime.sh
@@ -21,6 +25,11 @@ on:
       - scripts/prepare-starship.py
       - scripts/prepare-ghostship.py
       - scripts/prepare-lighthouse.py
+      - scripts/prepare-sote.py
+      - scripts/prepare-racer.py
+      - scripts/prepare-battleship.py
+      - scripts/rt64_tvos.py
+      - scripts/generate-n64interp.py
   push:
     branches: [main]
     paths:
@@ -31,6 +40,10 @@ on:
       - experiments/starship/**
       - experiments/ghostship/**
       - experiments/lighthouse/**
+      - experiments/sote/**
+      - experiments/racer/**
+      - experiments/battleship/**
+      - experiments/n64interp/**
       - scripts/upstream.py
       - scripts/UpstreamTests.py
       - scripts/build-nativecade-runtime.sh
@@ -41,6 +54,11 @@ on:
       - scripts/prepare-starship.py
       - scripts/prepare-ghostship.py
       - scripts/prepare-lighthouse.py
+      - scripts/prepare-sote.py
+      - scripts/prepare-racer.py
+      - scripts/prepare-battleship.py
+      - scripts/rt64_tvos.py
+      - scripts/generate-n64interp.py
   workflow_dispatch:
 
 permissions:

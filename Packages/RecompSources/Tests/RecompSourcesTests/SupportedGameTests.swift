@@ -22,6 +22,8 @@ import Testing
     #expect(SupportedGame.identify(sha1: "9ab85626c27372ee614b7c5301c2c4eb187fd9f6") == .shadowsOfTheEmpire)
     // Star Wars Episode I - Racer (USA), the release whose header CRC Racer checks (72F70398).
     #expect(SupportedGame.identify(sha1: "3542d5597c8a56ea8f5c63bceae97a24c4c08d58") == .episodeOneRacer)
+    // Super Smash Bros. (USA), NALE 1.0, the only release BattleShip's US build accepts.
+    #expect(SupportedGame.identify(sha1: "e2929e10fccc0aa84e5776227e798abc07cedabf") == .superSmashBros)
     #expect(SupportedGame.identify(sha1: String(repeating: "0", count: 40)) == nil)
     let record = ImportedROM(name: "Mario Kart 64.z64", revision: "NTSC 1.0 US", sha1: zelda,
         sha256: String(repeating: "a", count: 64), size: 33554432, sourceID: UUID())

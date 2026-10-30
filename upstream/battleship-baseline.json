@@ -1,0 +1,41 @@
+{
+  "release": "v1.6",
+  "recorded_on": "2026-10-30",
+  "sources": {
+    "battleship": {
+      "repository": "JRickey/BattleShip",
+      "revision": "78069c1fdac54351612ccf1c99778b51f2db1256"
+    },
+    "battleship-decomp": {
+      "repository": "JRickey/ssb-decomp-re",
+      "revision": "a79173a90f67c3e817e2c6ddcf683f3b76292823",
+      "gitlink": "decomp",
+      "checkout": "BattleShip/decomp"
+    },
+    "battleship-libultraship": {
+      "repository": "JRickey/libultraship",
+      "revision": "cdb279c5550f2fd123bbe0f5d68a45f84ce2587c",
+      "gitlink": "libultraship",
+      "checkout": "BattleShip/libultraship"
+    },
+    "battleship-torch": {
+      "repository": "JRickey/Torch",
+      "revision": "8060a909d9fa128d8c28db1ae2bcb6be7c446790",
+      "gitlink": "torch",
+      "checkout": "BattleShip/torch"
+    }
+  },
+  "catalog": "https://github.com/JRickey/BattleShip",
+  "roms": [
+    {
+      "name": "Super Smash Bros. (USA)",
+      "sha1": "e2929e10fccc0aa84e5776227e798abc07cedabf"
+    }
+  ],
+  "integration": "BattleShip builds against its own libultraship and Torch forks (its release's submodules), not the shared ones Lighthouse pins: the forks change Fast3D, the Context API and add SSB64 extraction. experiments/battleship builds them into NativecadeBattleShip.framework with hidden symbols; it takes only SDL and the game-runner API from NativecadeRuntime. US only (SSB64_VERSION=us).",
+  "prepare": [
+    [
+      "scripts/prepare-battleship.py"
+    ]
+  ]
+}

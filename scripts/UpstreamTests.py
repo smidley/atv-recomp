@@ -17,17 +17,19 @@ class UpstreamTests(unittest.TestCase):
         self.games = upstream.load_games(ROOT)
 
     def test_each_tracked_game_names_its_own_repository(self):
-        self.assertEqual(set(self.games), {"ghostship", "lighthouse", "racer", "shipwright", "sote", "spaghettikart", "starship"})
+        self.assertEqual(set(self.games), {"battleship", "ghostship", "lighthouse", "racer", "shipwright", "sote", "spaghettikart", "starship"})
         self.assertEqual(upstream.game_source(self.games["lighthouse"])[1]["repository"], "HarbourMasters/Lighthouse")
         self.assertEqual(upstream.game_source(self.games["shipwright"])[1]["repository"], "HarbourMasters/Shipwright")
         self.assertEqual(upstream.game_source(self.games["spaghettikart"])[1]["repository"], "HarbourMasters/SpaghettiKart")
         self.assertEqual(upstream.game_source(self.games["sote"])[1]["repository"], "GTTeancum/SotE-Recomp")
         self.assertEqual(upstream.game_source(self.games["racer"])[1]["repository"], "sp00nznet/racer")
+        self.assertEqual(upstream.game_source(self.games["battleship"])[1]["repository"], "JRickey/BattleShip")
 
     def test_checkouts_list_each_tvos_source_once(self):
         pins = upstream.checkouts(self.games)
         self.assertEqual(sorted(str(pin.path.relative_to(ROOT / "build/upstream")) for pin in pins),
-                         ["Ghostship", "Lighthouse", "Shipwright", "SotE-Recomp", "SpaghettiKart", "Starship", "Torch",
+                         ["BattleShip", "BattleShip/decomp", "BattleShip/libultraship", "BattleShip/torch",
+                          "Ghostship", "Lighthouse", "Shipwright", "SotE-Recomp", "SpaghettiKart", "Starship", "Torch",
                           "libultraship", "racer", "racer-toolkits/N64ModernRuntime", "racer-toolkits/N64Recomp",
                           "racer-toolkits/rt64"])
         for pin in pins:
@@ -37,7 +39,9 @@ class UpstreamTests(unittest.TestCase):
         # Build files and prepare scripts read these pins from lighthouse-baseline.json.
         owners = {name: key for key, game in self.games.items()
                   for name, source in game["sources"].items() if "gitlink" in source}
-        self.assertEqual(owners, {"libultraship": "lighthouse", "torch": "lighthouse"})
+        # BattleShip's own forks of them are its alone (docs/BATTLESHIP.md).
+        self.assertEqual(owners, {"libultraship": "lighthouse", "torch": "lighthouse", "battleship-decomp": "battleship",
+                                  "battleship-libultraship": "battleship", "battleship-torch": "battleship"})
 
     def test_update_takes_libraries_from_the_new_release(self):
         game = copy.deepcopy(self.games["lighthouse"])

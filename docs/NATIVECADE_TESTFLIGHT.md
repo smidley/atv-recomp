@@ -3,7 +3,9 @@
 The **Nativecade** scheme in `RecompTV.xcodeproj` combines the SwiftUI library,
 on-device Torch asset preparation, Shipwright 9.3.1, SpaghettiKart 1.0.0 and
 Starship v2.0.0 (Star Fox 64, in progress), Ghostship 3.0.0 (Super Mario 64, in
-progress) and Lighthouse 1.2.2 (Banjo-Kazooie, in progress) with a shared Metal renderer.
+progress), Lighthouse 1.2.2 (Banjo-Kazooie, in progress) and BattleShip v1.6 (Super Smash
+Bros., in progress) with a shared Metal renderer, and the recompilations SotE-Recomp (Shadows of
+the Empire) and Racer (Episode I: Racer) through the [N64 interpreter](N64_INTERPRETER.md).
 Its bundle identifier is `com.smidley.nativecade`; App Store Connect app ID is
 `6828252318`. The separate **RecompTV** scheme remains the lightweight diagnostics
 and network-source harness used by CI. It does not require the game framework.
@@ -69,7 +71,8 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
 1. Connect RomM or an SMB share reachable from the Apple TV. Follow
    [Network sources](NETWORK_SOURCES.md), including its token permissions.
 2. Browse a platform and import a supported Ocarina of Time ROM, Mario Kart 64
-   (USA), Star Fox 64 (USA), Super Mario 64 (USA) or Banjo-Kazooie, or use the
+   (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie, Shadows of the Empire
+   (USA Rev 2), Episode I: Racer (USA) or Super Smash Bros. (USA), or use the
    platform's bulk verification/import action. RomM covers and screenshots appear
    while browsing, and imported games retain their cover art. Each playable game
    has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md) and

@@ -23,6 +23,9 @@
 		"E24FEA663A7A4B9A9E1081F1" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "wrapper.xcframework"; "path" = "build/nativecade-runtime/NativecadeRacer.xcframework"; "sourceTree" = "SOURCE_ROOT"; };
 		"E24FEA663A7A4B9A9E1081F2" = { "isa" = "PBXBuildFile"; "fileRef" = "E24FEA663A7A4B9A9E1081F1"; };
 		"E24FEA663A7A4B9A9E1081F3" = { "isa" = "PBXBuildFile"; "fileRef" = "E24FEA663A7A4B9A9E1081F1"; "settings" = { "ATTRIBUTES" = ( "CodeSignOnCopy", "RemoveHeadersOnCopy", ); }; };
+		"E24FEA663A7A4B9A9E108201" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "wrapper.xcframework"; "path" = "build/nativecade-runtime/NativecadeBattleShip.xcframework"; "sourceTree" = "SOURCE_ROOT"; };
+		"E24FEA663A7A4B9A9E108202" = { "isa" = "PBXBuildFile"; "fileRef" = "E24FEA663A7A4B9A9E108201"; };
+		"E24FEA663A7A4B9A9E108203" = { "isa" = "PBXBuildFile"; "fileRef" = "E24FEA663A7A4B9A9E108201"; "settings" = { "ATTRIBUTES" = ( "CodeSignOnCopy", "RemoveHeadersOnCopy", ); }; };
 		"D707D4BA40161A156052FAA3" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "text.xml"; "path" = "RecompTV/PrivacyInfo.xcprivacy"; "sourceTree" = "SOURCE_ROOT"; };
 		"DA762B125923F75E1784D6E6" = { "isa" = "PBXBuildFile"; "fileRef" = "D707D4BA40161A156052FAA3"; };
 		"B2B76F7F2B842EF6765D18F3" = {
@@ -137,6 +140,7 @@
 				"E24FEA663A7A4B9A9E1081D2",
 				"E24FEA663A7A4B9A9E1081E2",
 				"E24FEA663A7A4B9A9E1081F2",
+				"E24FEA663A7A4B9A9E108202",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -163,6 +167,7 @@
 				"E24FEA663A7A4B9A9E1081D3",
 				"E24FEA663A7A4B9A9E1081E3",
 				"E24FEA663A7A4B9A9E1081F3",
+				"E24FEA663A7A4B9A9E108203",
 			);
 			"name" = "Embed Native Runtime";
 			"runOnlyForDeploymentPostprocessing" = "0";
@@ -429,6 +434,7 @@
 				"E24FEA663A7A4B9A9E1081D1",
 				"E24FEA663A7A4B9A9E1081E1",
 				"E24FEA663A7A4B9A9E1081F1",
+				"E24FEA663A7A4B9A9E108201",
 			);
 			"name" = "Frameworks";
 			"sourceTree" = "<group>";

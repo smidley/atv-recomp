@@ -64,6 +64,8 @@ A sixth, **Star Wars: Shadows of the Empire** with the **SotE-Recomp** recompila
 
 A seventh, **Star Wars Episode I: Racer** with **Racer** v0.3.0, runs the same way and is in progress: headless in the simulator it plays, makes sound and returns to the library. See [Racer](docs/RACER.md).
 
+An eighth, **Super Smash Bros. (USA)** with **BattleShip** v1.6, a source port of the complete decompilation with its own libultraship and Torch, is in progress: it builds for Apple TV and prepares its assets on the device from the player's ROM, but hasn't run with a ROM yet. See [Super Smash Bros.](docs/BATTLESHIP.md).
+
 The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
 ## Intended technology stack
@@ -99,6 +101,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Super Mario 64](docs/GHOSTSHIP.md) | Ghostship integration, its adaptations to the shared runtime, supported ROM, and simulator evidence |
 | [Banjo-Kazooie](docs/LIGHTHOUSE.md) | Lighthouse integration, the shared libraries it brought, supported ROMs, and simulator evidence |
 | [Shadows of the Empire](docs/SOTE.md) | SotE-Recomp, in progress: its game code run by the N64 interpreter, tvOS changes, and simulator limits |
+| [Super Smash Bros.](docs/BATTLESHIP.md) | BattleShip, in progress: its own libultraship and Torch, on-device preparation, and tvOS changes |
 | [Racer](docs/RACER.md) | Star Wars Episode I: Racer, in progress: the same interpreter, its own runtime versions, and simulator checks |
 | [N64 interpreter](docs/N64_INTERPRETER.md) | Runs a recompiled game's code and audio microcode from the player's ROM, so builds contain nothing from it |
 | [Updating game runtimes](docs/UPDATING_UPSTREAM.md) | Pinned upstream releases, the weekly release check, update steps, and the release checklist |

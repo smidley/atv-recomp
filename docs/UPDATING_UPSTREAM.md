@@ -25,9 +25,11 @@ Each game has one version file, `upstream/<game>-baseline.json`:
 | Banjo-Kazooie | [Lighthouse](https://github.com/HarbourMasters/Lighthouse) (`lighthouse`) | libultraship and Torch, shared with the other games |
 | Star Wars: Shadows of the Empire | [SotE-Recomp](https://github.com/GTTeancum/SotE-Recomp) (`sote`) | Its own N64ModernRuntime, RT64 and N64Recomp, from the pinned commit's submodules |
 | Star Wars Episode I: Racer | [Racer](https://github.com/sp00nznet/racer) (`racer`) | Its own N64ModernRuntime, RT64 and N64Recomp forks, pinned separately |
+| Super Smash Bros. | [BattleShip](https://github.com/JRickey/BattleShip) (`battleship`) | Its own libultraship and Torch forks and the ssb-decomp-re decompilation, from the release's submodules |
 
-All games build against one libultraship and one Torch, so exactly one game's
-release supplies them (`scripts/UpstreamTests.py` checks this). That is
+The libultraship games build against one libultraship and one Torch, so exactly one game's
+release supplies them (`scripts/UpstreamTests.py` checks this). BattleShip is the exception: it
+needs its own forks of both, which only it uses ([Super Smash Bros.](BATTLESHIP.md)). That is
 Lighthouse, because it needs the newest of both: Torch's Banjo-Kazooie
 extraction and the libultraship branch that draws N64 mipmaps
 ([JeodC/libultraship](https://github.com/JeodC/libultraship), which Lighthouse
