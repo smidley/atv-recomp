@@ -45,7 +45,7 @@ struct SMBProvider: LibraryProvider {
             let child = try address.child(name, in: path)
             let directory = row[.isDirectoryKey] as? Bool ?? false
             guard directory || LibraryEntry.isROMName(name) else { continue }
-            if !search.isEmpty && !name.localizedCaseInsensitiveContains(search) { continue }
+            if !FuzzyMatch.matches(search, name) { continue }
             let size = (row[.fileSizeKey] as? NSNumber)?.int64Value
             entries.append(LibraryEntry(id: child, name: name,
                                         detail: directory ? "Folder" : "Unverified N64 ROM", size: size,

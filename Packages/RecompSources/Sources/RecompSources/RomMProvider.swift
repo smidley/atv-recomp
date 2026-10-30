@@ -44,9 +44,8 @@ struct RomMProvider: LibraryProvider {
                                         detail: roms.count == 1 ? "1 game" : "\(roms.count) games", size: nil,
                                         target: .folder(.platform(id)), artwork: icon(name: name, slug: roms[0].platform_slug))
                 }
-                .filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-            return LibraryPage(entries: entries, nextOffset: nil)
+            return LibraryPage(entries: FuzzyMatch.rank(search, entries, by: \.name), nextOffset: nil)
         case .platform(let id):
             guard id > 0, offset == 0 else { throw LibraryError.message("Invalid RomM platform.") }
             let entries = try await playable(platformID: id).map { rom in
@@ -54,8 +53,7 @@ struct RomMProvider: LibraryProvider {
                              detail: "Open to choose a ROM file", size: nil, target: .folder(.rom(rom.id)),
                              artwork: artwork(id: rom.id, title: rom.name ?? rom.fs_name, media: rom.media))
             }
-            return LibraryPage(entries: entries.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) },
-                               nextOffset: nil)
+            return LibraryPage(entries: FuzzyMatch.rank(search, entries, by: \.name), nextOffset: nil)
         case .rom(let id):
             guard id > 0 else { throw LibraryError.message("Invalid RomM item.") }
             let rom = try await decode(RomMDetail.self, path: ["roms", String(id)])
