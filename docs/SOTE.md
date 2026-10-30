@@ -108,8 +108,8 @@ SIMCTL_CHILD_SOTE_SMOKE_VIS=6000 SIMCTL_CHILD_SOTE_INPUT_SCRIPT=120:5:start,300:
     xcrun simctl launch --console <simulator> com.smidley.nativecade
 ```
 
-With `SOTE_RSP_CAPTURE=DIRECTORY`, simulator builds also save the state 16 audio
-tasks start from, five seconds apart. `experiments/n64interp/RspSpike.cpp` runs
+With `N64INTERP_RSP_CAPTURE=DIRECTORY`, simulator builds also save the state 16 audio
+tasks start from, 120 tasks apart. `experiments/n64interp/RspSpike.cpp` runs
 them through the RSP interpreter and through the generated microcode and
 compares DMEM and RDRAM; its header shows how to build it. The captures and the
 generated code stay on the Mac.

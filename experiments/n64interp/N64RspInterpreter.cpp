@@ -2,8 +2,10 @@
 #include "N64RspInterpreter.h"
 #include "librecomp/rsp_vu_impl.hpp"
 
+#include <TargetConditionals.h>
 #include <array>
 #include <cstdio>
+#include <cstdlib>
 #include <utility>
 
 namespace {
@@ -110,6 +112,24 @@ using Cop2 = bool (*)(RSP &, uint32_t, uint32_t *);
 template <u8... e> constexpr std::array<Cop2, 16> cop2_table(std::integer_sequence<u8, e...>) { return {{&cop2<e>...}}; }
 constexpr auto cop2_ops = cop2_table(std::make_integer_sequence<u8, 16>());
 
+#if TARGET_OS_SIMULATOR
+// N64INTERP_RSP_CAPTURE=DIRECTORY saves the state 16 tasks, 120 tasks apart, start from, for
+// RspSpike.cpp to compare this interpreter with a microcode RSPRecomp generated, on the Mac.
+void capture(uint8_t *rdram, uint32_t ucode_addr) {
+    static const char *directory = std::getenv("N64INTERP_RSP_CAPTURE");
+    static unsigned task;
+    if (!directory || task++ % 120 || task > 120 * 16) return;
+    char path[1024];
+    std::snprintf(path, sizeof path, "%s/task-%04u.bin", directory, task);
+    if (FILE *file = std::fopen(path, "wb")) {
+        std::fwrite(&ucode_addr, sizeof ucode_addr, 1, file);
+        std::fwrite(dmem, 1, 0x1000, file);
+        std::fwrite(rdram, 1, 0x800000, file);
+        std::fclose(file);
+    }
+}
+#endif
+
 RspExitReason unsupported(uint32_t pc, uint32_t instruction) {
     std::fprintf(stderr, "[n64interp] unsupported RSP instruction %08X at %04X\n", instruction, 0x1000 + pc);
     return RspExitReason::Unsupported;
@@ -117,6 +137,9 @@ RspExitReason unsupported(uint32_t pc, uint32_t instruction) {
 } // namespace
 
 RspExitReason n64interp_rsp_run(uint8_t *rdram, uint32_t ucode_addr, const N64InterpRspPatch *patch) {
+#if TARGET_OS_SIMULATOR
+    capture(rdram, ucode_addr);
+#endif
     // rspboot copies the microcode to IMEM 0x080 and starts it there. IMEM holds words as the
     // RSP reads them; pc below is an offset into it.
     uint32_t imem[0x400] = {};

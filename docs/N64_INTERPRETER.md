@@ -34,8 +34,8 @@ Only the generated code is replaced:
 
 - `DecompressorSpike.cpp` interprets SotE's boot decompressor from a ROM and
   compares the result with the image SotE-Recomp's extractor wrote.
-- `RspSpike.cpp` runs audio tasks saved in the simulator through the RSP
-  interpreter and through RSPRecomp's code, and compares memory afterwards.
+- `RspSpike.cpp` runs audio tasks saved in the simulator (`N64INTERP_RSP_CAPTURE`)
+  through the RSP interpreter and through RSPRecomp's code, and compares memory afterwards.
 - In the simulator, SotE's headless smoke test plays without the renderer
   ([Shadows of the Empire](SOTE.md#checking-it-in-the-simulator)).
 

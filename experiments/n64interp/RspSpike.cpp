@@ -1,7 +1,7 @@
-// Spike: runs Shadows of the Empire audio tasks that SotE saved in the simulator (SOTE_RSP_CAPTURE,
-// experiments/sote/SoteAudioMicrocode.cpp) through the interpreter and through the microcode
-// RSPRecomp generated from the ROM, then compares DMEM and RDRAM. Runs on the Mac; neither the
-// captures nor the generated code leave it.
+// Spike: runs audio tasks a game saved in the simulator (N64INTERP_RSP_CAPTURE, N64RspInterpreter.cpp)
+// through the interpreter, as the game's aspMain runs it, and through the microcode RSPRecomp
+// generated from the ROM, then compares DMEM and RDRAM. Runs on the Mac; neither the captures nor
+// the generated code leave it. For Shadows of the Empire:
 //   clang++ -std=c++20 -O2 -DaspMain=recompiled_aspMain -c build/sote/source/generated/aspMain.cpp ...
 //   clang++ -std=c++20 -O2 RspSpike.cpp N64RspInterpreter.cpp ../sote/SoteAudioMicrocode.cpp librecomp/src/rsp.cpp aspMain.o
 //   ./a.out CAPTURE...

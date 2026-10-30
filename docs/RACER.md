@@ -72,6 +72,9 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=racer SIMCTL_CHILD_SWE1R_HEADLESS_SMOKE=1 
   library (`PASS: 1 games started in one session`).
 - Racer's audio dump (`SWE1R_AUDIODUMP`) from such a run held 30 seconds of sound, with a peak of
   9,943 and a loudness that changes as music does.
+- Six audio tasks saved from such a run (`N64INTERP_RSP_CAPTURE`), five of them writing 3.7 to 4.6 KB
+  of sound, gave byte-identical DMEM and RDRAM through the RSP interpreter and through the microcode
+  RSPRecomp generated from the ROM on the Mac (`experiments/n64interp/RspSpike.cpp`).
 - Not yet checked: anything on a physical Apple TV (picture, speed, controls, saves) and a second
   start in the same session.
 
