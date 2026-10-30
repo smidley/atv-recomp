@@ -136,7 +136,7 @@ artwork refresh for earlier imports, and Mario Kart 64 through SpaghettiKart.
 Its simulator build and 26 host tests passed; the earlier tvOS source/artwork
 probe also passed. Mario Kart's real menu and race input path passed an SDL
 virtual-controller test; [details and limitations](SPAGHETTIKART.md).
-On 2026-10-29, build 2 was archived from commit `469bfda` (merged with `main`)
+On 2026-10-29, build 2 was archived from commit `a11ac1a` (merged with `main`)
 and uploaded to App Store Connect. Its embedded runtime frameworks match their
 debug symbols, and the archive contains no ROMs, extracted game archives, saves,
 or debug launch options. Build 1 does not include artwork or Mario Kart.
@@ -144,7 +144,7 @@ or debug launch options. Build 1 does not include artwork or Mario Kart.
 Build **0.1.0 (3)** finds artwork for games imported before build 2, and Quit now
 returns to the library so any game can start again
 ([Switching games](GAME_SWITCHING.md)). On 2026-10-29 it was archived from commit
-`da3089a` with the build number raised to 3, and uploaded to App Store Connect. Its
+`2854e54` with the build number raised to 3, and uploaded to App Store Connect. Its
 runtime frameworks match their debug symbols, and the archive contains no ROMs,
 extracted game archives, saves, or simulator test options.
 
@@ -152,7 +152,7 @@ Build **0.1.0 (4)** shows only what Nativecade can play: RomM lists the platform
 that hold a supported game, with RomM's platform icon, and one card per game
 ([Network sources](NETWORK_SOURCES.md)). Each platform and game opens its own
 screen, and Release builds no longer show a one-tab bar that caught focus. On
-2026-10-29 it was archived from commit `5bd89b7` with the build number raised to
+2026-10-29 it was archived from commit `4c0a17c` with the build number raised to
 4, and uploaded to App Store Connect.
 Its runtime frameworks are build 3's (identical apart from code signatures) and
 match their debug symbols; the archive contains no ROMs, extracted game archives,
@@ -163,7 +163,7 @@ Build **0.1.0 (5)** fixes "not enough storage" when preparing a game on the Appl
 TV: each game now keeps its files in `Library/Caches/Nativecade/Games`. Its home
 screen shows Favorites and one card per platform; a platform lists its games, and
 each game's page has Play and a favorite toggle. It also adds Star Fox 64. On
-2026-10-29 it was archived from commit `50a8890` with Xcode 27.2 (27B52), whose
+2026-10-29 it was archived from commit `92eba87` with Xcode 27.2 (27B52), whose
 update had arrived through the Mac App Store that evening. Its runtime frameworks
 match their debug symbols, and the archive contains no ROMs, extracted game
 archives, saves, or simulator test options. App Store Connect rejected the upload
@@ -174,7 +174,7 @@ favorite appeared on the home screen and persisted across launches. The fix
 itself needs the Apple TV: the simulator also allowed `Documents`.
 
 Build **0.1.0 (6)** browses games in a cover flow and adds Super Mario 64. It was
-archived on 2026-10-29 from commit `aa9c295` and was never uploaded, for the same
+archived on 2026-10-29 from commit `e0ef217` and was never uploaded, for the same
 reason; build 7 replaces it.
 
 Build **0.1.0 (7)** adds game search with fuzzy matching, keeps large libraries
@@ -182,7 +182,7 @@ smooth to browse, and adds Banjo-Kazooie. Every game now uses the newer
 libultraship and Torch that Lighthouse ships, so Mario Kart, Star Fox and Super
 Mario 64 prepare their assets again on first launch, and each game deletes its
 outdated prepared assets first. On 2026-10-30 it was archived from commit
-`ed2bc8f` with Xcode 27.2 (27B52) and the tvOS 27.2 SDK. All five runtime
+`91de927` with Xcode 27.2 (27B52) and the tvOS 27.2 SDK. All five runtime
 frameworks match their debug symbols, and the archive contains no ROMs,
 extracted game archives, saves, or simulator test options. App Store Connect
 rejected the upload ("Unsupported SDK or Xcode version"). Apple's
