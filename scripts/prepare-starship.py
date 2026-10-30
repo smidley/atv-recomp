@@ -133,6 +133,11 @@ def adapt(relative, text):
     for old, new in mapping.items():
         text = text.replace('"' + old + '"', '"' + new + '"')
     text = text.replace('"gAdvancedResolution.', '"gSettings.AdvancedResolution.')
+    if relative == "port/Engine.cpp":
+        # Timers and audio pacing outlive a game; a pending timer would otherwise fire
+        # in the next start and change its state (StarshipRestart.cpp).
+        text += ("\nextern \"C\" void NativecadeStarshipReset() {\n"
+                 "    gTimerTasks.clear();\n    frames = 0;\n    countermin = 0;\n}\n")
     return text
 
 
