@@ -7,9 +7,9 @@ published source code, a recompilation turns the game's own code into C. That
 code is generated from the player's ROM on the Mac that builds Nativecade, so:
 
 - it is never committed, uploaded, or built in CI;
-- an app build contains it only if that Mac generated it;
-- Apple TV builds, which TestFlight archives use, leave it out unless
-  `NATIVECADE_INCLUDE_SOTE=1` is set when building the runtime.
+- only simulator builds on the Mac that generated it contain it;
+- Apple TV builds, which TestFlight archives use, never contain it:
+  `experiments/sote/CMakeLists.txt` stops with an error if asked to.
 
 Everywhere else, the `NativecadeSote` framework is a stand-in that reports the
 game isn't included in this build.
@@ -43,8 +43,7 @@ yet.
    ignores that folder.
 3. Build as usual ([Nativecade and TestFlight](NATIVECADE_TESTFLIGHT.md)).
    `build-nativecade-runtime.sh` notices the generated code and builds the real
-   framework for the simulator; add `NATIVECADE_INCLUDE_SOTE=1` to include it in
-   Apple TV builds too. RT64 compiles its shaders while it builds, which needs
+   framework for the simulator only. RT64 compiles its shaders while it builds, which needs
    Xcode's Metal Toolchain (`xcodebuild -downloadComponent MetalToolchain`).
 
 ## How it is adapted
@@ -86,8 +85,8 @@ recompiled code reads the cartridge while it runs.
 
 SotE-Recomp's own code is MIT. N64ModernRuntime, which it links, is GPL-3.0, so
 an app build that includes Shadows of the Empire is a combined work under
-GPL-3.0 when it is distributed. RT64, plume and N64Recomp are MIT. The app's
-third-party notices list them when this Mac has generated the game's code.
+GPL-3.0 when it is distributed. RT64, plume and N64Recomp are MIT. Builds that
+leave this Mac never include them, so the app's third-party notices don't list them.
 
 ## Verification on 2026-10-30
 
@@ -106,8 +105,10 @@ third-party notices list them when this Mac has generated the game's code.
   that depends on them never finishes, and the screen stays black with the game
   waiting. Starting Shadows of the Empire in the simulator therefore leaves the
   app stuck until it is closed. The Apple TV 4K (3rd generation, A15) supports
-  tier-2 argument buffers, as do the Macs RT64 runs on, so the next test needs
-  the Apple TV.
+  tier-2 argument buffers, as do the Macs RT64 runs on, but Apple TV builds
+  can't contain code generated from a ROM, so in this form the game can't be
+  tested there. Running it on the Apple TV needs its code read from the
+  player's ROM while it runs, as the other games' assets are.
 - Not yet checked: any picture, controls, sound quality, saves, Quit and a
   second start in the same session ([Switching games](GAME_SWITCHING.md)), and
   anything on a physical Apple TV.

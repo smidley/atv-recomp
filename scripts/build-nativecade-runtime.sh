@@ -33,9 +33,10 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
         esac
         runtime_build="$runtime_root/build/nativecade-runtime/$runtime_platform"
         runtime_sdk_path="$(xcode-select -p)/Platforms/$runtime_platform_folder.platform/Developer/SDKs/$runtime_platform_folder.sdk"
-        # Apple TV builds, which TestFlight archives use, include Shadows of the Empire only on request.
+        # Code generated from a ROM stays in this Mac's simulator builds; Apple TV builds, which
+        # TestFlight archives use, never include it (experiments/sote/CMakeLists.txt refuses).
         runtime_sote=
-        if $runtime_sote_generated && [[ $runtime_platform == appletvsimulator || ${NATIVECADE_INCLUDE_SOTE:-0} == 1 ]]; then
+        if $runtime_sote_generated && [[ $runtime_platform == appletvsimulator ]]; then
             runtime_sote="$runtime_root/build/sote/source"
         fi
         # CMake caches framework and zlib paths inside the versioned SDK, which an Xcode update replaces.

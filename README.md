@@ -60,7 +60,7 @@ The fourth, **Super Mario 64 (USA)** with **Ghostship 3.0.0**, reaches its title
 
 The fifth, **Banjo-Kazooie** (all four retail releases) with **Lighthouse 1.2.2**, plays its opening in the simulator and switches with the other games; controller play and Apple TV testing are still to come. Every game now shares the newer libultraship and Torch that Lighthouse ships. See [Banjo-Kazooie](docs/LIGHTHOUSE.md).
 
-A sixth, **Star Wars: Shadows of the Empire** with the **SotE-Recomp** recompilation, is in progress. Its code is generated from the player's ROM on the Mac that builds the app, so only that Mac's builds include it. It starts in the simulator, but its RT64 renderer needs the Apple TV's GPU to draw. See [Shadows of the Empire](docs/SOTE.md).
+A sixth, **Star Wars: Shadows of the Empire** with the **SotE-Recomp** recompilation, is in progress. Its code is generated from the player's ROM, so only simulator builds on the Mac that generated it include it; Apple TV and TestFlight builds never do. It starts in the simulator, where its RT64 renderer can't draw. See [Shadows of the Empire](docs/SOTE.md).
 
 The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 

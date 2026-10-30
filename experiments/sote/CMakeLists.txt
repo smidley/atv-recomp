@@ -1,6 +1,11 @@
 # Included by the Nativecade runtime build, like experiments/lighthouse. The game's code is generated
 # from the player's ROM (scripts/generate-sote-code.sh); without it, in CI or on another Mac, the
 # framework only reports that this build doesn't include the game (SoteUnavailable.cpp).
+# That code comes from a ROM, so it never goes into a build that can leave this Mac: Apple TV
+# builds, which TestFlight archives use, always get the stand-in.
+if(RECOMPTV_SOTE_SOURCE AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    message(FATAL_ERROR "Shadows of the Empire's code is generated from a ROM; build it only for the simulator.")
+endif()
 if(NOT RECOMPTV_SOTE_SOURCE OR NOT EXISTS "${RECOMPTV_SOTE_SOURCE}/generated/aspMain.cpp")
     add_library(NativecadeSote SHARED SoteUnavailable.cpp)
 else()
