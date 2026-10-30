@@ -8,6 +8,7 @@ on:
       - upstream/**
       - experiments/shipwright/**
       - experiments/spaghettikart/**
+      - experiments/starship/**
       - scripts/upstream.py
       - scripts/UpstreamTests.py
       - scripts/build-nativecade-runtime.sh
@@ -15,6 +16,7 @@ on:
       - scripts/prepare-shipwright-metal.py
       - scripts/prepare-shipwright-game.py
       - scripts/prepare-spaghettikart.py
+      - scripts/prepare-starship.py
   push:
     branches: [main]
     paths:
@@ -22,6 +24,7 @@ on:
       - upstream/**
       - experiments/shipwright/**
       - experiments/spaghettikart/**
+      - experiments/starship/**
       - scripts/upstream.py
       - scripts/UpstreamTests.py
       - scripts/build-nativecade-runtime.sh
@@ -29,6 +32,7 @@ on:
       - scripts/prepare-shipwright-metal.py
       - scripts/prepare-shipwright-game.py
       - scripts/prepare-spaghettikart.py
+      - scripts/prepare-starship.py
   workflow_dispatch:
 
 permissions:
