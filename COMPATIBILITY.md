@@ -28,8 +28,9 @@ The index warns that automatically collected rows can be misclassified.
 Record upstream progress separately from RecompTV progress. A decompilation
 can supply groundwork without supplying a playable native port; a released
 desktop port still needs a tvOS integration. No index row should automatically
-become a bundled runtime or a Ready library entry. Shipwright and SpaghettiKart
-are integrated; other N64 projects remain in the investigation queue.
+become a bundled runtime or a Ready library entry. Five ports are integrated;
+[Nintendo 64 games](docs/N64_GAMES.md) shows each game's state and the next
+candidates.
 
 ## What makes a game launchable
 

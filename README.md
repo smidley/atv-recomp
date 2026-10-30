@@ -88,6 +88,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Network sources](docs/NETWORK_SOURCES.md) | RomM/SMB setup, verified ROM imports, storage limits, and fixture tests |
 | [Foundation harness](docs/FOUNDATION_HARNESS.md) | Open the Xcode project, run checks, and collect device evidence |
 | [Simulator progress](docs/SIMULATOR_PROGRESS.md) | Maintainer-confirmed checks and remaining evidence |
+| [Nintendo 64 games](docs/N64_GAMES.md) | Each game's state in Nativecade, the next candidates, and the recomp.fyi board of community projects |
 | [Shipwright first game](docs/SHIPWRIGHT_PORT.md) | Pinned native port, local ROM identification, and next tvOS integration steps |
 | [Mario Kart 64](docs/SPAGHETTIKART.md) | SpaghettiKart integration, supported ROM, controls, and simulator evidence |
 | [Star Fox 64](docs/STARSHIP.md) | Starship integration, its adaptations to the shared runtime, supported ROMs, and simulator evidence |
