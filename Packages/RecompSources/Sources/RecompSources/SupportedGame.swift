@@ -13,6 +13,9 @@ public enum SupportedGame: String, Codable, Sendable, CaseIterable {
         }
     }
 
+    /// The library groups imported games by platform. Every supported game is a Nintendo 64 game so far.
+    public var platform: String { "Nintendo 64" }
+
     /// Words in both the RomM metadata title and the No-Intro filename. Browsing uses
     /// them to hide other games; an import still verifies the exact revision.
     var searchTerm: String {

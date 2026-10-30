@@ -16,6 +16,8 @@ final class LibraryModel {
     private(set) var artworkRefreshID = UUID()
     private(set) var importStatus = ""
     private(set) var importFraction: Double?
+    /// SHA-256 identities of favorite ROMs. They survive clearing the cache, so a reimport is a favorite again.
+    private(set) var favorites = Set(UserDefaults.standard.stringArray(forKey: LibraryModel.favoritesKey) ?? [])
     var error: String?
     @ObservationIgnored private var cache: ROMCache?
     @ObservationIgnored private var transfer: Task<Void, Never>?
@@ -25,6 +27,7 @@ final class LibraryModel {
     @ObservationIgnored private let gamePreparation = GamePreparation()
     @ObservationIgnored private let artworkCache = try? ArtworkCache()
     private let settingsKey = "library.sources.v1"
+    private static let favoritesKey = "library.favorites.v1"
 
     init(cache: ROMCache? = nil) {
         do {
@@ -89,6 +92,11 @@ final class LibraryModel {
                 }
             } catch { /* Artwork is optional; offline play and ROM imports remain available. */ }
         }
+    }
+
+    func toggleFavorite(_ rom: ImportedROM) {
+        if favorites.remove(rom.id) == nil { favorites.insert(rom.id) }
+        UserDefaults.standard.set(favorites.sorted(), forKey: Self.favoritesKey)
     }
 
     func save(_ source: LibrarySource, secret: String) throws {

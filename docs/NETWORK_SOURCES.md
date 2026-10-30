@@ -25,9 +25,11 @@ the RecompTV scheme remains the independent library/diagnostics harness.
    a platform/folder page. The batch scans every page and subfolder, including
    items hidden by the current search. It never requests a multi-file ZIP.
 6. A matching Ocarina of Time ROM displays its revision and SHA-1. A different game
-   or unsupported revision displays an explicit rejection and is not cached. The
-   Nativecade app offers **Play** and prepares the assets on the device. The
-   RecompTV harness only verifies/imports; it does not link the game runtime.
+   or unsupported revision displays an explicit rejection and is not cached. In
+   the Nativecade app, imported games appear under their platform on the home
+   screen, where **Play** prepares the assets on the device; a RomM game page
+   also offers **Play** once imported. The RecompTV harness only
+   verifies/imports; it does not link the game runtime.
 
 Use a server address reachable from the Apple TV, or from the Mac for simulator testing. There is no
 RecompTV server to install. No ROM or credential needs to be uploaded to GitHub or
