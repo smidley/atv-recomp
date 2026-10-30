@@ -197,6 +197,18 @@ began processing it. Builds 5 and 6 were never accepted; build 7 replaces them.
 In the tvOS simulator, every game started and switched in one session, and
 Banjo-Kazooie played its opening.
 
+Build **0.1.0 (8)** adds Star Wars: Shadows of the Empire, whose game code and
+audio microcode run through the [N64 interpreter](N64_INTERPRETER.md) from the
+player's ROM ([Shadows of the Empire](SOTE.md)). On 2026-10-30 it was archived
+from commit `0b91b17` with Xcode 27.2 (27B52) and uploaded; App Store Connect
+accepted it at 14:33. Besides the usual checks (no ROMs, extracted game archives,
+saves, or simulator test options), every binary in the archive was compared with
+the SotE ROM and its decompressed executable: the only shared 32-byte runs are
+SotE-Recomp's own copy of the game's legal notice and short counting sequences in
+the shared runtime. The SotE framework contains the interpreters and none of the
+generated code. In the simulator SotE plays only headless, so its picture, speed
+and controls need this build on the Apple TV.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
