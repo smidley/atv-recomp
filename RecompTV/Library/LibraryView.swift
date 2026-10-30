@@ -29,7 +29,7 @@ struct LibraryView: View {
                         CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
                     }
                     if shelf.platforms.isEmpty {
-                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64 or Super Mario 64.")
+                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64 or Banjo-Kazooie.")
                             .foregroundStyle(.secondary)
                     } else {
                         Text("Platforms").font(.title2.bold())
@@ -284,7 +284,7 @@ private struct SourceBrowserView: View {
                         Text("Includes every page and subfolder, even when search is active.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA) and Super Mario 64 (USA) ROMs are saved. Other games and compressed files appear in the results.")
+                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA) and Banjo-Kazooie ROMs are saved. Other games and compressed files appear in the results.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if library.isImporting {
@@ -338,7 +338,7 @@ private struct SourceBrowserView: View {
                     }
                 } }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64 or Super Mario 64 ROMs found here."
+                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64 or Banjo-Kazooie ROMs found here."
                          : "No matching ROMs in this folder.")
                         .foregroundStyle(.secondary)
                 }
@@ -731,7 +731,13 @@ struct ArtworkFixturePreview: View {
         if games == nil {
             let arguments = ProcessInfo.processInfo.arguments
             games = restart.map { $0.split(separator: ",").map {
-                $0 == "kart" ? SupportedGame.marioKart64 : $0 == "fox" ? .starFox64 : $0 == "mario" ? .superMario64 : .ocarinaOfTime
+                switch $0 {
+                case "kart": SupportedGame.marioKart64
+                case "fox": .starFox64
+                case "mario": .superMario64
+                case "banjo": .banjoKazooie
+                default: .ocarinaOfTime
+                }
             } }
                 ?? (arguments.contains("--nativecade-play-mario-kart") ? [.marioKart64]
                     : arguments.contains("--nativecade-play-cached-rom") ? [.ocarinaOfTime] : [])

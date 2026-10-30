@@ -28,7 +28,7 @@ for path in sources:
         raise SystemExit(f"error: Runtime scripting entered the simulator build: {path}")
 manifest_path = root / "upstream/libultraship-simulator.json"
 manifest = json.loads(manifest_path.read_text())
-pinned = json.loads((root / "upstream/shipwright-baseline.json").read_text())["sources"]["libultraship"]["revision"]
+pinned = json.loads((root / "upstream/lighthouse-baseline.json").read_text())["sources"]["libultraship"]["revision"]
 if "--record" in sys.argv[2:]:
     previous = {dependency["name"]: dependency for dependency in manifest["dependencies"]}
     recorded = []

@@ -12,7 +12,7 @@ def main():
         raise SystemExit("Usage: python3 scripts/prepare-shipwright-metal.py LIBULTRASHIP_CHECKOUT")
     root = Path(__file__).resolve().parent.parent
     source = Path(sys.argv[1]).resolve(strict=True)
-    pin = json.loads((root / "upstream/shipwright-baseline.json").read_text())["sources"]["libultraship"]["revision"]
+    pin = json.loads((root / "upstream/lighthouse-baseline.json").read_text())["sources"]["libultraship"]["revision"]
 
     def git(*args):
         return subprocess.check_output(["git", "-C", str(source), *args], text=True).strip()

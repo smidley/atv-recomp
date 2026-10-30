@@ -6,7 +6,7 @@ Nativecade is the working name for a native Apple TV launcher that discovers a u
 
 The [branding preview](docs/branding/nativecade/nativecade-brand-preview.png), [logo](docs/branding/nativecade/nativecade-logo-on-light.png), and [Apple TV icon concept](docs/branding/nativecade/nativecade-tv-icon.png) are saved with [design notes](docs/branding/nativecade/brand-notes.txt).
 
-**Status: Nativecade integrates RomM/SMB browsing, verified ROM import, on-device asset preparation, and playable Ocarina of Time and Mario Kart 64 ports, with Star Fox 64 and Super Mario 64 running in the simulator.** Both Apple TV and simulator runtimes build; Mario Kart's menu navigation and race acceleration have passed a simulator controller test. Physical Apple TV validation remains pending. See [Nativecade build and TestFlight](docs/NATIVECADE_TESTFLIGHT.md), [Mario Kart integration](docs/SPAGHETTIKART.md), and the [Shipwright baseline](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
+**Status: Nativecade integrates RomM/SMB browsing, verified ROM import, on-device asset preparation, and playable Ocarina of Time and Mario Kart 64 ports, with Star Fox 64, Super Mario 64 and Banjo-Kazooie running in the simulator.** Both Apple TV and simulator runtimes build; Mario Kart's menu navigation and race acceleration have passed a simulator controller test. Physical Apple TV validation remains pending. See [Nativecade build and TestFlight](docs/NATIVECADE_TESTFLIGHT.md), [Mario Kart integration](docs/SPAGHETTIKART.md), and the [Shipwright baseline](docs/SHIPWRIGHT_PORT.md). Earlier Zelda64Recomp/RT64 experiments remain separate from the app.
 
 ## Run the launcher
 
@@ -37,6 +37,8 @@ The second integrated game is **Mario Kart 64 (USA)**, using **SpaghettiKart 1.0
 The third, **Star Fox 64 (USA)** with **Starship v2.0.0**, prepares and runs in the simulator and switches with the other games; controller play and Apple TV testing are still to come. See [Star Fox 64](docs/STARSHIP.md).
 
 The fourth, **Super Mario 64 (USA)** with **Ghostship 3.0.0**, reaches its title screen in the simulator and switches with the other games; controller play and Apple TV testing are still to come. See [Super Mario 64](docs/GHOSTSHIP.md).
+
+The fifth, **Banjo-Kazooie** (all four retail releases) with **Lighthouse 1.2.2**, plays its opening in the simulator and switches with the other games; controller play and Apple TV testing are still to come. Every game now shares the newer libultraship and Torch that Lighthouse ships. See [Banjo-Kazooie](docs/LIGHTHOUSE.md).
 
 The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 
@@ -70,6 +72,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Mario Kart 64](docs/SPAGHETTIKART.md) | SpaghettiKart integration, supported ROM, controls, and simulator evidence |
 | [Star Fox 64](docs/STARSHIP.md) | Starship integration, its adaptations to the shared runtime, supported ROMs, and simulator evidence |
 | [Super Mario 64](docs/GHOSTSHIP.md) | Ghostship integration, its adaptations to the shared runtime, supported ROM, and simulator evidence |
+| [Banjo-Kazooie](docs/LIGHTHOUSE.md) | Lighthouse integration, the shared libraries it brought, supported ROMs, and simulator evidence |
 | [Updating game runtimes](docs/UPDATING_UPSTREAM.md) | Pinned upstream releases, the weekly release check, update steps, and the release checklist |
 | [Switching games](docs/GAME_SWITCHING.md) | What carries over between game starts, how each case is reset, and how to check a new game |
 | [Shipwright Metal build](docs/SHIPWRIGHT_METAL_BUILD.md) | Complete libultraship services and renderer link checks for tvOS Simulator |

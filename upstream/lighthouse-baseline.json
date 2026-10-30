@@ -1,0 +1,45 @@
+{
+  "release": "1.2.2",
+  "recorded_on": "2026-10-29",
+  "sources": {
+    "lighthouse": {
+      "repository": "HarbourMasters/Lighthouse",
+      "revision": "bdb8cd9cc7d499405441d07109c020c7543f813b"
+    },
+    "libultraship": {
+      "repository": "JeodC/libultraship",
+      "revision": "e175b95944fd41003246edaaef27c9b46b5e6fb2",
+      "gitlink": "libultraship"
+    },
+    "torch": {
+      "repository": "HarbourMasters/Torch",
+      "revision": "7f5d55f9de53f96e61c11399cb3066f8dd8e835e",
+      "gitlink": "Torch"
+    }
+  },
+  "catalog": "https://github.com/HarbourMasters/Lighthouse",
+  "roms": [
+    {
+      "name": "Banjo-Kazooie (USA)",
+      "sha1": "1fe1632098865f639e22c11b9a81ee8f29c75d7a"
+    },
+    {
+      "name": "Banjo-Kazooie (USA) (Rev 1)",
+      "sha1": "ded6ee166e740ad1bc810fd678a84b48e245ab80"
+    },
+    {
+      "name": "Banjo-Kazooie (Europe)",
+      "sha1": "bb359a75941df74bf7290212c89fbc6e2c5601fe"
+    },
+    {
+      "name": "Banjo to Kazooie no Daibouken (Japan)",
+      "sha1": "90726d7e7cd5bf6cdfd38f45c9acbf4d45bd9fd8"
+    }
+  ],
+  "integration": "Every game builds against this release's libultraship and Torch: Lighthouse needs the newest of both (BK64 extraction and N64 mipmaps), so updating Lighthouse moves them for all games.",
+  "prepare": [
+    [
+      "scripts/prepare-lighthouse.py"
+    ]
+  ]
+}

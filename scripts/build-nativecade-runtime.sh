@@ -12,6 +12,7 @@ python3 "$runtime_root/scripts/prepare-shipwright-game.py" "$runtime_ship"
 python3 "$runtime_root/scripts/prepare-spaghettikart.py"
 python3 "$runtime_root/scripts/prepare-starship.py"
 python3 "$runtime_root/scripts/prepare-ghostship.py"
+python3 "$runtime_root/scripts/prepare-lighthouse.py"
 for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
     # The default contains both SDKs; explicit arguments can build one at a time.
     for runtime_platform in $runtime_sdk; do
@@ -38,10 +39,13 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
             -DRECOMPTV_TORCH_SOURCE="$runtime_torch" \
             -DRECOMPTV_SPAGHETTIKART_SOURCE="$runtime_root/build/spaghettikart/source" \
             -DRECOMPTV_STARSHIP_SOURCE="$runtime_root/build/starship/source" \
-            -DRECOMPTV_GHOSTSHIP_SOURCE="$runtime_root/build/ghostship/source"
-        cmake --build "$runtime_build" --target NativecadeSpaghetti NativecadeStarship NativecadeGhostship --parallel "${NATIVECADE_BUILD_JOBS:-4}"
+            -DRECOMPTV_GHOSTSHIP_SOURCE="$runtime_root/build/ghostship/source" \
+            -DRECOMPTV_LIGHTHOUSE_SOURCE="$runtime_root/build/lighthouse/source"
+        cmake --build "$runtime_build" --target NativecadeSpaghetti NativecadeStarship NativecadeGhostship \
+            NativecadeLighthouse --parallel "${NATIVECADE_BUILD_JOBS:-4}"
         for runtime_relative in NativecadeRuntime.framework spaghettikart/NativecadeSpaghetti.framework \
-                starship/NativecadeStarship.framework ghostship/NativecadeGhostship.framework; do
+                starship/NativecadeStarship.framework ghostship/NativecadeGhostship.framework \
+                lighthouse/NativecadeLighthouse.framework; do
         runtime_framework="$runtime_build/$runtime_relative"
         runtime_name=$(basename "$runtime_framework" .framework)
         lipo "$runtime_framework/$runtime_name" -verify_arch arm64

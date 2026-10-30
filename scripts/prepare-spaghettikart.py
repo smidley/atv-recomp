@@ -98,7 +98,7 @@ for original in (source / "src").rglob("*"):
 # and runtime texture segments. SpaghettiKart 1.0.0 resolves both by asset hash.
 # Adapt only these two exports; the Ocarina path and upstream checkout stay intact.
 torch = root / "build/upstream/Torch"
-baseline = json.loads((root / "upstream/shipwright-baseline.json").read_text())
+baseline = json.loads((root / "upstream/lighthouse-baseline.json").read_text())
 if subprocess.check_output(["git", "-C", str(torch), "rev-parse", "HEAD"], text=True).strip() != baseline["sources"]["torch"]["revision"]:
     raise SystemExit("Use the pinned shared Torch checkout.")
 if subprocess.check_output(["git", "-C", str(torch), "status", "--porcelain"], text=True).strip():

@@ -17,7 +17,7 @@
       "sha1": "09f0d105f476b00efa5303a3ebc42e60a7753b7a"
     }
   ],
-  "integration": "Uses Nativecade's pinned libultraship and Torch from shipwright-baseline.json, with SF64 extraction enabled, and shares its SDL/Metal runtime.",
+  "integration": "Uses Nativecade's pinned libultraship and Torch from lighthouse-baseline.json, with SF64 extraction enabled, and shares its SDL/Metal runtime.",
   "prepare": [
     [
       "scripts/prepare-starship.py"

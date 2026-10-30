@@ -13,7 +13,7 @@
       "sha1": "9bef1128717f958171a4afac3ed78ee2bb4e86ce"
     }
   ],
-  "integration": "Uses Nativecade's pinned libultraship and Torch from shipwright-baseline.json, with SM64 extraction enabled, and shares its SDL/Metal runtime.",
+  "integration": "Uses Nativecade's pinned libultraship and Torch from lighthouse-baseline.json, with SM64 extraction enabled, and shares its SDL/Metal runtime.",
   "prepare": [
     [
       "scripts/prepare-ghostship.py"
