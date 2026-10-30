@@ -39,10 +39,12 @@ option(RECOMPTV_SOTE_RECOMPILED "Compile the code N64Recomp generated from the R
 if(RECOMPTV_SOTE_RECOMPILED)
     set(sote_tables "${sote}/generated/RecompiledFuncs")
     file(GLOB sote_game_sources CONFIGURE_DEPENDS "${sote_tables}/*.c")
+    set(sote_audio "${sote}/generated/aspMain.cpp")
 else()
     set(sote_tables "${sote}/interpreter")
     set(sote_game_sources "${CMAKE_CURRENT_LIST_DIR}/../n64interp/N64Interpreter.cpp"
         "${sote_tables}/n64interp_game.c" "${sote_tables}/lookup.cpp")
+    set(sote_audio SoteAudioMicrocode.cpp "${CMAKE_CURRENT_LIST_DIR}/../n64interp/N64RspInterpreter.cpp")
 endif()
 add_library(NativecadeSoteGameCode OBJECT ${sote_game_sources})
 target_include_directories(NativecadeSoteGameCode PRIVATE "${sote_runtime}/ultramodern/include"
@@ -53,14 +55,13 @@ target_compile_options(NativecadeSoteGameCode PRIVATE -include "${sote}/src/reco
 # Upstream's C standard: the code calls runtime functions it doesn't declare, which C23 forbids.
 set_target_properties(NativecadeSoteGameCode PROPERTIES C_STANDARD 17)
 
-# SotE's host program (upstream's SOTE_RUNTIME_SOURCES) and its audio microcode, from RSPRecomp.
+# SotE's host program (upstream's SOTE_RUNTIME_SOURCES) and its audio microcode.
 set(sote_sources controls_menu.cpp control_bindings.cpp modern_controls.cpp modern_aim.cpp frontend.cpp
     graphics_menu.cpp menu_model.cpp menu_canvas.cpp hud_labels.cpp menu_skin.cpp menu_renderer.cpp hd_audio.cpp
     pc_voices.cpp hd_music.cpp san_movies.cpp music_replacement.cpp libultra_stubs.c main.cpp
     register_overlays.cpp rt64_renderer.cpp)
 list(TRANSFORM sote_sources PREPEND "${sote}/src/")
-add_library(NativecadeSoteObjects OBJECT ${sote_sources} "${sote}/generated/aspMain.cpp"
-    SoteRuntime.mm SoteRestart.cpp AppleTVStubs.cpp)
+add_library(NativecadeSoteObjects OBJECT ${sote_sources} ${sote_audio} SoteRuntime.mm SoteRestart.cpp AppleTVStubs.cpp)
 add_dependencies(NativecadeSoteObjects rt64)
 set_source_files_properties("${sote}/src/main.cpp" PROPERTIES COMPILE_DEFINITIONS "main=NativecadeSoteMain")
 if(NOT RECOMPTV_SOTE_RECOMPILED)
@@ -77,7 +78,7 @@ target_include_directories(NativecadeSoteObjects PRIVATE "${sote_tables}" "${CMA
     "${sote_rt64}/include" "${sote_rt64}/src" "${sote_rt64}/src/rhi" "${sote_rt64}/src/render" "${sote_rt64}/src/contrib"
     "${sote_rt64}/src/contrib/plume" "${sote_rt64}/src/contrib/imgui" "${sote_rt64}/src/contrib/hlslpp/include"
     "${sote_rt64}/src/contrib/nativefiledialog-extended/src/include" "${sote}/third_party/sandec"
-    "${CMAKE_CURRENT_LIST_DIR}/../shipwright/simulator-game" "${SDL2_INCLUDE_DIRS}")
+    "${CMAKE_CURRENT_LIST_DIR}/../shipwright/simulator-game" "${CMAKE_CURRENT_LIST_DIR}/../n64interp" "${SDL2_INCLUDE_DIRS}")
 
 add_library(NativecadeSote SHARED $<TARGET_OBJECTS:NativecadeSoteObjects> $<TARGET_OBJECTS:NativecadeSoteGameCode>)
 # All of librecomp and ultramodern, so their libultra replacements win over n64interp_game.c's
