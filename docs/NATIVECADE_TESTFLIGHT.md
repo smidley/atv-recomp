@@ -141,6 +141,21 @@ match their debug symbols; the archive contains no ROMs, extracted game archives
 saves, or simulator test options. Back on the Siri Remote still needs a check on
 the Apple TV, because the simulator tools cannot press Menu.
 
+Build **0.1.0 (5)** fixes "not enough storage" when preparing a game on the Apple
+TV: each game now keeps its files in `Library/Caches/Nativecade/Games`. Its home
+screen shows Favorites and one card per platform; a platform lists its games, and
+each game's page has Play and a favorite toggle. It also adds Star Fox 64. On
+2026-10-29 it was archived from commit `50a8890` with Xcode 27.2 (27B52), whose
+update had arrived through the Mac App Store that evening. Its runtime frameworks
+match their debug symbols, and the archive contains no ROMs, extracted game
+archives, saves, or simulator test options. App Store Connect rejected the upload
+("Unsupported SDK or Xcode version"); builds 1 to 4 used Xcode 27.1. The upload is
+retried until App Store Connect accepts Xcode 27.2. In the tvOS 27.0 simulator,
+the restart check passed twice with all three games, each game's archives were
+hard links in its own `Games` folder with no leftover temporary files, and a
+favorite appeared on the home screen and persisted across launches. The fix
+itself needs the Apple TV: the simulator also allowed `Documents`.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
