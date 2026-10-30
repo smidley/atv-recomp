@@ -96,8 +96,9 @@ static bool InstallArchive(NSString *source, NSString *destination) {
     if (link(source.fileSystemRepresentation, temporary.fileSystemRepresentation) != 0 &&
         ![files copyItemAtPath:source toPath:temporary error:nil]) return false;
     // rename atomically replaces an existing derived archive. Player save files are separate.
+    // When both names already link to one file, rename does nothing, so the temporary name is always removed.
     bool ok = rename(temporary.fileSystemRepresentation, destination.fileSystemRepresentation) == 0;
-    if (!ok) [files removeItemAtPath:temporary error:nil];
+    unlink(temporary.fileSystemRepresentation);
     return ok;
 }
 

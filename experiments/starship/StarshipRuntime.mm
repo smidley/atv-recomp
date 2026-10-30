@@ -56,8 +56,9 @@ static bool Install(NSString *source, NSString *destination) {
     // A hard link shares the prepared archive's storage; copy when linking isn't possible.
     if (link(source.fileSystemRepresentation, temporary.fileSystemRepresentation) != 0 &&
         ![files copyItemAtPath:source toPath:temporary error:nil]) return false;
+    // When both names already link to one file, rename does nothing, so the temporary name is always removed.
     const bool ok = rename(temporary.fileSystemRepresentation, destination.fileSystemRepresentation) == 0;
-    if (!ok) [files removeItemAtPath:temporary error:nil];
+    unlink(temporary.fileSystemRepresentation);
     return ok;
 }
 
