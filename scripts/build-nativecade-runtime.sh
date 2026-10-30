@@ -21,7 +21,13 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
         esac
         runtime_build="$runtime_root/build/nativecade-runtime/$runtime_platform"
         runtime_sdk_path="$(xcode-select -p)/Platforms/$runtime_platform_folder.platform/Developer/SDKs/$runtime_platform_folder.sdk"
-        cmake -S "$runtime_root/experiments/shipwright/simulator-game" -B "$runtime_build" -G Ninja \
+        # CMake caches framework and zlib paths inside the versioned SDK, which an Xcode update replaces.
+        runtime_fresh=
+        if [[ -f "$runtime_build/CMakeCache.txt" ]] &&
+                ! grep -qF "$(xcrun --sdk "$runtime_platform" --show-sdk-path)" "$runtime_build/CMakeCache.txt"; then
+            runtime_fresh=--fresh
+        fi
+        cmake $runtime_fresh -S "$runtime_root/experiments/shipwright/simulator-game" -B "$runtime_build" -G Ninja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_SYSTEM_NAME=tvOS \
             -DCMAKE_OSX_SYSROOT="$runtime_platform" -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 -DCMAKE_FIND_ROOT_PATH="$runtime_sdk_path" \
