@@ -235,4 +235,8 @@ for key, replacements in SWAPS.items():
         text = swap(text, old, new, relative)
     path.write_text(text)
 shutil.copyfile(experiment / "plume_apple_tvos.mm", destination / "third_party/rt64/src/contrib/plume/plume_apple.mm")
+# Tables for experiments/n64interp, which runs the game's code from the ROM instead of compiling
+# code generated from it. They come from SotE's configuration and symbol file only.
+subprocess.check_call(["python3", str(root / "scripts/generate-n64interp.py"), str(destination / "sote.toml"),
+                       str(destination / "third_party/N64ModernRuntime/N64Recomp"), str(destination / "interpreter")])
 print(f"Prepared Shadows of the Empire {pin['release']} ({revision[:12]}) in {destination.relative_to(root)}")

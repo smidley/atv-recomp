@@ -31,11 +31,23 @@ set(SDL2_INCLUDE_DIRS "$<TARGET_PROPERTY:SDL2-static,INTERFACE_INCLUDE_DIRECTORI
 add_subdirectory("${sote_rt64}" rt64)
 add_subdirectory("${sote_runtime}" runtime)
 
-# The game's code, generated from the ROM by N64Recomp, with SotE's hooks.
-file(GLOB sote_recompiled CONFIGURE_DEPENDS "${sote}/generated/RecompiledFuncs/*.c")
-add_library(NativecadeSoteGameCode OBJECT ${sote_recompiled})
+# The game's code: by default experiments/n64interp runs it from the ROM in RDRAM, with tables
+# that scripts/generate-n64interp.py wrote from SotE's configuration (prepare-sote.py). With
+# RECOMPTV_SOTE_RECOMPILED, the code N64Recomp generated from the ROM is compiled instead, which only
+# local simulator builds may do, to compare the two.
+option(RECOMPTV_SOTE_RECOMPILED "Compile the code N64Recomp generated from the ROM (simulator only)" OFF)
+if(RECOMPTV_SOTE_RECOMPILED)
+    set(sote_tables "${sote}/generated/RecompiledFuncs")
+    file(GLOB sote_game_sources CONFIGURE_DEPENDS "${sote_tables}/*.c")
+else()
+    set(sote_tables "${sote}/interpreter")
+    set(sote_game_sources "${CMAKE_CURRENT_LIST_DIR}/../n64interp/N64Interpreter.cpp"
+        "${sote_tables}/n64interp_game.c" "${sote_tables}/lookup.cpp")
+endif()
+add_library(NativecadeSoteGameCode OBJECT ${sote_game_sources})
 target_include_directories(NativecadeSoteGameCode PRIVATE "${sote_runtime}/ultramodern/include"
-    "${sote_runtime}/librecomp/include" "${sote_runtime}/N64Recomp/include")
+    "${sote_runtime}/librecomp/include" "${sote_runtime}/N64Recomp/include" "${sote_tables}"
+    "${CMAKE_CURRENT_LIST_DIR}/../n64interp")
 target_compile_options(NativecadeSoteGameCode PRIVATE -include "${sote}/src/recomp_hooks.h" -fno-strict-aliasing
     -Wno-unused-variable -Wno-implicit-function-declaration)
 # Upstream's C standard: the code calls runtime functions it doesn't declare, which C23 forbids.
@@ -51,13 +63,16 @@ add_library(NativecadeSoteObjects OBJECT ${sote_sources} "${sote}/generated/aspM
     SoteRuntime.mm SoteRestart.cpp AppleTVStubs.cpp)
 add_dependencies(NativecadeSoteObjects rt64)
 set_source_files_properties("${sote}/src/main.cpp" PROPERTIES COMPILE_DEFINITIONS "main=NativecadeSoteMain")
+if(NOT RECOMPTV_SOTE_RECOMPILED)
+    set_source_files_properties(SoteRestart.cpp PROPERTIES COMPILE_DEFINITIONS NATIVECADE_SOTE_INTERPRETED)
+endif()
 # SDL_MAIN_HANDLED stops SDL's tvOS header from renaming main to SDL_main.
 target_compile_definitions(NativecadeSoteObjects PRIVATE NOMINMAX SDL_MAIN_HANDLED)
 # OBJECT usage requirements supply the runtime's headers (sse2neon, concurrentqueue, rabbitizer).
 target_link_libraries(NativecadeSoteObjects PRIVATE librecomp ultramodern N64Recomp)
 target_compile_options(NativecadeSoteObjects PRIVATE -fno-strict-aliasing -fms-extensions
     $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
-target_include_directories(NativecadeSoteObjects PRIVATE "${sote}/generated/RecompiledFuncs" "${CMAKE_BINARY_DIR}/src"
+target_include_directories(NativecadeSoteObjects PRIVATE "${sote_tables}" "${CMAKE_BINARY_DIR}/src"
     "${sote_runtime}/ultramodern/include" "${sote_runtime}/librecomp/include" "${sote_runtime}/N64Recomp/include"
     "${sote_rt64}/include" "${sote_rt64}/src" "${sote_rt64}/src/rhi" "${sote_rt64}/src/render" "${sote_rt64}/src/contrib"
     "${sote_rt64}/src/contrib/plume" "${sote_rt64}/src/contrib/imgui" "${sote_rt64}/src/contrib/hlslpp/include"
@@ -65,7 +80,10 @@ target_include_directories(NativecadeSoteObjects PRIVATE "${sote}/generated/Reco
     "${CMAKE_CURRENT_LIST_DIR}/../shipwright/simulator-game" "${SDL2_INCLUDE_DIRS}")
 
 add_library(NativecadeSote SHARED $<TARGET_OBJECTS:NativecadeSoteObjects> $<TARGET_OBJECTS:NativecadeSoteGameCode>)
-target_link_libraries(NativecadeSote PRIVATE rt64 librecomp ultramodern RecompTVShipwright
+# All of librecomp and ultramodern, so their libultra replacements win over n64interp_game.c's
+# weak fallbacks even where nothing else pulls those objects in.
+target_link_libraries(NativecadeSote PRIVATE rt64 "-Wl,-force_load,$<TARGET_FILE:librecomp>"
+    "-Wl,-force_load,$<TARGET_FILE:ultramodern>" librecomp ultramodern RecompTVShipwright
     "-framework Foundation" "-framework UIKit" "-framework Metal" "-framework QuartzCore")
 endif()
 set_target_properties(NativecadeSote PROPERTIES FRAMEWORK TRUE OUTPUT_NAME NativecadeSote
