@@ -116,6 +116,12 @@ def adapt(relative, text):
                         "audioStereo")
     if "LUS::ControlDeck" in text:
         text = require(text, "libultraship/controller/controldeck/ControlDeck.h")
+    # Since Torch 4e021e10, sequences are "SEQC" version 2 rather than blobs: the same size
+    # and bytes, then table metadata that Starship reads from its own tables.
+    blob = '"Blob", static_cast<uint32_t>(Ship::ResourceType::Blob), 0);'
+    text = text.replace(blob, blob + "\n    loader->RegisterResourceFactory(std::make_shared<Ship::ResourceFactoryBinaryBlobV0>(), "
+                        "RESOURCE_FORMAT_BINARY,\n                                    \"Sequence\", "
+                        "static_cast<uint32_t>(SF64::ResourceType::Sequence), 2);")
     # The backend list lost its count; Metal is the last backend.
     text = text.replace("Fast::WindowBackend::WINDOW_BACKEND_COUNT", "Fast::WindowBackend::FAST3D_SDL_METAL + 1")
     if "Fast::Fast3dGui" in text:
