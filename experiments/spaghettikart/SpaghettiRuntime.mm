@@ -56,7 +56,9 @@ static bool ValidArchive(NSString *path, const char *required, bool game = false
 static bool Install(NSString *source, NSString *destination) {
     NSString *temporary = [destination stringByAppendingFormat:@".%@.partial", NSUUID.UUID.UUIDString];
     auto files = NSFileManager.defaultManager;
-    if (![files copyItemAtPath:source toPath:temporary error:nil]) return false;
+    // A hard link shares the prepared archive's storage; copy when linking isn't possible.
+    if (link(source.fileSystemRepresentation, temporary.fileSystemRepresentation) != 0 &&
+        ![files copyItemAtPath:source toPath:temporary error:nil]) return false;
     const bool ok = rename(temporary.fileSystemRepresentation, destination.fileSystemRepresentation) == 0;
     if (!ok) [files removeItemAtPath:temporary error:nil];
     return ok;
@@ -85,10 +87,14 @@ bool NativecadePrepareMarioKart(const char *romPath, const char *expectedSHA1, c
             return Fail(error, capacity, "This app build is missing its Mario Kart support files.");
         NSString *cache = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
             stringByAppendingPathComponent:@"Nativecade/Prepared/" NATIVECADE_KART_PREPARED];
-        NSString *root = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/MarioKart64"];
-        if (![files createDirectoryAtPath:cache withIntermediateDirectories:YES attributes:nil error:nil] ||
-            ![files createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:nil])
-            return Fail(error, capacity, "There is not enough storage to prepare Mario Kart.");
+        // Apple TV apps keep files in Library/Caches, like NativecadeRuntime.mm's game folders.
+        NSString *root = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+            stringByAppendingPathComponent:@"Nativecade/Games/MarioKart64"];
+        NSError *problem = nil;
+        if (![files createDirectoryAtPath:cache withIntermediateDirectories:YES attributes:nil error:&problem] ||
+            ![files createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:&problem])
+            return Fail(error, capacity, [NSString stringWithFormat:@"Nativecade could not create a game folder: %@",
+                problem.localizedDescription ?: @"unknown error"].UTF8String);
         NSString *archive = [cache stringByAppendingPathComponent:@"mk64.o2r"];
         if (!ValidArchive(archive, "mods.toml", true)) {
             NSString *stage = [cache stringByAppendingPathComponent:NSUUID.UUID.UUIDString];

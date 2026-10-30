@@ -60,8 +60,9 @@ also copies `config.yml` and the US extraction definitions.
 Preparation rechecks the ROM's hash, extracts `sf64.o2r` with the shared Torch,
 and checks the archive before installing it. The result is cached per ROM
 revision and per Starship release and Torch revision, so later starts skip
-extraction. Star Fox uses `Documents/StarFox64` for its archives, settings,
-saves and logs.
+extraction. Star Fox keeps its archives, settings, saves and logs in
+`Library/Caches/Nativecade/Games/StarFox64`. tvOS can purge that folder while
+Nativecade isn't running, and Star Fox saves have no safety copy yet.
 
 Starship's default controller mapping, in N64 terms: A is A, X is B, Menu is
 Start, Y or the right trigger is C-left, B or the left trigger is C-down, the

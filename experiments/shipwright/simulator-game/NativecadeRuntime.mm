@@ -38,6 +38,18 @@ static bool Failure(char *error, size_t capacity, const char *message) {
     return false;
 }
 
+static bool FolderFailure(char *error, size_t capacity, NSError *problem) {
+    return Failure(error, capacity, [NSString stringWithFormat:@"Nativecade could not create a game folder: %@",
+        problem.localizedDescription ?: @"unknown error"].UTF8String);
+}
+
+// Apple documents only Library/Caches and preferences as local storage for Apple TV apps, and tvOS
+// may purge caches while the app isn't running. The simulator also allows Documents, which hid this.
+static NSString *GameFolder(NSString *name) {
+    return [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+        stringByAppendingPathComponent:[@"Nativecade/Games" stringByAppendingPathComponent:name]];
+}
+
 static NSString *ROMHash(NSData *data) {
     unsigned char bytes[CC_SHA1_DIGEST_LENGTH];
     CC_SHA1(data.bytes, (CC_LONG)data.length, bytes);
@@ -80,7 +92,9 @@ static bool ValidArchive(NSString *path) {
 static bool InstallArchive(NSString *source, NSString *destination) {
     NSFileManager *files = NSFileManager.defaultManager;
     NSString *temporary = [destination stringByAppendingFormat:@".%@.partial", NSUUID.UUID.UUIDString];
-    if (![files copyItemAtPath:source toPath:temporary error:nil]) return false;
+    // A hard link shares the prepared archive's storage; copy when linking isn't possible.
+    if (link(source.fileSystemRepresentation, temporary.fileSystemRepresentation) != 0 &&
+        ![files copyItemAtPath:source toPath:temporary error:nil]) return false;
     // rename atomically replaces an existing derived archive. Player save files are separate.
     bool ok = rename(temporary.fileSystemRepresentation, destination.fileSystemRepresentation) == 0;
     if (!ok) [files removeItemAtPath:temporary error:nil];
@@ -115,8 +129,9 @@ bool NativecadePrepareGame(const char *romPath, const char *expectedSHA1, char *
             return Failure(error, capacity, "This app build is missing its game support files.");
         NSString *cache = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
             stringByAppendingPathComponent:[@"Nativecade/Prepared/" NATIVECADE_SHIPWRIGHT_RELEASE stringByAppendingPathComponent:hash]];
-        if (![files createDirectoryAtPath:cache withIntermediateDirectories:YES attributes:nil error:nil])
-            return Failure(error, capacity, "There is not enough storage to prepare this game.");
+        NSError *problem = nil;
+        if (![files createDirectoryAtPath:cache withIntermediateDirectories:YES attributes:nil error:&problem])
+            return FolderFailure(error, capacity, problem);
         NSString *archiveName = @"oot.o2r";
         if (!ValidArchive([cache stringByAppendingPathComponent:archiveName])) archiveName = @"oot-mq.o2r";
         if (!ValidArchive([cache stringByAppendingPathComponent:archiveName])) {
@@ -134,8 +149,9 @@ bool NativecadePrepareGame(const char *romPath, const char *expectedSHA1, char *
             [files removeItemAtPath:staging error:nil];
             if (!valid) return Failure(error, capacity, "Game preparation failed. Check available storage and try importing the ROM again.");
         }
-        NSString *root = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
-        [files createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:nil];
+        NSString *root = GameFolder(@"OcarinaOfTime");
+        if (![files createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:&problem])
+            return FolderFailure(error, capacity, problem);
         if (!InstallArchive(port, [root stringByAppendingPathComponent:@"soh.o2r"]) ||
             !InstallArchive([cache stringByAppendingPathComponent:archiveName], [root stringByAppendingPathComponent:archiveName]))
             return Failure(error, capacity, "The prepared game could not be installed. Check available storage and try again.");
@@ -218,7 +234,7 @@ static int RunApplication(int argc, char **argv) {
     @autoreleasepool {
         if (!ShowLibrary || !HideLibrary) return 2;
         HideLibrary();
-        NSString *root = GameDirectory ?: [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+        NSString *root = GameDirectory ?: GameFolder(@"OcarinaOfTime");
         int status = 2;
         if (chdir(root.fileSystemRepresentation) == 0) {
             ResetGameGlobals();
@@ -232,8 +248,9 @@ static int RunApplication(int argc, char **argv) {
                 });
             }
 #endif
+            // libultraship otherwise uses Documents; Apple TV apps keep files in Caches (GameFolder).
+            setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
             if (GameRunner) {
-                setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
                 status = GameRunner(argc, argv);
             } else {
                 RecompTVInitializeSaveStorage(root.fileSystemRepresentation);
