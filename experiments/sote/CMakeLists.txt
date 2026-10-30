@@ -1,12 +1,21 @@
-# Included by the Nativecade runtime build, like experiments/lighthouse. The game's code is generated
-# from the player's ROM (scripts/generate-sote-code.sh); without it, in CI or on another Mac, the
-# framework only reports that this build doesn't include the game (SoteUnavailable.cpp).
-# That code comes from a ROM, so it never goes into a build that can leave this Mac: Apple TV
-# builds, which TestFlight archives use, always get the stand-in.
-if(RECOMPTV_SOTE_SOURCE AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
-    message(FATAL_ERROR "Shadows of the Empire's code is generated from a ROM; build it only for the simulator.")
+# Included by the Nativecade runtime build, like experiments/lighthouse. The game's code and audio
+# microcode run through experiments/n64interp from the player's ROM, with tables prepare-sote.py
+# writes from SotE's configuration, so nothing in the build comes from a ROM. Without a prepared
+# SotE (RECOMPTV_SOTE_SOURCE), the framework only reports that this build doesn't include the game.
+#
+# RECOMPTV_SOTE_RECOMPILED compiles the code N64Recomp and RSPRecomp generated from the ROM instead
+# (scripts/generate-sote-code.sh), to compare the two. That code never goes into a build that can
+# leave this Mac, so only simulator builds may use it.
+option(RECOMPTV_SOTE_RECOMPILED "Compile the code generated from the ROM (simulator only)" OFF)
+if(RECOMPTV_SOTE_RECOMPILED)
+    if(NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+        message(FATAL_ERROR "Code generated from a ROM can't go into an Apple TV build; turn off RECOMPTV_SOTE_RECOMPILED.")
+    endif()
+    set(sote_ready "${RECOMPTV_SOTE_SOURCE}/generated/aspMain.cpp")
+else()
+    set(sote_ready "${RECOMPTV_SOTE_SOURCE}/interpreter/n64interp_game.c")
 endif()
-if(NOT RECOMPTV_SOTE_SOURCE OR NOT EXISTS "${RECOMPTV_SOTE_SOURCE}/generated/aspMain.cpp")
+if(NOT RECOMPTV_SOTE_SOURCE OR NOT EXISTS "${sote_ready}")
     add_library(NativecadeSote SHARED SoteUnavailable.cpp)
 else()
 # The game code, N64ModernRuntime and RT64 have hidden symbols; SDL comes from the shared runtime.
@@ -31,11 +40,7 @@ set(SDL2_INCLUDE_DIRS "$<TARGET_PROPERTY:SDL2-static,INTERFACE_INCLUDE_DIRECTORI
 add_subdirectory("${sote_rt64}" rt64)
 add_subdirectory("${sote_runtime}" runtime)
 
-# The game's code: by default experiments/n64interp runs it from the ROM in RDRAM, with tables
-# that scripts/generate-n64interp.py wrote from SotE's configuration (prepare-sote.py). With
-# RECOMPTV_SOTE_RECOMPILED, the code N64Recomp generated from the ROM is compiled instead, which only
-# local simulator builds may do, to compare the two.
-option(RECOMPTV_SOTE_RECOMPILED "Compile the code N64Recomp generated from the ROM (simulator only)" OFF)
+# The game's code and audio microcode: interpreted from RDRAM, or recompiled (see the top).
 if(RECOMPTV_SOTE_RECOMPILED)
     set(sote_tables "${sote}/generated/RecompiledFuncs")
     file(GLOB sote_game_sources CONFIGURE_DEPENDS "${sote_tables}/*.c")

@@ -48,6 +48,7 @@ are 139 KB and 2.8 MB.
 
 - Shadows of the Empire hasn't been through the restart check: in the simulator its
   renderer can't draw, so it never reaches Quit ([Shadows of the Empire](SOTE.md)).
+  Its interpreter keeps its tables between starts; the game's code is read from RDRAM each time.
   N64ModernRuntime, its runtime, also expects a new process for each start.
 - On 2026-10-30, the sequence `banjo,oot,kart,fox,mario,banjo` stalled in two of
   three runs: Banjo-Kazooie's second start waited in `osRecvMesg` for a controller

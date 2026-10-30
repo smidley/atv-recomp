@@ -176,6 +176,32 @@ SWAPS = {
     ],
     # Code mods are compiled to native code while the game runs, which tvOS doesn't allow, so the
     # live recompiler isn't linked (experiments/sote/AppleTVStubs.cpp) and code mods fail to load.
+    # The runtime reserves 4 GB of address space, so a stray game address faults instead of reaching
+    # other memory. An Apple TV app may not have that much free in one piece; then it reserves the
+    # 512 MB the game uses, without that guard.
+    "third_party/N64ModernRuntime/librecomp/src/recomp.cpp": [
+        ("""    rdram = (uint8_t*)mmap(NULL, allocation_size, PROT_NONE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    alloc_failed = rdram == reinterpret_cast<uint8_t*>(MAP_FAILED);
+    if (!alloc_failed) {
+        // mprotect returns -1 on failure.
+        alloc_failed = (mprotect(rdram, mem_size, PROT_READ | PROT_WRITE) == -1);
+        if (alloc_failed) {
+            munmap(rdram, allocation_size);""",
+         """    size_t reserved = allocation_size;
+    rdram = (uint8_t*)mmap(NULL, reserved, PROT_NONE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    if (rdram == reinterpret_cast<uint8_t*>(MAP_FAILED)) {
+        reserved = mem_size;
+        rdram = (uint8_t*)mmap(NULL, reserved, PROT_NONE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    }
+    alloc_failed = rdram == reinterpret_cast<uint8_t*>(MAP_FAILED);
+    if (!alloc_failed) {
+        // mprotect returns -1 on failure.
+        alloc_failed = (mprotect(rdram, mem_size, PROT_READ | PROT_WRITE) == -1);
+        if (alloc_failed) {
+            munmap(rdram, reserved);"""),
+        ("    free_failed = (munmap(rdram, allocation_size) == -1);",
+         "    free_failed = (munmap(rdram, reserved) == -1);"),
+    ],
     "third_party/N64ModernRuntime/librecomp/CMakeLists.txt": [
         ("target_link_libraries(librecomp PRIVATE ultramodern N64Recomp LiveRecomp)",
          "target_link_libraries(librecomp PRIVATE ultramodern N64Recomp)"),

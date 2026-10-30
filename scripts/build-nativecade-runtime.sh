@@ -13,16 +13,12 @@ python3 "$runtime_root/scripts/prepare-spaghettikart.py"
 python3 "$runtime_root/scripts/prepare-starship.py"
 python3 "$runtime_root/scripts/prepare-ghostship.py"
 python3 "$runtime_root/scripts/prepare-lighthouse.py"
-# Shadows of the Empire's code exists only on a Mac that generated it from the player's ROM
-# (scripts/generate-sote-code.sh); elsewhere its framework only reports the game unavailable.
-runtime_sote_generated=false
-if [[ -f "$runtime_root/build/sote/source/generated/aspMain.cpp" ]]; then
-    runtime_sote_generated=true
-    python3 "$runtime_root/scripts/prepare-sote.py"
-    cmake -S "$runtime_root/experiments/sote/host-tools" -B "$runtime_root/build/sote/rt64-host-tools" -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release -DRECOMPTV_SOTE_SOURCE="$runtime_root/build/sote/source"
-    cmake --build "$runtime_root/build/sote/rt64-host-tools"
-fi
+# Shadows of the Empire runs its game code and audio microcode through experiments/n64interp from
+# the player's ROM (docs/SOTE.md), so its build reads no ROM either.
+python3 "$runtime_root/scripts/prepare-sote.py"
+cmake -S "$runtime_root/experiments/sote/host-tools" -B "$runtime_root/build/sote/rt64-host-tools" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release -DRECOMPTV_SOTE_SOURCE="$runtime_root/build/sote/source"
+cmake --build "$runtime_root/build/sote/rt64-host-tools"
 for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
     # The default contains both SDKs; explicit arguments can build one at a time.
     for runtime_platform in $runtime_sdk; do
@@ -33,12 +29,6 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
         esac
         runtime_build="$runtime_root/build/nativecade-runtime/$runtime_platform"
         runtime_sdk_path="$(xcode-select -p)/Platforms/$runtime_platform_folder.platform/Developer/SDKs/$runtime_platform_folder.sdk"
-        # Code generated from a ROM stays in this Mac's simulator builds; Apple TV builds, which
-        # TestFlight archives use, never include it (experiments/sote/CMakeLists.txt refuses).
-        runtime_sote=
-        if $runtime_sote_generated && [[ $runtime_platform == appletvsimulator ]]; then
-            runtime_sote="$runtime_root/build/sote/source"
-        fi
         # CMake caches framework and zlib paths inside the versioned SDK, which an Xcode update replaces.
         runtime_fresh=
         if [[ -f "$runtime_build/CMakeCache.txt" ]] &&
@@ -57,7 +47,12 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
             -DRECOMPTV_STARSHIP_SOURCE="$runtime_root/build/starship/source" \
             -DRECOMPTV_GHOSTSHIP_SOURCE="$runtime_root/build/ghostship/source" \
             -DRECOMPTV_LIGHTHOUSE_SOURCE="$runtime_root/build/lighthouse/source" \
-            -DRECOMPTV_SOTE_SOURCE="$runtime_sote" -DRECOMPTV_SOTE_HOST_TOOLS="$runtime_root/build/sote/rt64-host-tools"
+            -DRECOMPTV_SOTE_SOURCE="$runtime_root/build/sote/source" -DRECOMPTV_SOTE_HOST_TOOLS="$runtime_root/build/sote/rt64-host-tools"
+        # Code generated from a ROM (scripts/generate-sote-code.sh) may be compiled into this Mac's
+        # simulator builds to compare it with the interpreter, never into an Apple TV build.
+        if [[ $runtime_platform == appletvos ]] && grep -q "build/sote/source/generated" "$runtime_build/build.ninja"; then
+            echo 'Code generated from a ROM is in the Apple TV build.' >&2; exit 1
+        fi
         cmake --build "$runtime_build" --target NativecadeSpaghetti NativecadeStarship NativecadeGhostship \
             NativecadeLighthouse NativecadeSote --parallel "${NATIVECADE_BUILD_JOBS:-4}"
         for runtime_relative in NativecadeRuntime.framework spaghettikart/NativecadeSpaghetti.framework \

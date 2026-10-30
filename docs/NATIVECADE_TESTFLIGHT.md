@@ -34,10 +34,10 @@ matching debug symbols, then assembles `NativecadeRuntime.xcframework`,
 `NativecadeSpaghetti.xcframework`, `NativecadeStarship.xcframework`,
 `NativecadeGhostship.xcframework`, `NativecadeLighthouse.xcframework` and
 `NativecadeSote.xcframework` under `build/nativecade-runtime`.
-Shadows of the Empire is only in simulator builds on a Mac that ran
-`bash scripts/generate-sote-code.sh PATH_TO_ROM` ([Shadows of the Empire](SOTE.md)).
-Its code is generated from a ROM, so Apple TV builds, which TestFlight archives
-use, always get a stand-in that reports the game isn't included.
+Shadows of the Empire's game code and audio microcode run through the
+[N64 interpreter](N64_INTERPRETER.md) from the player's ROM, so its framework
+contains nothing from a ROM ([Shadows of the Empire](SOTE.md)). The script stops
+if an Apple TV build would compile code generated from a ROM.
 An explicit SDK argument builds just that slice. The resources script packs only
 the port's own support assets, extraction definitions, and third-party notices.
 It has no ROM argument and never reads `LocalData`. Both generated directories
