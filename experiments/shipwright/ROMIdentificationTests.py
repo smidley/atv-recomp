@@ -86,7 +86,7 @@ class ROMIdentificationTests(unittest.TestCase):
         reference = baseline["rom_reference"]
         data = rom.REFERENCE.read_bytes()
         self.assertEqual(hashlib.sha256(data).hexdigest(), reference["file_sha256"])
-        self.assertEqual(len(rom.load_revisions()), 19)
+        self.assertEqual(len(rom.load_revisions()), reference["upstream_entry_count"])
         self.assertNotIn(self.sha1, rom.load_revisions())
 
     def test_duplicate_reference_hash_is_rejected(self):

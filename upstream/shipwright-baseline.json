@@ -7,16 +7,6 @@
     "shipwright": {
       "repository": "HarbourMasters/Shipwright",
       "revision": "f0599f96f8d442f26d0fa1c5cedafddacd56633f"
-    },
-    "libultraship": {
-      "repository": "kenix3/libultraship",
-      "revision": "da6daf1a50a5e46d6641408d52227e31e85e46df",
-      "gitlink": "libultraship"
-    },
-    "torch": {
-      "repository": "HarbourMasters/Torch",
-      "revision": "2ab12fe9660aec04e02ee89fe81baed304a1a1d6",
-      "gitlink": "torch"
     }
   },
   "rom_reference": {
@@ -25,6 +15,18 @@
     "file_sha256": "e76e156f8642deaf822bcb2171dde340f5d7eba11387dc94fc003ed88e99554b",
     "identity_algorithm": "sha1",
     "upstream_entry_count": 19,
-    "note": "Upstream reference hashes only; no real ROM was used to validate this host tool or a tvOS runtime."
-  }
+    "note": "Upstream reference hashes only; no real ROM was used to validate this host tool or a tvOS runtime.",
+    "app_copy": "Packages/RecompSources/Sources/RecompSources/Resources/shipwright-supported-roms.json"
+  },
+  "prepare": [
+    [
+      "scripts/prepare-shipwright-metal.py",
+      "build/upstream/libultraship"
+    ],
+    [
+      "scripts/prepare-shipwright-game.py",
+      "build/upstream/Shipwright"
+    ]
+  ],
+  "integration": "Builds against Nativecade's shared libultraship and Torch, pinned in lighthouse-baseline.json."
 }

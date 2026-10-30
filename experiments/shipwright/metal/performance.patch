@@ -1,0 +1,445 @@
+--- a/include/fast/backends/gfx_metal.h
++++ b/include/fast/backends/gfx_metal.h
+@@ -12,6 +12,8 @@
+ 
+ #include <imgui_impl_sdl2.h>
+ #include <simd/simd.h>
++#include <deque>
++#include <vector>
+ 
+ static constexpr size_t kMaxVertexBufferPoolSize = 3;
+ static constexpr size_t METAL_MAX_MULTISAMPLE_SAMPLE_COUNT = 8;
+@@ -29,6 +31,7 @@ class Device;
+ class Function;
+ class Buffer;
+ class RenderPipelineState;
++class RenderPipelineDescriptor;
+ class ComputePipelineState;
+ class CommandQueue;
+ class Viewport;
+@@ -58,6 +61,11 @@ struct hash_pair_shader_ids {
+ namespace Fast {
+ 
+ struct ShaderProgramMetal {
++    ShaderProgramMetal() = default;
++    ShaderProgramMetal(const ShaderProgramMetal&) = delete;
++    ShaderProgramMetal& operator=(const ShaderProgramMetal&) = delete;
++    ~ShaderProgramMetal();
++    MTL::RenderPipelineDescriptor* pipelineDescriptor = nullptr;
+     uint64_t shader_id0;
+     uint64_t shader_id1;
+ 
+@@ -67,7 +75,7 @@ struct ShaderProgramMetal {
+     bool markedForDeletion = false;
+ 
+     // hashed by msaa_level
+-    MTL::RenderPipelineState* pipeline_state_variants[9];
++    MTL::RenderPipelineState* pipeline_state_variants[9]{};
+ };
+ 
+ struct TextureDataMetal {
+@@ -175,12 +183,29 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
+     void SetSrgbMode() override;
+     ImTextureID GetTextureById(int id) override;
+ 
++    // Polled on the render thread. Timestamps never wait for the GPU.
++    bool GetLatestFrameTiming(uint64_t& sequence, double& milliseconds, uint32_t& renderHeight) const;
++    void GetOutputSize(uint32_t& width, uint32_t& height) const;
+     void NewFrame();
+     void SetupFloatingFrame();
+     void RenderDrawData(ImDrawData* drawData);
+     bool MetalInit(SDL_Renderer* renderer);
+ 
+   private:
++    struct PendingFrameTiming {
++        std::vector<MTL::CommandBuffer*> buffers;
++        uint32_t renderHeight;
++        uint64_t sequence;
++    };
++    void TrackTimingBuffer(MTL::CommandBuffer* buffer);
++    void CollectFrameTimings();
++    std::vector<MTL::CommandBuffer*> mCurrentTimingBuffers;
++    std::deque<PendingFrameTiming> mPendingFrameTimings;
++    bool mCollectCurrentTiming = false;
++    uint64_t mNextTimingSequence = 0, mLatestTimingSequence = 0;
++    double mLatestGpuMilliseconds = 0;
++    uint32_t mLatestTimingHeight = 0;
++    MTL::RenderPipelineState* GetPipelineState(ShaderProgramMetal& program, uint32_t samples);
+     bool NonUniformThreadGroupSupported();
+     void SetupScreenFramebuffer(uint32_t width, uint32_t height);
+     // Elements that only need to be setup once
+@@ -209,6 +234,7 @@ class GfxRenderingAPIMetal final : public GfxRenderingAPI {
+     MTL::Buffer* mDepthValueOutputBuffer = nullptr;
+     size_t mCoordBufferSize = 0;
+     MTL::Function* mDepthComputeFunction = nullptr;
++    MTL::ComputePipelineState* mDepthComputePipelineState = nullptr;
+     MTL::Function* mConvertToRgb5a1Function = nullptr;
+     MTL::ComputePipelineState* mConvertToRgb5a1PipelineState = nullptr;
+ 
+--- a/src/fast/backends/gfx_metal.cpp
++++ b/src/fast/backends/gfx_metal.cpp
+@@ -17,6 +17,9 @@
+ #include <time.h>
+ #include <math.h>
+ #include <cmath>
++#include <chrono>
++#include <cstdlib>
++#include <cstring>
+ #include <stddef.h>
+ #include <stdexcept>
+ 
+@@ -47,6 +50,31 @@
+ // MARK: - Helpers
+ namespace Fast {
+ 
++// Pipeline objects are immutable and can be reused across frames.
++ShaderProgramMetal::~ShaderProgramMetal() {
++    for (auto* pipeline : pipeline_state_variants) {
++        if (pipeline) pipeline->release();
++    }
++    if (pipelineDescriptor) pipelineDescriptor->release();
++}
++
++MTL::RenderPipelineState* GfxRenderingAPIMetal::GetPipelineState(ShaderProgramMetal& program, uint32_t samples) {
++    if (samples == 0 || samples > METAL_MAX_MULTISAMPLE_SAMPLE_COUNT || !mMsaaNumQualityLevels[samples - 1]) {
++        throw std::runtime_error("Unsupported Metal sample count");
++    }
++    auto*& pipeline = program.pipeline_state_variants[samples];
++    if (!pipeline) {
++        NS::Error* error = nullptr;
++        program.pipelineDescriptor->setSampleCount(samples);
++        pipeline = mDevice->newRenderPipelineState(program.pipelineDescriptor, &error);
++        if (!pipeline) {
++            SPDLOG_ERROR("Metal pipeline creation failed: {}", error ? error->localizedDescription()->utf8String() : "unknown error");
++            throw std::runtime_error("Could not create Metal pipeline");
++        }
++    }
++    return pipeline;
++}
++
+ static MTL::SamplerAddressMode gfx_cm_to_metal(uint32_t val) {
+     switch (val) {
+         case G_TX_NOMIRROR | G_TX_CLAMP:
+@@ -72,13 +100,17 @@ template <typename T> void ReleaseMetal(T*& object) {
+     }
+ }
+ 
+-void ConfigureDepthClipMode(MTL::RenderCommandEncoder* encoder) {
+-#if TARGET_OS_TV && TARGET_OS_SIMULATOR
++void ConfigureDepthClipMode(MTL::Device* device, MTL::RenderCommandEncoder* encoder) {
++#if TARGET_OS_SIMULATOR
+     // The simulator rejects depth clamping. Keep Metal's default clipping;
+     // game near/far-plane fidelity requires a separate validation step.
++    (void)device;
+     (void)encoder;
+ #else
+-    encoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    // GPU families before Apple3 have no depth-clip-mode control.
++    if (device->supportsFamily(MTL::GPUFamilyApple3) || device->supportsFamily(MTL::GPUFamilyMac2)) {
++        encoder->setDepthClipMode(MTL::DepthClipModeClamp);
++    }
+ #endif
+ }
+ }
+@@ -105,6 +137,10 @@ GfxRenderingAPIMetal::~GfxRenderingAPIMetal() {
+     ReleaseMetal(mLastSubmittedFrame);
+     ReleaseMetal(mScreenReadbackCmdBuf);
+     ReleaseMetal(mScreenReadbackBuffer);
++    for (auto*& buffer : mCurrentTimingBuffers) ReleaseMetal(buffer);
++    for (auto& frame : mPendingFrameTimings) {
++        for (auto*& buffer : frame.buffers) ReleaseMetal(buffer);
++    }
+     for (auto& [key, program] : mShaderProgramPool) {
+         for (auto*& pipeline : program.pipeline_state_variants) ReleaseMetal(pipeline);
+     }
+@@ -125,6 +161,7 @@ GfxRenderingAPIMetal::~GfxRenderingAPIMetal() {
+     ReleaseMetal(mFrameUniformBuffer);
+     ReleaseMetal(mCoordUniformBuffer);
+     ReleaseMetal(mDepthValueOutputBuffer);
++    ReleaseMetal(mDepthComputePipelineState);
+     ReleaseMetal(mDepthComputeFunction);
+     ReleaseMetal(mConvertToRgb5a1Function);
+     ReleaseMetal(mConvertToRgb5a1PipelineState);
+@@ -188,7 +225,54 @@ bool GfxRenderingAPIMetal::MetalInit(SDL_Renderer* renderer) {
+ 
+ static void SetupScreenFramebuffer(uint32_t width, uint32_t height);
+ 
++void GfxRenderingAPIMetal::GetOutputSize(uint32_t& width, uint32_t& height) const {
++    const auto size = mLayer->drawableSize();
++    width = static_cast<uint32_t>(size.width);
++    height = static_cast<uint32_t>(size.height);
++}
++
++bool GfxRenderingAPIMetal::GetLatestFrameTiming(uint64_t& sequence, double& milliseconds,
++                                               uint32_t& renderHeight) const {
++    sequence = mLatestTimingSequence;
++    milliseconds = mLatestGpuMilliseconds;
++    renderHeight = mLatestTimingHeight;
++    return sequence != 0;
++}
++
++void GfxRenderingAPIMetal::TrackTimingBuffer(MTL::CommandBuffer* buffer) {
++    if (mCollectCurrentTiming) mCurrentTimingBuffers.push_back(buffer->retain());
++}
++
++void GfxRenderingAPIMetal::CollectFrameTimings() {
++    while (!mPendingFrameTimings.empty()) {
++        auto& frame = mPendingFrameTimings.front();
++        bool complete = true, valid = true;
++        double milliseconds = 0;
++        for (auto* buffer : frame.buffers) {
++            const auto status = buffer->status();
++            if (status != MTL::CommandBufferStatusCompleted && status != MTL::CommandBufferStatusError) {
++                complete = false;
++                break;
++            }
++            const double start = buffer->GPUStartTime(), end = buffer->GPUEndTime();
++            valid &= status == MTL::CommandBufferStatusCompleted && start > 0 && end > start;
++            milliseconds += (end - start) * 1000.0;
++        }
++        if (!complete) break;
++        if (valid) {
++            mLatestTimingSequence = frame.sequence;
++            mLatestGpuMilliseconds = milliseconds;
++            mLatestTimingHeight = frame.renderHeight;
++        }
++        for (auto* buffer : frame.buffers) buffer->release();
++        mPendingFrameTimings.pop_front();
++    }
++}
++
+ void GfxRenderingAPIMetal::NewFrame() {
++    // Release completed command buffers before acquiring another drawable.
++    CollectFrameTimings();
++    mCollectCurrentTiming = mPendingFrameTimings.size() < 4;
+     int width, height;
+     SDL_GetRendererOutputSize(mRenderer, &width, &height);
+     SetupScreenFramebuffer(width, height);
+@@ -287,6 +371,9 @@ void GfxRenderingAPIMetal::Init() {
+ 
+     mDepthComputeFunction = library->newFunction(NS::String::string("depthKernel", NS::UTF8StringEncoding));
+     mConvertToRgb5a1Function = library->newFunction(NS::String::string("convertToRGB5A1", NS::UTF8StringEncoding));
++    mDepthComputePipelineState = mDevice->newComputePipelineState(mDepthComputeFunction, &error);
++    if (!mDepthComputePipelineState) throw std::runtime_error("Could not create Metal depth pipeline");
++
+ 
+     library->release();
+     autorelease_pool->release();
+@@ -310,6 +397,7 @@ void GfxRenderingAPIMetal::ClearShaderCache() {
+ }
+ 
+ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shader_id0, uint64_t shader_id1) {
++    const auto compileStart = std::chrono::steady_clock::now();
+     CCFeatures cc_features;
+     gfx_cc_get_features(shader_id0, shader_id1, &cc_features);
+ 
+@@ -369,24 +457,14 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
+     prg->numInputs = cc_features.numInputs;
+     prg->numFloats = numFloats;
+ 
+-    // Prepoluate pipeline state cache with program and available msaa levels
+-    for (int i = 0; i < ARRAY_COUNT(mMsaaNumQualityLevels); i++) {
+-        if (mMsaaNumQualityLevels[i] == 1) {
+-            int msaa_level = i + 1;
+-            pipeline_descriptor->setSampleCount(msaa_level);
+-            MTL::RenderPipelineState* pipeline_state = mDevice->newRenderPipelineState(pipeline_descriptor, &error);
+-
+-            if (!pipeline_state || error != nullptr) {
+-                // Pipeline State creation could fail if we haven't properly set up our pipeline descriptor.
+-                // If the Metal API validation is enabled, we can find out more information about what
+-                // went wrong.  (Metal API validation is enabled by default when a debug build is run
+-                // from Xcode)
+-                SPDLOG_ERROR("Failed to create pipeline state, error {}",
+-                             error->localizedDescription()->cString(NS::UTF8StringEncoding));
+-            }
+-
+-            prg->pipeline_state_variants[msaa_level] = pipeline_state;
+-        }
++    // Build only the variant needed now. Other sample counts are cached on first use,
++    // instead of compiling unused 2x/4x/8x variants during a new scene's first frame.
++    prg->pipelineDescriptor = pipeline_descriptor;
++    GetPipelineState(*prg, mFramebuffers[mCurrentFramebuffer].mMsaaLevel);
++    const char* perf = std::getenv("RECOMPTV_PERF_LOG");
++    if (perf && std::strcmp(perf, "1") == 0) {
++        SPDLOG_INFO("[RecompTVPerf] shader_ms={:.2f} initial_pipeline_variants=1",
++            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - compileStart).count());
+     }
+ 
+     LoadShader((struct ShaderProgram*)prg);
+@@ -394,7 +472,7 @@ struct ShaderProgram* GfxRenderingAPIMetal::CreateAndLoadNewShader(uint64_t shad
+     vertexFunc->release();
+     fragmentFunc->release();
+     library->release();
+-    pipeline_descriptor->release();
++    // The shader owns its descriptor for later sample-count variants.
+     autorelease_pool->release();
+ 
+     return (struct ShaderProgram*)prg;
+@@ -641,7 +719,7 @@ void GfxRenderingAPIMetal::DrawTriangles(float buf_vbo[], size_t buf_vbo_len, si
+         current_framebuffer.mLastShaderProgram = mShaderProgram;
+ 
+         MTL::RenderPipelineState* pipeline_state =
+-            mShaderProgram->pipeline_state_variants[current_framebuffer.mMsaaLevel];
++            GetPipelineState(*mShaderProgram, current_framebuffer.mMsaaLevel);
+         current_framebuffer.mCommandEncoder->setRenderPipelineState(pipeline_state);
+     }
+ 
+@@ -683,6 +761,7 @@ void GfxRenderingAPIMetal::EndFrame() {
+         if (!framebuffer.mHasEndedEncoding)
+             framebuffer.mCommandEncoder->endEncoding();
+ 
++        TrackTimingBuffer(framebuffer.mCommandBuffer);
+         framebuffer.mCommandBuffer->commit();
+         it++;
+     }
+@@ -723,6 +802,7 @@ void GfxRenderingAPIMetal::EndFrame() {
+     mCurrentVertexBufferPoolIndex = (mCurrentVertexBufferPoolIndex + 1) % kMaxVertexBufferPoolSize;
+     ReleaseMetal(mLastSubmittedFrame);
+     mLastSubmittedFrame = screen_framebuffer.mCommandBuffer->retain();
++    TrackTimingBuffer(screen_framebuffer.mCommandBuffer);
+     screen_framebuffer.mCommandBuffer->commit();
+ 
+     // Now that commit has been called, retain the command buffer for GPU sync
+@@ -740,6 +820,16 @@ void GfxRenderingAPIMetal::EndFrame() {
+         mScreenReadbackDataReady = false;
+     }
+ 
++    if (mCollectCurrentTiming && !mCurrentTimingBuffers.empty()) {
++        uint32_t width = 0, height = 0;
++        auto window = std::dynamic_pointer_cast<Fast3dWindow>(Ship::Context::GetRawInstance()->GetWindow());
++        if (window) {
++            if (auto interpreter = window->GetInterpreterWeak().lock()) interpreter->GetCurDimensions(&width, &height);
++        }
++        mPendingFrameTimings.push_back({std::move(mCurrentTimingBuffers), height, ++mNextTimingSequence});
++        mCurrentTimingBuffers.clear();
++    }
++    mCollectCurrentTiming = false;
+     mDrawnFramebuffers.clear();
+ 
+     // Cleanup states
+@@ -797,7 +887,7 @@ void GfxRenderingAPIMetal::SetupScreenFramebuffer(uint32_t width, uint32_t heigh
+         throw std::runtime_error("Metal layer did not provide a drawable");
+     }
+ 
+-    bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
++    bool msaa_enabled = Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1) > 1;
+ 
+     FramebufferMetal& fb = mFramebuffers[0];
+     TextureDataMetal& tex = mTextures[fb.mTextureId];
+@@ -908,7 +998,7 @@ void GfxRenderingAPIMetal::UpdateFramebufferParameters(int fb_id, uint32_t width
+ 
+             bool fb_msaa_enabled = (msaa_level > 1);
+             bool game_msaa_enabled =
+-                Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger("gMSAAValue", 1) > 1;
++                Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_MSAA_VALUE, 1) > 1;
+ 
+             if (fb_msaa_enabled) {
+                 render_pass_descriptor->colorAttachments()->object(0)->setTexture(tex.msaaTexture);
+@@ -1009,7 +1099,7 @@ void GfxRenderingAPIMetal::StartDrawToFramebuffer(int fb_id, float noise_scale)
+         fb.mCommandEncoder = fb.mCommandBuffer->renderCommandEncoder(fb.mRenderPassDescriptor);
+         std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder", fb_id);
+         fb.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-        ConfigureDepthClipMode(fb.mCommandEncoder);
++        ConfigureDepthClipMode(mDevice, fb.mCommandEncoder);
+     }
+ 
+     if (noise_scale != 0.0f) {
+@@ -1049,7 +1139,7 @@ void GfxRenderingAPIMetal::ClearFramebuffer(bool color, bool depth) {
+ 
+     std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Clear", mCurrentFramebuffer);
+     framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-    ConfigureDepthClipMode(framebuffer.mCommandEncoder);
++    ConfigureDepthClipMode(mDevice, framebuffer.mCommandEncoder);
+     framebuffer.mCommandEncoder->setViewport(*framebuffer.mViewport);
+     framebuffer.mCommandEncoder->setScissorRect(*framebuffer.mScissorRect);
+ 
+@@ -1160,8 +1250,7 @@ GfxRenderingAPIMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, f
+     auto command_buffer = mCommandQueue->commandBuffer();
+     command_buffer->setLabel(NS::String::string("Depth Shader Command Buffer", NS::UTF8StringEncoding));
+ 
+-    NS::Error* error = nullptr;
+-    MTL::ComputePipelineState* compute_pipeline_state = mDevice->newComputePipelineState(mDepthComputeFunction, &error);
++    MTL::ComputePipelineState* compute_pipeline_state = mDepthComputePipelineState;
+ 
+     MTL::ComputeCommandEncoder* compute_encoder = command_buffer->computeCommandEncoder();
+     compute_encoder->setComputePipelineState(compute_pipeline_state);
+@@ -1181,6 +1270,7 @@ GfxRenderingAPIMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, f
+ 
+     compute_encoder->endEncoding();
+ 
++    TrackTimingBuffer(command_buffer);
+     command_buffer->commit();
+     command_buffer->waitUntilCompleted();
+ 
+@@ -1195,7 +1285,6 @@ GfxRenderingAPIMetal::GetPixelDepth(int fb_id, const std::set<std::pair<float, f
+         }
+     }
+ 
+-    compute_pipeline_state->release();
+     autorelease_pool->release();
+ 
+     return res;
+@@ -1260,7 +1349,7 @@ void GfxRenderingAPIMetal::CopyFramebuffer(int fb_dst_id, int fb_src_id, int src
+ 
+     std::string fbce_label = fmt::format("FrameBuffer {} Command Encoder After Copy", fb_src_id);
+     source_framebuffer.mCommandEncoder->setLabel(NS::String::string(fbce_label.c_str(), NS::UTF8StringEncoding));
+-    ConfigureDepthClipMode(source_framebuffer.mCommandEncoder);
++    ConfigureDepthClipMode(mDevice, source_framebuffer.mCommandEncoder);
+     source_framebuffer.mCommandEncoder->setViewport(*source_framebuffer.mViewport);
+     source_framebuffer.mCommandEncoder->setScissorRect(*source_framebuffer.mScissorRect);
+ 
+@@ -1350,6 +1439,7 @@ void GfxRenderingAPIMetal::ReadFramebufferToCPU(int fb_id, uint32_t width, uint3
+         }
+         compute_encoder->endEncoding();
+ 
++        TrackTimingBuffer(framebuffer.mCommandBuffer);
+         framebuffer.mCommandBuffer->commit();
+ 
+         if (framebuffer.mUseReadbackQueue) {
+--- a/src/fast/backends/gfx_sdl2.cpp
++++ b/src/fast/backends/gfx_sdl2.cpp
+@@ -4,6 +4,9 @@
+ 
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
++#if TARGET_OS_TV
++#include "FramePacing.h"
++#endif
+ #endif
+ 
+ #include "fast/Fast3dWindow.h"
+@@ -743,12 +746,17 @@ void GfxWindowBackendSDL2::SyncFramerateWithTime() const {
+         t = qpc_to_100ns(SDL_GetPerformanceCounter());
+     }
+ #endif
++#if defined(__APPLE__) && TARGET_OS_TV
++    const int64_t interval = 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
++    t = RecompTV::PacingAnchor(t, next, interval, left > 0);
++#else
+     if (left > 0 && t - next < 10000) {
+         // In case it takes some time for the application to wake up after sleep,
+         // or inaccurate mTimer,
+         // don't let that slow down the framerate.
+         t = next;
+     }
++#endif
+     previous_time = t;
+ }
+ 
+@@ -757,12 +765,16 @@ void GfxWindowBackendSDL2::SwapBuffersBegin() {
+ 
+     if (mVsyncEnabled != nextVsyncEnabled) {
+         mVsyncEnabled = nextVsyncEnabled;
++#if !defined(__APPLE__) || !TARGET_OS_TV
+         SDL_GL_SetSwapInterval(mVsyncEnabled ? 1 : 0);
++#endif
+         SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
+     }
+ 
+     SyncFramerateWithTime();
++#if !defined(__APPLE__) || !TARGET_OS_TV
+     SDL_GL_SwapWindow(mWnd);
++#endif // tvOS Metal has already presented in GfxRenderingAPIMetal::EndFrame.
+ }
+ 
+ void GfxWindowBackendSDL2::SwapBuffersEnd() {

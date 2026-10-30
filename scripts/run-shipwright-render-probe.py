@@ -80,7 +80,11 @@ def run_probe(app, output, keep_simulator=False):
         if not runtimes:
             return "unavailable", "No available tvOS Simulator runtime is installed"
         runtime = max(runtimes, key=lambda r: tuple(int(p) for p in r["version"].split(".")))
-        types = [d for d in listing["devicetypes"] if "Apple-TV" in d["identifier"] or "AppleTV" in d["identifier"]]
+        # Newer runtimes drop older models (tvOS 27 rejects the Apple TV HD), so only
+        # consider device types this runtime lists as supported.
+        supported = {d["identifier"] for d in runtime.get("supportedDeviceTypes", [])}
+        types = [d for d in listing["devicetypes"] if ("Apple-TV" in d["identifier"] or "AppleTV" in d["identifier"])
+                 and (not supported or d["identifier"] in supported)]
         if not types:
             return "unavailable", "No Apple TV simulator device type is installed"
         device = next((d for d in reversed(types) if "1080" in d["identifier"]), types[-1])

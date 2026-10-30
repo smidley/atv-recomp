@@ -1,0 +1,103 @@
+--- a/soh/soh/OTRGlobals.cpp
++++ b/soh/soh/OTRGlobals.cpp
+@@ -114,6 +114,9 @@
+ #include "soh/resource/importer/BackgroundFactory.h"
+ 
+ #include "soh/config/ConfigUpdaters.h"
++#ifdef RECOMPTV_TVOS
++#include "AppleTVPerformance.h"
++#endif
+ #include "soh/ShipInit.hpp"
+ #include "soh/SohGui/SohModals.h"
+ 
+@@ -286,6 +289,9 @@
+ 
+     context->InitConfiguration();
+     context->InitConsoleVariables();
++#ifdef RECOMPTV_TVOS
++    RecompTVInitializePerformanceDefaults();
++#endif
+ 
+     auto controlDeck = std::make_shared<LUS::ControlDeck>(std::vector<CONTROLLERBUTTONS_T>({
+         BTN_CUSTOM_MODIFIER1,
+@@ -1064,6 +1070,10 @@
+ }
+ 
+ uint32_t OTRGlobals::GetInterpolationFPS() {
++#ifdef RECOMPTV_TVOS
++    return RecompTVGetFrameTarget(CVarGetInteger(CVAR_SETTING("InterpolationFPS"), 20),
++        CVarGetInteger(CVAR_SETTING("MatchRefreshRate"), 0));
++#endif
+     if (CVarGetInteger(CVAR_SETTING("MatchRefreshRate"), 0)) {
+         return Ship::Context::GetRawInstance()->GetWindow()->GetCurrentRefreshRate();
+     } else if (CVarGetInteger(CVAR_VSYNC_ENABLED, 1) ||
+@@ -1826,7 +1836,14 @@
+         std::unordered_map<Mtx*, MtxF> mtx_replacements =
+             (time == denom) ? std::unordered_map<Mtx*, MtxF>() : FrameInterpolation_Interpolate((float)time / denom);
+         intp->mInterpolationT = (float)time / denom;
++#ifdef RECOMPTV_TVOS
++        RecompTVPrepareFrame(wnd->GetTargetFps());
++        if (wnd->DrawAndRunGraphicsCommands(Commands, mtx_replacements)) {
++            RecompTVRecordFrame(wnd->GetTargetFps());
++        }
++#else
+         wnd->DrawAndRunGraphicsCommands(Commands, mtx_replacements);
++#endif
+         intp->mInterpolationIndex++;
+     }
+     ImGui::PopStyleColor();
+--- a/soh/soh/SohGui/SohMenuSettings.cpp
++++ b/soh/soh/SohGui/SohMenuSettings.cpp
+@@ -8,6 +8,9 @@
+ #include "UIWidgets.hpp"
+ #include <ship/controller/controldeck/ControlDeck.h>
+ #include <ship/Context.h>
++#ifdef RECOMPTV_TVOS
++#include "AppleTVPerformance.h"
++#endif
+ 
+ extern "C" {
+ #include "include/z64audio.h"
+@@ -326,7 +329,11 @@
+     AddWidget(path, "Audio API (Needs reload)", WIDGET_AUDIO_BACKEND).RaceDisable(false);
+ 
+     // Graphics Settings
++#ifdef RECOMPTV_TVOS
++    static int32_t maxFps = 60;
++#else
+     static int32_t maxFps = 360;
++#endif
+     const char* tooltip =
+         "Uses Matrix Interpolation to create extra frames, resulting in smoother graphics. This is "
+         "purely visual and does not impact game logic, execution of glitches, etc.\n\nA higher target "
+@@ -334,6 +341,30 @@
+     path.sidebarName = "Graphics";
+     AddSidebarEntry("Settings", "Graphics", 3);
+     AddWidget(path, "Graphics Options", WIDGET_SEPARATOR_TEXT);
++#ifdef RECOMPTV_TVOS
++    AddWidget(path, "Apple TV presets", WIDGET_SEPARATOR_TEXT);
++    AddWidget(path, "Automatic: up to 4K / 60 FPS", WIDGET_BUTTON)
++        .RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVApplyPerformancePreset(RecompTV::PerformancePreset::Automatic); })
++        .Options(ButtonOptions().Tooltip("Starts at the display resolution, up to 4K. Adjusts resolution for sustained GPU load while targeting 60 FPS. A manual resolution change turns this off."));
++    AddWidget(path, "4K / 60 FPS", WIDGET_BUTTON)
++        .RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVApplyPerformancePreset(RecompTV::PerformancePreset::Ultra); })
++        .Options(ButtonOptions().Tooltip("Fixed 2160p rendering. Best detail, highest GPU cost. Visible output is limited by the connected display."));
++    AddWidget(path, "720p / 60 FPS", WIDGET_BUTTON)
++        .RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVApplyPerformancePreset(RecompTV::PerformancePreset::Performance); })
++        .Options(ButtonOptions().Tooltip("Prioritizes smooth motion. No MSAA or supersampling; bilinear filtering."));
++    AddWidget(path, "1080p / 60 FPS", WIDGET_BUTTON)
++        .RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVApplyPerformancePreset(RecompTV::PerformancePreset::Sharper); })
++        .Options(ButtonOptions().Tooltip("More image detail with a higher graphics cost."));
++    AddWidget(path, "Low load: 720p / 30 FPS", WIDGET_BUTTON)
++        .RaceDisable(false)
++        .Callback([](WidgetInfo&) { RecompTVApplyPerformancePreset(RecompTV::PerformancePreset::LowLoad); })
++        .Options(ButtonOptions().Tooltip("Reduces CPU and GPU load if 60 FPS is unstable."));
++#endif
++
+     AddWidget(path, "Toggle Fullscreen", WIDGET_BUTTON)
+         .RaceDisable(false)
+         .Callback([](WidgetInfo& info) { Ship::Context::GetRawInstance()->GetWindow()->ToggleFullscreen(); })

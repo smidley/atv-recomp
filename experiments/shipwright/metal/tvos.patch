@@ -377,3 +377,36 @@
      // Use macOS scheduler interval on macOS. Don't trust sysctl on macOS
      left -= 10000UL;
  #elif defined(__OpenBSD__)
+--- a/src/ship/Context.cpp
++++ b/src/ship/Context.cpp
+@@ -489,6 +489,7 @@
+ #endif
+ 
+ #ifdef __IOS__
++    if (const char* game = getenv("NATIVECADE_GAME_DIRECTORY")) return game;
+     const char* home = getenv("HOME");
+     return std::string(home) + "/Documents";
+ #endif
+@@ -552,6 +553,7 @@
+ #endif
+ 
+ #ifdef __IOS__
++    if (const char* game = getenv("NATIVECADE_GAME_DIRECTORY")) return game;
+     const char* home = getenv("HOME");
+     return std::string(home) + "/Documents";
+ #endif
+--- a/src/fast/interpreter.cpp
++++ b/src/fast/interpreter.cpp
+@@ -3223,8 +3223,10 @@
+ }
+ 
+ void* Interpreter::SegAddr(uintptr_t w1) {
+-    // Segmented?
+-    if (w1 & 1) {
++    // Only 16 N64 segments are tagged with bit zero. A real host texture may
++    // also have an odd address (for example MK64's one-byte-aligned I8 data).
++    // Never treat that pointer as an index beyond the segment table.
++    if ((w1 & 1) && (w1 >> 24) < MAX_SEGMENT_POINTERS) {
+         uint32_t segNum = (uint32_t)(w1 >> 24);
+ 
+         uint32_t offset = w1 & 0x00FFFFFE;

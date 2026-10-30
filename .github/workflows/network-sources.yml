@@ -1,0 +1,88 @@
+name: Network sources
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Packages/RecompSources/**
+      - RecompTV/**
+      - scripts/network-fixtures.py
+      - scripts/test-network-sources.sh
+      - scripts/run-source-simulator-probe.py
+      - scripts/ci-build-tvos.sh
+      - RecompTV.xcodeproj/**
+      - .github/workflows/network-sources.yml
+  push:
+    branches: [main]
+    paths:
+      - Packages/RecompSources/**
+      - scripts/network-fixtures.py
+      - scripts/test-network-sources.sh
+      - scripts/run-source-simulator-probe.py
+      - scripts/ci-build-tvos.sh
+      - RecompTV/**
+      - RecompTV.xcodeproj/**
+      - .github/workflows/network-sources.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  providers:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Start synthetic HTTP and SMB servers on loopback
+        run: |
+          python3 -m venv "$RUNNER_TEMP/network-fixtures-venv"
+          "$RUNNER_TEMP/network-fixtures-venv/bin/pip" install impacket==0.13.0
+          "$RUNNER_TEMP/network-fixtures-venv/bin/python" scripts/network-fixtures.py > "$RUNNER_TEMP/network-fixtures.log" 2>&1 &
+          echo "FIXTURE_PID=$!" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import time,urllib.request,socket
+          for attempt in range(60):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:18080/health',timeout=1).read()
+                  with socket.create_connection(('127.0.0.1',1445),timeout=1):
+                      break
+              except OSError:
+                  time.sleep(0.5)
+          else:
+              raise SystemExit('Fixture servers did not start')
+          PY
+      - name: Test provider protocols, cancellation, and ROM cache
+        id: tests
+        env:
+          RECOMPTV_NETWORK_FIXTURES: '1'
+        run: bash scripts/test-network-sources.sh
+      - name: "${{ steps.tests.outputs.diagnostic }}"
+        if: failure() && steps.tests.outcome == 'failure'
+        run: echo 'See test output for full diagnostics.'
+      - name: Build the app for tvOS Simulator
+        id: build
+        run: bash scripts/ci-build-tvos.sh simulator
+      - name: "${{ steps.build.outputs.diagnostic }}"
+        if: failure() && steps.build.outcome == 'failure'
+        run: echo 'See simulator build output for full diagnostics.'
+      - name: Run providers and Keychain in tvOS Simulator twice
+        id: simulator
+        run: python3 scripts/run-source-simulator-probe.py --app build/simulator/Build/Products/Debug-appletvsimulator/RecompTV.app --output build/source-probe
+      - name: "${{ steps.simulator.outputs.diagnostic }}"
+        if: failure() && steps.simulator.outcome == 'failure'
+        run: echo 'See source probe output for full diagnostics.'
+      - name: Save simulator reports and launcher screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: network-source-simulator
+          path: build/source-probe/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stop fixture servers
+        if: always()
+        run: |
+          if [ -n "${FIXTURE_PID:-}" ]; then kill "$FIXTURE_PID" || true; fi

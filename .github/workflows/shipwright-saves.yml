@@ -1,0 +1,30 @@
+name: Shipwright save backups
+
+on:
+  pull_request:
+    branches: [main, feature/shipwright-rom-identification]
+    paths:
+      - .github/workflows/shipwright-saves.yml
+      - experiments/shipwright/simulator-game/**
+      - scripts/test-shipwright-saves.sh
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/shipwright-saves.yml
+      - experiments/shipwright/simulator-game/**
+      - scripts/test-shipwright-saves.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  save-backups:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test local recovery and the RomM save protocol with isolated fixtures
+        run: bash scripts/test-shipwright-saves.sh

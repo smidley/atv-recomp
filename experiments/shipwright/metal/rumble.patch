@@ -1,0 +1,85 @@
+--- a/src/ship/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
++++ b/src/ship/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.cpp
+@@ -1,6 +1,7 @@
+ #include "ship/controller/controldevice/controller/mapping/sdl/SDLRumbleMapping.h"
+
+ #include "ship/config/ConsoleVariable.h"
++#include "RumblePolicy.h"
+ #include "ship/utils/StringHelper.h"
+ #include "ship/Context.h"
+ #include "ship/controller/controldeck/ControlDeck.h"
+@@ -19,7 +20,14 @@
+                                                  ->GetControlDeck()
+                                                  ->GetConnectedPhysicalDeviceManager()
+                                                  ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+-        SDL_GameControllerRumble(gamepad, mLowFrequencyIntensity, mHighFrequencyIntensity, 0);
++        auto vars = Context::GetRawInstance()->GetConsoleVariables();
++        const bool enabled = RecompTV::rumbleActive.load() && vars->GetInteger("gSettings.AppleTV.RumbleEnabled", 1);
++        const int strength = vars->GetInteger("gSettings.AppleTV.RumbleStrength", 100);
++        if (SDL_GameControllerHasRumble(gamepad)) {
++            SDL_GameControllerRumble(gamepad,
++                RecompTV::RumbleStrength(mLowFrequencyIntensity, strength, enabled),
++                RecompTV::RumbleStrength(mHighFrequencyIntensity, strength, enabled), RecompTV::kRumblePulseMs);
++        }
+     }
+ }
+
+@@ -28,16 +36,18 @@
+                                                  ->GetControlDeck()
+                                                  ->GetConnectedPhysicalDeviceManager()
+                                                  ->GetConnectedSDLGamepadsForPort(mPortIndex)) {
+-        SDL_GameControllerRumble(gamepad, 0, 0, 0);
++        if (SDL_GameControllerHasRumble(gamepad)) SDL_GameControllerRumble(gamepad, 0, 0, 0);
+     }
+ }
+
+ void SDLRumbleMapping::SetLowFrequencyIntensity(uint8_t intensityPercentage) {
++    intensityPercentage = std::min<uint8_t>(intensityPercentage, 100);
+     mLowFrequencyIntensityPercentage = intensityPercentage;
+     mLowFrequencyIntensity = UINT16_MAX * (intensityPercentage / 100.0f);
+ }
+
+ void SDLRumbleMapping::SetHighFrequencyIntensity(uint8_t intensityPercentage) {
++    intensityPercentage = std::min<uint8_t>(intensityPercentage, 100);
+     mHighFrequencyIntensityPercentage = intensityPercentage;
+     mHighFrequencyIntensity = UINT16_MAX * (intensityPercentage / 100.0f);
+ }
+--- a/src/ship/controller/controldevice/controller/ControllerRumble.cpp
++++ b/src/ship/controller/controldevice/controller/ControllerRumble.cpp
+@@ -51,17 +51,20 @@
+ }
+
+ void ControllerRumble::ClearRumbleMappingId(std::string id) {
++    StopRumble();
+     mRumbleMappings.erase(id);
+     SaveRumbleMappingIdsToConfig();
+ }
+
+ void ControllerRumble::ClearRumbleMapping(std::string id) {
++    StopRumble();
+     mRumbleMappings[id]->EraseFromConfig();
+     mRumbleMappings.erase(id);
+     SaveRumbleMappingIdsToConfig();
+ }
+
+ void ControllerRumble::ClearAllMappings() {
++    StopRumble();
+     for (auto [id, mapping] : mRumbleMappings) {
+         mapping->EraseFromConfig();
+     }
+@@ -70,6 +73,7 @@
+ }
+
+ void ControllerRumble::ClearAllMappingsForDeviceType(PhysicalDeviceType physicalDeviceType) {
++    StopRumble();
+     std::vector<std::string> mappingIdsToRemove;
+     for (auto [id, mapping] : mRumbleMappings) {
+         if (mapping->GetPhysicalDeviceType() == physicalDeviceType) {
+@@ -109,6 +113,7 @@
+ }
+
+ void ControllerRumble::ReloadAllMappingsFromConfig() {
++    StopRumble();
+     mRumbleMappings.clear();
+
+     // todo: this efficently (when we build out cvar array support?)

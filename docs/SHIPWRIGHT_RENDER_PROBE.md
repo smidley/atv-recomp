@@ -12,6 +12,16 @@ Prism shader generator, and `GfxRenderingAPIMetal`. It packages only the pinned
 open-source Metal template and its license into a small O2R archive. There is
 no ROM, extracted game data, Torch invocation, or replacement renderer.
 
+tvOS 27 refuses to launch apps that have not adopted the UIScene lifecycle, so
+the fixture uses the game's SDL scene adapter
+([`sdl-scenes.patch`](../experiments/shipwright/simulator-game/sdl-scenes.patch)),
+applied to the pinned SDL checkout when the probe is built on its own, and
+declares a scene in its Info.plist. The runner creates its simulator only from
+device types that the newest installed runtime supports; tvOS 27 no longer
+supports the Apple TV HD. On 2026-10-29, with Xcode 27.1, both launches passed
+on tvOS 27.0 (Apple TV 4K, 2nd generation, at 1080p) and on tvOS 26.5
+(Apple TV HD).
+
 ## What it checks
 
 Each process creates and destroys three renderer instances. They draw red,
@@ -39,8 +49,9 @@ depth-clamp request (`Depth Clip Mode is not supported on this device`). tvOS
 Simulator therefore retains Metal's [default depth clipping](https://developer.apple.com/documentation/metal/mtlrendercommandencoder/setdepthclipmode(_:)).
 The fixture's vertices have depth 0.5, inside the clip range. This fallback does
 not establish equivalent game rendering near the near/far planes; that needs a
-separate fidelity test and GPU trace review when the game is integrated. The
-non-simulator upstream clamp path remains unchanged and untested here.
+separate fidelity test and GPU trace review when the game is integrated. Outside
+the simulator, the clamp is requested only on GPU families that support it (see
+[Apple TV performance](APPLE_TV_PERFORMANCE.md)); that path is untested here.
 
 GPU completion and pixel readback are automated evidence. Screenshots are
 saved for visual review, not treated as proof of a presentation timestamp.

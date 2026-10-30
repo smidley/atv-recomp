@@ -1,0 +1,91 @@
+name: Nativecade game runtime
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/nativecade-runtime.yml
+      - upstream/**
+      - experiments/shipwright/**
+      - experiments/spaghettikart/**
+      - experiments/starship/**
+      - experiments/ghostship/**
+      - experiments/lighthouse/**
+      - scripts/upstream.py
+      - scripts/UpstreamTests.py
+      - scripts/build-nativecade-runtime.sh
+      - scripts/package-nativecade-runtime.py
+      - scripts/prepare-shipwright-metal.py
+      - scripts/prepare-shipwright-game.py
+      - scripts/prepare-spaghettikart.py
+      - scripts/prepare-starship.py
+      - scripts/prepare-ghostship.py
+      - scripts/prepare-lighthouse.py
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nativecade-runtime.yml
+      - upstream/**
+      - experiments/shipwright/**
+      - experiments/spaghettikart/**
+      - experiments/starship/**
+      - experiments/ghostship/**
+      - experiments/lighthouse/**
+      - scripts/upstream.py
+      - scripts/UpstreamTests.py
+      - scripts/build-nativecade-runtime.sh
+      - scripts/package-nativecade-runtime.py
+      - scripts/prepare-shipwright-metal.py
+      - scripts/prepare-shipwright-game.py
+      - scripts/prepare-spaghettikart.py
+      - scripts/prepare-starship.py
+      - scripts/prepare-ghostship.py
+      - scripts/prepare-lighthouse.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pins:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test the game version files and update helpers
+        run: python3 scripts/UpstreamTests.py
+
+  # Compiles both games for tvOS only, from the pinned upstream releases plus our
+  # patches. No ROM or game asset is read; gameplay checks stay local.
+  runtime:
+    needs: pins
+    runs-on: macos-15
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [appletvsimulator, appletvos]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test the prepared-asset cleanup
+        run: |
+          clang++ -std=c++20 -fobjc-arc -Wall -Wextra -Werror -DNATIVECADE_PREPARED_ASSETS_TEST \
+            experiments/shipwright/simulator-game/PreparedAssets.mm -framework Foundation -o "$RUNNER_TEMP/prepared-assets"
+          "$RUNNER_TEMP/prepared-assets"
+      - name: Install CMake and Ninja
+        run: |
+          python3 -m venv "$RUNNER_TEMP/build-tools"
+          "$RUNNER_TEMP/build-tools/bin/pip" install cmake==4.4.4 ninja==1.13.2
+          echo "$RUNNER_TEMP/build-tools/bin" >> "$GITHUB_PATH"
+      - name: Fetch pinned sources, apply tvOS patches, and build the ${{ matrix.sdk }} runtime
+        id: build
+        env:
+          NATIVECADE_BUILD_JOBS: '4'
+        run: bash scripts/ci-run-experiment.sh bash scripts/build-nativecade-runtime.sh ${{ matrix.sdk }}
+      - name: "${{ steps.build.outputs.diagnostic }}"
+        if: failure() && steps.build.outcome == 'failure'
+        run: echo 'See the build step for the complete error.'

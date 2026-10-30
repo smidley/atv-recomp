@@ -1,0 +1,43 @@
+Created with the built-in image_gen tool. No API/CLI fallback was used.
+
+Initial logo identity
+
+Use case: logo-brand.
+Asset type: polished primary logo for a proposed app called Nativecade, a premium Apple TV app for browsing and playing classic games with modern native performance.
+Create one original, clean horizontal logo lockup on a genuinely transparent background, wide 3:1 composition, high resolution.
+The logo consists of a bold compact emblem followed by the exact word "Nativecade" (N-a-t-i-v-e-c-a-d-e). The lettering is exceptionally clean, confident, friendly geometric sans serif, title case, dark midnight ink #111C2C. Carefully balanced kerning, substantial weight, no tiny detail.
+Design an inventive flat geometric capital N emblem with a subtle right-pointing play triangle integrated into its negative space. Use warm coral #FF715B as the main emblem color, with one small mint #81E3C4 geometric accent. One strong silhouette, clear enough to recognize from a couch on a television. Slightly softened corners, a restrained hint of arcade-era geometry, elegant contemporary execution. Keep the emblem recognizably N-shaped rather than an isolated generic play button.
+Exact text: "Nativecade" only. No tagline, no other letters, no frame, no icon tile, no scene or mockup, no trademark symbols. Flat colors, crisp vector-like edges, no gradients, no glow, no 3D shading, no shadows. Generous clear space around the complete logo. This must feel like an original independent gaming brand, not a Nintendo, Netflix, Apple, Xbox or other existing brand logo.
+
+--------------------
+
+Apple TV icon artwork
+
+Use case: logo-brand.
+Asset type: Apple TV home-screen app icon concept for Nativecade.
+Input image 1 is the approved-for-exploration source logo: use its coral N emblem and mint play triangle as the identity reference. Create one icon artwork using exactly that emblem, without its wordmark.
+Canvas: a flat landscape rectangle in a 5:3 aspect ratio, ideally 1600x960. Fill the entire canvas with uniform very deep ink navy #111C2C. Do not draw a rounded-rectangle container; the operating system supplies the mask. No margins outside the background.
+Center the coral N emblem and mint right-pointing triangle precisely. Preserve the reference emblem's silhouette and proportions. The emblem occupies about 52% of the canvas height, with generous breathing room for Apple TV parallax. Clean the silhouette into immaculate smooth geometry with slightly softened corners. Main emblem warm coral #FF715B; play triangle mint #81E3C4. Keep both areas flat and opaque with crisp antialiased edges and no colored fringe.
+The impression is modern, welcoming and confidently simple: classic games reborn for the living room. Readable from across the room at a glance.
+Only the one emblem on the background. No words, letters outside the N emblem, captions, labels, border, device, screenshots, controller illustrations, buttons or mockup. No gloss, lighting effects, noise, glow, gradients, 3D, shadows, pixel trails or texture.
+
+--------------------
+
+Brand presentation
+
+Use case: logo-brand.
+Create a finished, polished Nativecade brand presentation on a clean warm ivory background #F6F3EC, wide landscape composition.
+Input image 1 is the source wordmark and emblem identity. Input image 2 is the source Apple TV icon and is the definitive clean emblem shape. Preserve the Nativecade name and the N/play symbol, including its coral and mint colors.
+Show one large horizontal logo centered in the upper half: the exact clean emblem from image 2 at left, followed by the exact text "Nativecade" in the bold friendly geometric lettering style of image 1, in dark ink #111C2C. Give the typography expert optical spacing and crisp completely clean edges. No colored fringes, shadows, bevels, gradients or texture.
+Beneath it in a smaller beautifully spaced sans serif, render this exact supporting line: "Classic games, built for Apple TV".
+In the lower half, show one generously sized landscape 5:3 app tile preview using image 2's dark navy background and centered N/play emblem. Keep it a flat rectangle, not a perspective mockup, and let its corners have only a very subtle presentation rounding. The mark should remain unchanged, centered and fully visible. Leave ample clear space between every element and around the whole composition.
+Do not include any other text, labels, palette swatches, phone, TV hardware, controllers, additional logos, drawings or UI. This is one refined design direction, not a contact sheet. Editorial precision, welcoming retro gaming personality, premium simplicity.
+
+--------------------
+
+Selected logo on ivory
+
+Use case: logo-brand.
+Input image 1 is the reference Nativecade brand presentation. Create a polished standalone primary logo using precisely the upper horizontal logo in that image: coral N emblem with mint play triangle, followed by the dark ink "Nativecade" wordmark. Preserve its letterforms, proportions, spelling, kerning and emblem silhouette.
+Use a solid warm ivory #F6F3EC background across the entire canvas, with no transparency. Wide horizontal 3:1 format and balanced clear space around the logo. Only the logo and background: exclude the supporting line, exclude the lower app tile. Render all colored shapes with perfectly smooth crisp edges; no outline, fringe, stray pixels, texture, shadow, bevel, lighting or gradient. Strong flat colors. Exact text "Nativecade", no other text.
+

@@ -66,7 +66,7 @@ void Report(const char* status, const std::string& detail) {
         @"detail": @(detail.c_str()),
         @"backend": @"libultraship Metal",
         @"depth_clip_mode": @"clip (simulator fallback)",
-        @"libultraship_revision": @"da6daf1a50a5e46d6641408d52227e31e85e46df",
+        @"libultraship_revision": @RECOMPTV_LUS_REVISION,
         @"metal_device": @(deviceName.c_str()),
         @"completed_frames": @(completedFrames),
         @"verified_cycles": @(cycle),

@@ -41,7 +41,7 @@ baseline and a host ROM-identification prototype.
 
 ## Proposed implementation choices
 
-These choices make the plan actionable but are not yet adopted or proven.
+The network import subset is now implemented as documented in [Network sources](docs/NETWORK_SOURCES.md). The remaining choices and release evidence are still open.
 
 | ID | Proposal | Evidence needed |
 | --- | --- | --- |
@@ -59,8 +59,8 @@ These choices make the plan actionable but are not yet adopted or proven.
 | Which Apple TV model and tvOS version form the minimum baseline? | POC measurements, before advertising support |
 | Which upstream commit and dependency revisions should be pinned? | Start of the game integration experiment |
 | Can the renderer's required features and shaders work on tvOS? | POC dependency/rendering checkpoints |
-| Which SMB client meets platform and licensing needs? | Before SMB integration |
-| Which RomM versions, scopes, and authentication flows are supported? | Before RomM integration |
+| Does pinned AMSMB2 4.0.3 work with the intended NAS and eventual distribution requirements? | Live server testing and release review; initial tvOS adapter is implemented |
+| Which deployed RomM versions interoperate with the 5.4.1 API contract and `roms.read` client token? | Live server testing; pairing and broader-version support remain open |
 | What is the exact accepted ROM region/revision/format/hash set? | Before the first game launch |
 | How will local saves survive purge, reinstall, or device loss? | Before a player-facing release |
 | Which project license and redistribution model are appropriate? | Before importing/distributing dependencies |
@@ -92,7 +92,7 @@ Sources below were checked on 2026-10-28. Recheck them when selecting versions o
 - [Shipwright 9.3.1](https://github.com/HarbourMasters/Shipwright/blob/f0599f96f8d442f26d0fa1c5cedafddacd56633f/README.md) describes the Ocarina of Time decompilation-based native port, libultraship, user-ROM asset extraction, and macOS Metal support. This is the selected first target; it has no RecompTV game execution result yet.
 
 - [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp) describes static recompilation of Majora's Mask, use of RT64, desktop platforms including macOS, and a requirement for user game data. Its repository identifies GPL-3.0 licensing. These observations establish a candidate starting point, not tvOS compatibility. Consult its [contribution policy](https://github.com/Zelda64Recomp/Zelda64Recomp/blob/dev/CONTRIBUTING.md) before considering any upstream contribution.
-- [RomM's API reference](https://docs.romm.app/latest/developers/api-reference/) points developers to the API specification served by each instance. Its [client API token documentation](https://docs.romm.app/latest/developers/client-api-tokens/) describes scoped tokens and pairing. RecompTV still needs to select and test an integration baseline.
+- [RomM's API reference](https://docs.romm.app/latest/developers/api-reference/) points developers to the API specification served by each instance. Its [client API token documentation](https://docs.romm.app/latest/developers/client-api-tokens/) describes scoped tokens and pairing. RecompTV's initial implementation follows the 5.4.1 catalog/file contract and a read-only client token; the intended live deployment still needs testing.
 - Apple's [archived tvOS programming guide](https://developer.apple.com/library/archive/documentation/General/Conceptual/AppleTV_PG/index.html) describes purgeable local app data. It is historical guidance; confirm current SDK/device behavior rather than copying its numeric limits into requirements.
 - Apple's [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) address downloaded code in section 2.5.2, emulator/game offerings in section 4.7, and intellectual property in section 5.2. Whether this specific recompilation design qualifies for distribution remains unresolved. Bundling code and requiring user ROM data do not by themselves establish approval or legal clearance.
 

@@ -4,7 +4,7 @@
 
 **Confirmed order:** Shipwright/Ocarina of Time first, then N64 coverage toward the full library, then other platforms. Every title needs a compatible native integration; full-library coverage is a goal to investigate, not an automatic result of a shared launcher.
 
-Validate native execution before investing in the full launcher. If the runtime or renderer is infeasible, revisit the scope before building provider integrations around it.
+Native execution remains the feasibility gate for gameplay. At the maintainer's request, a focused RomM/SMB import path now proceeds alongside game integration so an existing server can supply the first test ROM. This does not complete the full launcher or imply the game is playable.
 
 ## M0 — Establish the project baseline
 
@@ -64,6 +64,8 @@ RT64 is not Shipwright's renderer and its execution work is deferred.
 **Exit:** launch the proven runtime through the UI using locally provisioned data; reject invalid data; recover from expected failures; record the chosen save policy.
 
 ## M4 — Connect existing libraries
+
+**Progress:** [network sources](docs/NETWORK_SOURCES.md) now implement saved RomM/SMB connections, browsing, individual downloads, and byte-level Shipwright ROM validation. Swift 6 tests exercise loopback HTTP and SMB2 with synthetic bytes. Intended-server testing, artwork, and native launch remain open; see the workflow for current simulator execution evidence.
 
 **Deliverables**
 

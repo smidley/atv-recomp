@@ -1,0 +1,58 @@
+--- a/CMake/lus-cvars.cmake
++++ b/CMake/lus-cvars.cmake
+@@ -17,4 +17,4 @@
+ set(CVAR_MENU_BAR_OPEN "${CVAR_PREFIX_SETTING}.OpenMenuBar" CACHE STRING "")
+ set(CVAR_PREFIX_CONTROLLERS "${CVAR_PREFIX_SETTING}.Controllers" CACHE STRING "")
+ set(CVAR_PREFIX_ADVANCED_RESOLUTION "${CVAR_PREFIX_SETTING}.AdvancedResolution" CACHE STRING "")
+-include("libultraship/cmake/cvars.cmake")
+\ No newline at end of file
++include("${RECOMPTV_LUS_SOURCE}/cmake/cvars.cmake")
+\ No newline at end of file
+--- a/soh/soh/Extractor/Extract.cpp
++++ b/soh/soh/Extractor/Extract.cpp
+@@ -6,7 +6,9 @@
+ #endif
+ #include "Extract.h"
+ #include "TorchExtract.h"
++#ifndef RECOMPTV_TVOS
+ #include "portable-file-dialogs.h"
++#endif
+ #include "spdlog/spdlog.h"
+ #include <ship/utils/binarytools/BitConverter.h>
+ #include "soh/ShipUtils.h"
+@@ -317,6 +319,8 @@
+         return false;
+     }
+     mCurrentRomPath = nameBuffer;
++#elif defined(RECOMPTV_TVOS)
++    return false; // Nativecade prepares imported ROMs before entering the game.
+ #else
+     if (!pfd::settings::available()) {
+         std::string msg =
+--- a/soh/soh/OTRGlobals.cpp
++++ b/soh/soh/OTRGlobals.cpp
+@@ -419,6 +419,24 @@
+     OTRVersion mqVersion = DetectOTRVersion("oot-mq.o2r", true);
+ 
+     bool shouldRegen = VerifyArchiveVersion(vanillaVersion) || VerifyArchiveVersion(mqVersion);
++
++#ifdef RECOMPTV_TVOS
++    // Nativecade verifies and prepares archives before entering the runtime.
++    // Accept either supported game variant without opening the desktop extractor.
++    const auto matches = [](const OTRVersion& version) {
++        return version.major == gBuildVersionMajor && version.minor == gBuildVersionMinor &&
++               version.patch == gBuildVersionPatch;
++    };
++    if (!sohArchiveVersionMatch || (!matches(vanillaVersion) && !matches(mqVersion))) {
++        SPDLOG_ERROR("Prepared game archives do not match this Shipwright build.");
++        exit(1);
++    }
++    CheckAndCreateModFolder();
++    SPDLOG_INFO("Verified prepared game archives for Shipwright {}.{}.{}",
++                gBuildVersionMajor, gBuildVersionMinor, gBuildVersionPatch);
++    return;
++#endif
++
+ 
+     std::filesystem::path ownPath;
+     std::vector<std::string> args;

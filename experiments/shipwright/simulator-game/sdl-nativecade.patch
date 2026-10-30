@@ -1,0 +1,23 @@
+--- a/src/video/uikit/SDL_uikitappdelegate.m
++++ b/src/video/uikit/SDL_uikitappdelegate.m
+@@ -538,3 +538,7 @@
++#ifdef NATIVECADE_RUNTIME
++extern void NativecadeRuntimePresentLibrary(void);
++#endif
++
+ @implementation RecompTVGameSceneDelegate
+ - (void)sceneDidBecomeActive:(UIScene *)scene
+ {
+@@ -542,8 +546,12 @@
+     static BOOL started = NO;
+     if (!started) {
+         started = YES;
++#ifdef NATIVECADE_RUNTIME
++        NativecadeRuntimePresentLibrary();
++#else
+         SDLUIKitDelegate *delegate = (SDLUIKitDelegate *)UIApplication.sharedApplication.delegate;
+         [delegate performSelector:@selector(postFinishLaunch) withObject:nil afterDelay:0.0];
++#endif
+     }
+ }
+ @end

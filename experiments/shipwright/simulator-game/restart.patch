@@ -1,0 +1,42 @@
+--- a/soh/soh/Enhancements/Restorations/GraveHoleJumps.cpp
++++ b/soh/soh/Enhancements/Restorations/GraveHoleJumps.cpp
+@@ -61,7 +61,7 @@
+ }
+ 
+ void ApplyGraveyardGeometryPatches() {
+-    static CollisionHeader* graveyardColHeader = getGraveyardCollisionHeader();
++    CollisionHeader* graveyardColHeader = getGraveyardCollisionHeader();
+     for (auto& mappingPatch : graveyardGeometryPatches) {
+         for (int i = mappingPatch.first.first; i <= mappingPatch.first.second; i++) {
+             CollisionPoly* poly = &graveyardColHeader->polyList[i];
+--- a/soh/soh/Enhancements/cosmetics/CosmeticsEditor.cpp
++++ b/soh/soh/Enhancements/cosmetics/CosmeticsEditor.cpp
+@@ -1468,7 +1468,7 @@
+ 
+     if (gPlayState != nullptr) {
+         if (CVarGetInteger(CVAR_COSMETIC("Link.BodySize.Changed"), 0)) {
+-            static Player* player = GET_PLAYER(gPlayState);
++            Player* player = GET_PLAYER(gPlayState);
+             float scale = CVarGetFloat(CVAR_COSMETIC("Link.BodySize.Value"), 0.01f);
+             player->actor.scale.x = scale;
+             player->actor.scale.y = scale;
+@@ -1881,7 +1881,7 @@
+         CVarClear(CVAR_COSMETIC("Link.BodySize.Value"));
+         CVarClear(CVAR_COSMETIC("Link.BodySize.Changed"));
+         if (gPlayState != nullptr) {
+-            static Player* player = GET_PLAYER(gPlayState);
++            Player* player = GET_PLAYER(gPlayState);
+             player->actor.scale.x = 0.01f;
+             player->actor.scale.y = 0.01f;
+             player->actor.scale.z = 0.01f;
+--- a/soh/soh/Enhancements/game-interactor/GameInteractor.h
++++ b/soh/soh/Enhancements/game-interactor/GameInteractor.h
+@@ -219,7 +219,7 @@
+     //
+     // Hooks should be idempotent and execution order is not guaranteed.
+     // If two operations must happen in a specific order, they should be placed in the same hook.
+-    HOOK_ID nextHookId = 1;
++    inline static HOOK_ID nextHookId = 1; // Hook IDs stay unique when Nativecade restarts the game.
+ 
+     template <typename H> struct RegisteredGameHooks {
+         inline static std::unordered_map<HOOK_ID, typename H::fn> functions;

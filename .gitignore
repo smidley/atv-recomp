@@ -13,6 +13,9 @@ LocalData/
 *.v64
 *.n64
 *.rom
+*.romdata
+*.o2r
+*.otr
 *.iso
 *.sav
 *.srm

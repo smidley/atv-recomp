@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(RecompTVShipwrightMetal LANGUAGES C CXX OBJC OBJCXX)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../upstream/pins.cmake")
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     message(FATAL_ERROR "This experiment must use the tvOS SDK")
 endif()
@@ -36,6 +37,7 @@ endforeach()
 
 add_subdirectory("${RECOMPTV_LUS_SOURCE}" libultraship)
 target_compile_options(libultraship PRIVATE -fblocks)
+target_include_directories(libultraship PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
 # The upstream mobile-mode flag is PRIVATE; the link fixture needs matching headers.
 add_executable(shipwright_metal_link LinkProbe.cpp SDKContract.mm)
 target_compile_definitions(shipwright_metal_link PRIVATE __IOS__ SDL_MAIN_HANDLED)
@@ -59,7 +61,8 @@ add_custom_command(OUTPUT "${probe_archive}"
 add_custom_target(shipwright_probe_assets DEPENDS "${probe_archive}")
 add_executable(shipwright_metal_render MACOSX_BUNDLE RenderProbe.mm)
 add_dependencies(shipwright_metal_render shipwright_probe_assets)
-target_compile_definitions(shipwright_metal_render PRIVATE __IOS__ SDL_MAIN_HANDLED)
+target_compile_definitions(shipwright_metal_render PRIVATE __IOS__ SDL_MAIN_HANDLED
+    RECOMPTV_LUS_REVISION="${RECOMPTV_LUS_REVISION}")
 target_compile_options(shipwright_metal_render PRIVATE -fobjc-arc -fblocks
     -Werror=unguarded-availability -Werror=unguarded-availability-new)
 target_link_libraries(shipwright_metal_render PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,libultraship>")
@@ -73,3 +76,20 @@ add_custom_command(TARGET shipwright_metal_render POST_BUILD
     VERBATIM)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/render-probe-path.txt"
     CONTENT "$<TARGET_BUNDLE_DIR:shipwright_metal_render>\n")
+
+# tvOS 27 only launches apps that adopt the UIScene lifecycle. Standalone probe
+# builds reuse the game's SDL scene adapter; the game build, which includes this
+# file, applies that adapter itself together with its other SDL patches.
+if(PROJECT_IS_TOP_LEVEL)
+    include(FetchContent)
+    FetchContent_GetProperties(SDL2 SOURCE_DIR recomptv_sdl_source)
+    set(scene_patch "${CMAKE_CURRENT_LIST_DIR}/../simulator-game/sdl-scenes.patch")
+    execute_process(COMMAND git apply --reverse --check "${scene_patch}"
+        WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE scene_patch_applied
+        OUTPUT_QUIET ERROR_QUIET)
+    if(NOT scene_patch_applied EQUAL 0)
+        execute_process(COMMAND git apply "${scene_patch}"
+            WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    target_compile_definitions(SDL2-static PRIVATE RECOMPTV_TVOS_SCENES)
+endif()

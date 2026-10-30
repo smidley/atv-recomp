@@ -1,9 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+# Simulator builds keep Xcode's ad hoc "Sign to Run Locally" signature: it embeds the
+# simulated application identifier that Keychain needs and requires no certificate.
+# Device builds stay unsigned in CI.
 case "${1:-}" in
-    simulator) sdk=appletvsimulator; configuration=Debug; destination='generic/platform=tvOS Simulator' ;;
-    device) sdk=appletvos; configuration=Release; destination='generic/platform=tvOS' ;;
+    simulator) sdk=appletvsimulator; configuration=Debug; destination='generic/platform=tvOS Simulator'; signing=YES ;;
+    device) sdk=appletvos; configuration=Release; destination='generic/platform=tvOS'; signing=NO ;;
     *) echo 'Usage: bash scripts/ci-build-tvos.sh simulator|device' >&2; exit 2 ;;
 esac
 
@@ -14,7 +17,7 @@ trap 'rm -f "$task_log"' EXIT
 set +e
 xcodebuild -project "$task_root/RecompTV.xcodeproj" -scheme RecompTV \
     -configuration "$configuration" -sdk "$sdk" -destination "$destination" \
-    -derivedDataPath "$task_root/build/$1" CODE_SIGNING_ALLOWED=NO build 2>&1 | tee "$task_log"
+    -derivedDataPath "$task_root/build/$1" CODE_SIGNING_ALLOWED="$signing" build 2>&1 | tee "$task_log"
 task_status=${PIPESTATUS[0]}
 set -e
 
