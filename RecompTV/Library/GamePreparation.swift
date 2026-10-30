@@ -18,6 +18,8 @@ actor GamePreparation {
         #if NATIVECADE_RUNTIME
         let url = try await cache.verifiedFileURL(for: rom)
         guard let game = rom.game else { throw LibraryError.message("This ROM does not have a playable runtime yet.") }
+        // Racer's runtime is still being adapted (docs/N64_GAMES.md); its ROM can already be imported.
+        if game == .episodeOneRacer { throw LibraryError.message("Star Wars Episode I: Racer isn't playable in Nativecade yet.") }
         try Task.checkCancellation()
         var message = [CChar](repeating: 0, count: 512)
         let prepared = url.path.withCString { path in
@@ -29,6 +31,7 @@ actor GamePreparation {
                 case .superMario64: NativecadePrepareSuperMario(path, hash, &message, 512)
                 case .banjoKazooie: NativecadePrepareBanjoKazooie(path, hash, &message, 512)
                 case .shadowsOfTheEmpire: NativecadePrepareShadowsOfTheEmpire(path, hash, &message, 512)
+                case .episodeOneRacer: false
                 }
             }
         }
