@@ -12,7 +12,7 @@
     "sha1": "579c48e211ae952530ffc8738709f078d5dd215e",
     "size": 12582912
   },
-  "integration": "Uses Nativecade's pinned libultraship and Torch from shipwright-baseline.json, with MK64 extraction enabled, and shares its SDL/Metal runtime.",
+  "integration": "Uses Nativecade's pinned libultraship and Torch from lighthouse-baseline.json, with MK64 extraction enabled, and shares its SDL/Metal runtime.",
   "prepare": [
     [
       "scripts/prepare-spaghettikart.py"

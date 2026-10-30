@@ -2,8 +2,8 @@
 
 The **Nativecade** scheme in `RecompTV.xcodeproj` combines the SwiftUI library,
 on-device Torch asset preparation, Shipwright 9.3.1, SpaghettiKart 1.0.0 and
-Starship v2.0.0 (Star Fox 64, in progress) and Ghostship 3.0.0 (Super Mario 64, in
-progress) with a shared Metal renderer.
+Starship v2.0.0 (Star Fox 64, in progress), Ghostship 3.0.0 (Super Mario 64, in
+progress) and Lighthouse 1.2.2 (Banjo-Kazooie, in progress) with a shared Metal renderer.
 Its bundle identifier is `com.smidley.nativecade`; App Store Connect app ID is
 `6828252318`. The separate **RecompTV** scheme remains the lightweight diagnostics
 and network-source harness used by CI. It does not require the game framework.
@@ -12,8 +12,9 @@ and network-source harness used by CI. It does not require the game framework.
 
 Use a Mac with Xcode, the tvOS SDK, CMake 3.26 or newer, Ninja, and Python 3.
 The runtime script first downloads the upstream releases pinned in
-`upstream/shipwright-baseline.json`, `upstream/spaghettikart-baseline.json` and
-`upstream/starship-baseline.json` and `upstream/ghostship-baseline.json` into `build/upstream/` (see [Updating game runtimes](UPDATING_UPSTREAM.md)).
+`upstream/shipwright-baseline.json`, `upstream/spaghettikart-baseline.json`,
+`upstream/starship-baseline.json`, `upstream/ghostship-baseline.json` and
+`upstream/lighthouse-baseline.json` into `build/upstream/` (see [Updating game runtimes](UPDATING_UPSTREAM.md)).
 The preparation scripts patch generated copies;
 they do not modify those checkouts or existing player data.
 
@@ -23,14 +24,15 @@ python3 scripts/prepare-nativecade-resources.py
 python3 scripts/prepare-spaghettikart-resources.py
 python3 scripts/prepare-starship-resources.py
 python3 scripts/prepare-ghostship-resources.py
+python3 scripts/prepare-lighthouse-resources.py
 swift scripts/package-nativecade-icons.swift
 open RecompTV.xcodeproj
 ```
 
 The runtime script builds arm64 `appletvsimulator` and `appletvos` slices and
 matching debug symbols, then assembles `NativecadeRuntime.xcframework`,
-`NativecadeSpaghetti.xcframework`, `NativecadeStarship.xcframework` and
-`NativecadeGhostship.xcframework` under
+`NativecadeSpaghetti.xcframework`, `NativecadeStarship.xcframework`,
+`NativecadeGhostship.xcframework` and `NativecadeLighthouse.xcframework` under
 `build/nativecade-runtime`.
 An explicit SDK argument builds just that slice. The resources script packs only
 the port's own support assets, extraction definitions, and third-party notices.
@@ -63,11 +65,11 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
 1. Connect RomM or an SMB share reachable from the Apple TV. Follow
    [Network sources](NETWORK_SOURCES.md), including its token permissions.
 2. Browse a platform and import a supported Ocarina of Time ROM, Mario Kart 64
-   (USA), Star Fox 64 (USA) or Super Mario 64 (USA), or use the
+   (USA), Star Fox 64 (USA), Super Mario 64 (USA) or Banjo-Kazooie, or use the
    platform's bulk verification/import action. RomM covers and screenshots appear
    while browsing, and imported games retain their cover art. Each playable game
    has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md) and
-   [Star Fox](STARSHIP.md) and [Super Mario 64](GHOSTSHIP.md).
+   [Star Fox](STARSHIP.md), [Super Mario 64](GHOSTSHIP.md) and [Banjo-Kazooie](LIGHTHOUSE.md).
 3. Connect a compatible game controller. On the home screen, open the game's
    platform (or **Favorites**), choose the game, and select **Play**. The game's
    page can also add it to Favorites. A RomM game page shows **Play** once that
@@ -83,7 +85,7 @@ extracted game archive, save, or server credential is bundled with the app.
 tvOS gives apps only caches and preferences as local storage, so each game's
 settings and saves live in `Library/Caches/Nativecade/Games`. tvOS can purge
 cached game data; reimport if needed. Ocarina keeps safety copies of its saves in
-preferences; Mario Kart, Star Fox and Super Mario 64 saves don't have them yet. Save recovery and optional
+preferences; Mario Kart, Star Fox, Super Mario 64 and Banjo-Kazooie saves don't have them yet. Save recovery and optional
 RomM backups are separate from the ROM cache. See
 [Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md) and
 [Apple TV performance](APPLE_TV_PERFORMANCE.md).

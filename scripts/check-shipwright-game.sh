@@ -12,7 +12,7 @@ game_lus=$(cd "$3" && pwd)
 game_sdk="$(xcode-select -p)/Platforms/AppleTVSimulator.platform/Developer/SDKs/AppleTVSimulator.sdk"
 game_build="$game_root/build/shipwright-game/simulator-arm64"
 game_torch_pin=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["sources"]["torch"]["revision"])' \
-    "$game_root/upstream/shipwright-baseline.json")
+    "$game_root/upstream/lighthouse-baseline.json")
 [[ $(git -C "$game_torch" rev-parse HEAD) == "$game_torch_pin" ]] || {
     echo 'Wrong Torch revision.' >&2; exit 2;
 }

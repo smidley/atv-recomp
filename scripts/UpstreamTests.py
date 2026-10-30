@@ -17,29 +17,35 @@ class UpstreamTests(unittest.TestCase):
         self.games = upstream.load_games(ROOT)
 
     def test_each_tracked_game_names_its_own_repository(self):
-        self.assertEqual(set(self.games), {"ghostship", "shipwright", "spaghettikart", "starship"})
+        self.assertEqual(set(self.games), {"ghostship", "lighthouse", "shipwright", "spaghettikart", "starship"})
+        self.assertEqual(upstream.game_source(self.games["lighthouse"])[1]["repository"], "HarbourMasters/Lighthouse")
         self.assertEqual(upstream.game_source(self.games["shipwright"])[1]["repository"], "HarbourMasters/Shipwright")
         self.assertEqual(upstream.game_source(self.games["spaghettikart"])[1]["repository"], "HarbourMasters/SpaghettiKart")
 
     def test_checkouts_list_each_tvos_source_once(self):
         pins = upstream.checkouts(self.games)
-        self.assertEqual(sorted(pin.path.name for pin in pins), ["Ghostship", "Shipwright", "SpaghettiKart", "Starship", "Torch", "libultraship"])
+        self.assertEqual(sorted(pin.path.name for pin in pins), ["Ghostship", "Lighthouse", "Shipwright", "SpaghettiKart", "Starship", "Torch", "libultraship"])
         for pin in pins:
             self.assertRegex(pin.revision, r"^[0-9a-f]{40}$")
             self.assertEqual(pin.path.parent, ROOT / "build/upstream")
 
+    def test_shared_libraries_follow_one_game(self):
+        # Build files and prepare scripts read these pins from lighthouse-baseline.json.
+        owners = {name: key for key, game in self.games.items()
+                  for name, source in game["sources"].items() if "gitlink" in source}
+        self.assertEqual(owners, {"libultraship": "lighthouse", "torch": "lighthouse"})
+
     def test_update_takes_libraries_from_the_new_release(self):
-        game = copy.deepcopy(self.games["shipwright"])
-        updated = upstream.update_pins(game, "9.4.0", "a" * 40, {"libultraship": "b" * 40, "torch": "c" * 40}, "2026-11-02")
+        game = copy.deepcopy(self.games["lighthouse"])
+        updated = upstream.update_pins(game, "1.3.0", "a" * 40, {"libultraship": "b" * 40, "Torch": "c" * 40}, "2026-11-02")
         sources = updated["sources"]
-        self.assertEqual((updated["release"], updated["recorded_on"]), ("9.4.0", "2026-11-02"))
-        self.assertEqual([sources[k]["revision"] for k in ("shipwright", "libultraship", "torch")], ["a" * 40, "b" * 40, "c" * 40])
-        self.assertEqual(updated["rom_reference"], game["rom_reference"])
-        self.assertEqual(game["release"], self.games["shipwright"]["release"], "the input must stay unchanged")
+        self.assertEqual((updated["release"], updated["recorded_on"]), ("1.3.0", "2026-11-02"))
+        self.assertEqual([sources[k]["revision"] for k in ("lighthouse", "libultraship", "torch")], ["a" * 40, "b" * 40, "c" * 40])
+        self.assertEqual(game["release"], self.games["lighthouse"]["release"], "the input must stay unchanged")
 
     def test_update_rejects_a_release_without_a_shared_library(self):
-        with self.assertRaisesRegex(SystemExit, "torch"):
-            upstream.update_pins(self.games["shipwright"], "9.4.0", "a" * 40, {"libultraship": "b" * 40}, "2026-11-02")
+        with self.assertRaisesRegex(SystemExit, "Torch"):
+            upstream.update_pins(self.games["lighthouse"], "1.3.0", "a" * 40, {"libultraship": "b" * 40}, "2026-11-02")
 
     def test_rom_reference_follows_the_new_list(self):
         data = json.dumps([{"name": "A", "sha1": "1" * 40}, {"name": "B", "sha1": "2" * 40}]).encode()

@@ -13,6 +13,7 @@ release = json.loads((root / "upstream/shipwright-baseline.json").read_text())["
 kart_release = json.loads((root / "upstream/spaghettikart-baseline.json").read_text())["release"]
 fox_release = json.loads((root / "upstream/starship-baseline.json").read_text())["release"]
 mario_release = json.loads((root / "upstream/ghostship-baseline.json").read_text())["release"]
+banjo_release = json.loads((root / "upstream/lighthouse-baseline.json").read_text())["release"]
 ship = root / "build/upstream/Shipwright"
 torch = root / "build/upstream/Torch"
 lus = root / "build/upstream/libultraship"
@@ -39,17 +40,19 @@ if definitions.exists():
     shutil.rmtree(definitions)
 shutil.copytree(ship / "soh/assets/yml", definitions)
 notices = [f"Nativecade uses Shipwright {release}, SpaghettiKart {kart_release}, Starship {fox_release}, "
-           f"Ghostship {mario_release}, Torch and libultraship.\n"
+           f"Ghostship {mario_release}, Lighthouse {banjo_release}, Torch and libultraship.\n"
            "https://github.com/HarbourMasters/Shipwright\n"
            "https://github.com/HarbourMasters/SpaghettiKart\n"
            "https://github.com/HarbourMasters/Starship\n"
            "https://github.com/HarbourMasters/Ghostship\n"
+           "https://github.com/HarbourMasters/Lighthouse\n"
            "https://github.com/HarbourMasters/Torch\n"
-           "https://github.com/HarbourMasters/libultraship\n\n"
+           "https://github.com/HarbourMasters/libultraship\n"
+           "https://github.com/JeodC/libultraship\n\n"
            "No game ROMs or extracted game content are included. Import a supported ROM to play.\n"]
 seen = set()
 for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "build/upstream/Starship",
-               root / "build/upstream/Ghostship",
+               root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse",
                host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
                root / "build/nativecade-runtime/appletvos/_deps"):
     if not source.exists():
@@ -73,6 +76,7 @@ for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "
 for path in output.rglob("*"):
     if path.is_file() and (path.suffix.lower() in {".z64", ".v64", ".n64", ".rom", ".romdata", ".sav"} or
                            path.name in {"oot.o2r", "oot-mq.o2r", "oot.otr", "oot-mq.otr", "mk64.o2r", "mk64.otr",
-                                         "sf64.o2r", "sf64.otr", "sm64.o2r", "sm64.otr"}):
+                                         "sf64.o2r", "sf64.otr", "sm64.o2r", "sm64.otr",
+                                         "bk.o2r", "bk.otr"}):
         raise SystemExit(f"Refusing to distribute private game data: {path}")
 print(f"Prepared open-source game support files: {output}")

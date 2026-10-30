@@ -3,7 +3,7 @@
 Quit in a game's menu returns to the Nativecade library, and any game can then be
 started again in the same app session. This was hard because every port assumes
 it owns the process: on a PC, quitting a game ends the program, so nothing in
-Shipwright, SpaghettiKart, Starship, Ghostship or libultraship cleans up for a second start. This page
+Shipwright, SpaghettiKart, Starship, Ghostship, Lighthouse or libultraship cleans up for a second start. This page
 records what carried over between starts, how each case is handled, and how to
 check a new game. Expect a new game to hit some of the same cases.
 
@@ -15,7 +15,8 @@ check a new game. Expect a new game to hit some of the same cases.
    `RunApplication` in `simulator-game/NativecadeRuntime.mm`, which hides the
    library and runs the game's `main` (`RecompTVShipwrightMain` for Ocarina,
    `NativecadeRunMarioKart` for Mario Kart, `NativecadeRunStarFox` for Star Fox,
-   `NativecadeRunSuperMario` for Super Mario 64).
+   `NativecadeRunSuperMario` for Super Mario 64, `NativecadeRunBanjoKazooie` for
+   Banjo-Kazooie).
 3. The red power button (Quit) in the game's menu closes libultraship's window.
    The game's main loop ends, and its `main` returns.
 4. `RunApplication` cleans up (below) and shows the library again. SDL keeps
@@ -35,11 +36,13 @@ check a new game. Expect a new game to hit some of the same cases.
 | Mario Kart's C++ globals that its startup does not rebuild | The world (cups, track, actors), the track editor's objects, item registry IDs, and the set that records which display lists mirror mode already flipped. | `NativecadeRunMarioKart` rebuilds them after Mario Kart ends, while its context still exists. `prepare-spaghettikart.py` makes `gModifiedGfxSet` visible to it. | `spaghettikart/KartRestart.cpp`, `scripts/prepare-spaghettikart.py` |
 | Star Fox's event listeners | Starship v2.0.0 has its own process-wide event system, so the listeners registered at each start would pile up. | `prepare-starship.py` switches Star Fox to libultraship's event system, which the context owns, so `DestroyInstance` clears it. The event IDs are C globals and are restored with the others. | `scripts/prepare-starship.py` |
 | Star Fox's C++ timer list and audio pacing counters | A timer still pending at Quit, such as the logo screen's, would fire during the next start and change a game variable at the wrong moment. | `NativecadeRunStarFox` calls `NativecadeStarshipReset`, which `prepare-starship.py` adds to `Engine.cpp`. | `starship/StarshipRestart.cpp`, `scripts/prepare-starship.py` |
+| Banjo-Kazooie's emulated N64 threads, timers and graphics tasks | Lighthouse runs them on real threads, and their shutdown flags only go one way. On the next start, every game thread would leave at once and timers would never fire. A graphics task still pending at Quit pointed into game memory that the next start had reset, so the renderer read a null display list and crashed. | `NativecadeRunBanjoKazooie` calls reset functions that `prepare-lighthouse.py` adds to Lighthouse's `Game.cpp`, `OS_Threads.cpp`, `OS_RCP.cpp` and `OS_Timer.cpp`. | `lighthouse/LighthouseRestart.cpp`, `scripts/prepare-lighthouse.py` |
 | Nativecade's own observers and hooks | The app-lifecycle observers and the save-backup hook were added again on every start. | Observers are installed once per app session. The hook is registered each start, since the tables are cleared. | `AppleTVGameplay.cpp` |
 
 Sizes measured in the simulator build: Ocarina's game globals are 377 KB of
 initialized data and 101 MB of zeroed data; Mario Kart's are 826 KB and 277 MB;
-Star Fox's are 252 KB and 9.5 MB; Super Mario 64's are 283 KB and 3.7 MB.
+Star Fox's are 252 KB and 9.5 MB; Super Mario 64's are 283 KB and 3.7 MB; Banjo-Kazooie's
+are 139 KB and 2.8 MB.
 
 ## Adding a game
 
@@ -68,7 +71,7 @@ Star Fox's are 252 KB and 9.5 MB; Super Mario 64's are 283 KB and 3.7 MB.
 ### Restart check
 
 Debug simulator builds start each game listed in `NATIVECADE_RESTART_PROBE`
-(`oot`, `kart`, `fox` or `mario`), one each time the library appears, and end each game
+(`oot`, `kart`, `fox`, `mario` or `banjo`), one each time the library appears, and end each game
 after 30 seconds as Quit does. The timer applies to every game started in that
 app session, including one started with Play:
 
@@ -131,7 +134,7 @@ Two reports are not restart bugs:
   stops writing them after many crashes in one day; the sanitizer still reports.
 - Each game's libultraship log is in `logs` inside its data folder,
   `Library/Caches/Nativecade/Games/OcarinaOfTime`, `.../MarioKart64`,
-  `.../StarFox64` or `.../SuperMario64`.
+  `.../StarFox64`, `.../SuperMario64` or `.../BanjoKazooie`.
 - Builds can be killed (exit code 137) when the Mac runs low on memory and swap.
   Shutting down the simulator during builds and running `ninja` directly, rather
   than `cmake --build`, helped.
@@ -144,6 +147,9 @@ Two reports are not restart bugs:
   Star Fox three times among the other games (`fox,oot,fox,kart,fox`), and with
   Super Mario 64 three times (`mario,oot,mario,kart,fox,mario`). Super Mario 64 needed
   no reset of its own so far; its startup rebuilds its engine object each time.
+  On 2026-10-30 it passed with Banjo-Kazooie four times, twice in a row
+  (`banjo,banjo,oot,banjo,kart,fox,mario,banjo`); Banjo-Kazooie hasn't run under
+  Address Sanitizer either.
 - Memory use after many restarts. Shipwright's startup creates new singletons
   each time without freeing the old ones; the amount has not been measured.
 - Ocarina asks before quitting; Mario Kart quits at once. Either way, progress

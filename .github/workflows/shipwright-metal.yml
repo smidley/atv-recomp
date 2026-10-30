@@ -12,7 +12,7 @@ on:
       - scripts/verify-shipwright-metal-build.py
       - scripts/run-shipwright-render-probe.py
       - scripts/ci-run-experiment.sh
-      - upstream/shipwright-baseline.json
+      - upstream/lighthouse-baseline.json
       - upstream/libultraship-simulator.json
       - upstream/pins.cmake
       - scripts/upstream.py
@@ -27,7 +27,7 @@ on:
       - scripts/verify-shipwright-metal-build.py
       - scripts/run-shipwright-render-probe.py
       - scripts/ci-run-experiment.sh
-      - upstream/shipwright-baseline.json
+      - upstream/lighthouse-baseline.json
       - upstream/libultraship-simulator.json
       - upstream/pins.cmake
       - scripts/upstream.py

@@ -17,7 +17,7 @@ the RecompTV scheme remains the independent library/diagnostics harness.
    separately from the source address and display name.
 4. Select the saved connection. RomM lists only the platforms that hold a game
    Nativecade plays, each with RomM's platform icon; choose one to see those games
-   (Ocarina of Time, Mario Kart 64, Star Fox 64 and Super Mario 64 today). Each folder or game opens its own
+   (Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64 and Banjo-Kazooie today). Each folder or game opens its own
    screen, and Back returns to the previous one. For SMB, use the server's platform
    folders (or configure the source directly to a platform folder). RomM game
    entries open an individual file list.
@@ -58,7 +58,7 @@ RomM's implemented contract is checked against **5.4.1** source:
   decode `items`, `total`, and `offset`. Reject mismatched platform IDs and invalid
   pagination so a platform import cannot silently include another platform.
   Browsing sends one `search_term` per supported game ("Ocarina of Time",
-  "Mario Kart 64", "Star Fox 64", "Super Mario 64"), which RomM matches word by word against the title, filename
+  "Mario Kart 64", "Star Fox 64", "Super Mario 64", "Banjo-Kazooie"), which RomM matches word by word against the title, filename
   and aliases. Because aliases match too (Paper Mario matches "Super Mario 64"), a result is kept
   only when its title or filename contains the phrase ([search](https://github.com/rommapp/romm/blob/5.4.1/backend/handler/database/roms_handler.py)).
   It also sends `group_by_meta_id=true` and `missing=false`
@@ -102,7 +102,8 @@ app does not use browser cookies or persist tokens in URLs or catalog records.
 - The file's magic bytes determine byte order; the extension does not prove identity.
   Streamed canonicalization checks the N64 header, size/alignment, SHA-1 against
   all 19 pinned Shipwright revisions plus Mario Kart 64 (USA), Star Fox 64 (USA)
-  1.0 and 1.1, and Super Mario 64 (USA), and SHA-256 for local integrity.
+  1.0 and 1.1, Super Mario 64 (USA), and Banjo-Kazooie (USA 1.0 and 1.1, Europe,
+  Japan), and SHA-256 for local integrity.
 - Transfers reject changed sizes, partial bodies, paths that escape the selected
   share folder, and ROMs larger than 64 MiB. HTTP catalog bodies are limited to 8 MiB.
   SMB compares size and modification time before/after transfer. A content change

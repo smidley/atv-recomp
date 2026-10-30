@@ -23,15 +23,17 @@ platform services, without assuming one game's renderer fits all games.
 
 ## Pinned starting point
 
-The [baseline](../upstream/shipwright-baseline.json) records the release and its
-two direct gitlinks. It is not a complete transitive dependency lock or a claim
-that the desktop build works on tvOS.
+The [baseline](../upstream/shipwright-baseline.json) records the release. The
+libultraship and Torch it builds against are the ones every Nativecade game
+shares, pinned by [Lighthouse's version file](../upstream/lighthouse-baseline.json)
+(see [Updating game runtimes](UPDATING_UPSTREAM.md)). This is not a complete
+transitive dependency lock or a claim that the desktop build works on tvOS.
 
 | Component | Exact revision | Role |
 | --- | --- | --- |
 | [Shipwright 9.3.1](https://github.com/HarbourMasters/Shipwright/tree/f0599f96f8d442f26d0fa1c5cedafddacd56633f) | `f0599f96f8d442f26d0fa1c5cedafddacd56633f` | Native game source and integration |
-| [libultraship](https://github.com/kenix3/libultraship/tree/da6daf1a50a5e46d6641408d52227e31e85e46df) | `da6daf1a50a5e46d6641408d52227e31e85e46df` | Host services and Fast3D/Metal graphics |
-| [Torch](https://github.com/HarbourMasters/Torch/tree/2ab12fe9660aec04e02ee89fe81baed304a1a1d6) | `2ab12fe9660aec04e02ee89fe81baed304a1a1d6` | Asset extraction and packing |
+| [libultraship](https://github.com/JeodC/libultraship/tree/e175b95944fd41003246edaaef27c9b46b5e6fb2) | `e175b95944fd41003246edaaef27c9b46b5e6fb2` | Host services and Fast3D/Metal graphics |
+| [Torch](https://github.com/HarbourMasters/Torch/tree/7f5d55f9de53f96e61c11399cb3066f8dd8e835e) | `7f5d55f9de53f96e61c11399cb3066f8dd8e835e` | Asset extraction and packing |
 
 The pinned [README](https://github.com/HarbourMasters/Shipwright/blob/f0599f96f8d442f26d0fa1c5cedafddacd56633f/README.md)
 documents the decompilation/libultraship architecture, user ROM requirement,
