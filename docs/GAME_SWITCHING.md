@@ -128,9 +128,9 @@ Two reports are not restart bugs:
 
 - Crash reports: `~/Library/Logs/DiagnosticReports/Nativecade-*.ips`. macOS
   stops writing them after many crashes in one day; the sanitizer still reports.
-- Each game's libultraship log is in its data folder: `Documents/logs` for
-  Ocarina, `Documents/MarioKart64/logs` for Mario Kart and
-  `Documents/StarFox64/logs` for Star Fox.
+- Each game's libultraship log is in `logs` inside its data folder,
+  `Library/Caches/Nativecade/Games/OcarinaOfTime`, `.../MarioKart64` or
+  `.../StarFox64`.
 - Builds can be killed (exit code 137) when the Mac runs low on memory and swap.
   Shutting down the simulator during builds and running `ninja` directly, rather
   than `cmake --build`, helped.

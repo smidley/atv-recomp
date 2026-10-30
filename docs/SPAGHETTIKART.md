@@ -47,8 +47,11 @@ player saves or another game's ROM cache.
 
 ## Storage and controls
 
-Mario Kart uses `Documents/MarioKart64` for its configuration, `default.sav`
-EEPROM, and `controllerPak_*.sav` files. Ocarina of Time's save directory remains
+Mario Kart keeps its configuration, `default.sav` EEPROM, and
+`controllerPak_*.sav` files in `Library/Caches/Nativecade/Games/MarioKart64`.
+Caches and preferences are the only local storage tvOS gives apps, and tvOS can
+purge caches while Nativecade isn't running. Ocarina's saves have safety copies
+in preferences; Mario Kart's don't yet. Ocarina of Time's save directory remains
 separate. Quit in the game's menu returns to the library, where either game can be
 started again.
 
