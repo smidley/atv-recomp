@@ -114,6 +114,13 @@ and uploaded to App Store Connect. Its embedded runtime frameworks match their
 debug symbols, and the archive contains no ROMs, extracted game archives, saves,
 or debug launch options. Build 1 does not include artwork or Mario Kart.
 
+Build **0.1.0 (3)** finds artwork for games imported before build 2, and Quit now
+returns to the library so any game can start again
+([Switching games](GAME_SWITCHING.md)). On 2026-10-29 it was archived from commit
+`da3089a` with the build number raised to 3, and uploaded to App Store Connect. Its
+runtime frameworks match their debug symbols, and the archive contains no ROMs,
+extracted game archives, saves, or simulator test options.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
