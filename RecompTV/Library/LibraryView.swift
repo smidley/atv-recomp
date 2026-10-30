@@ -13,21 +13,47 @@ struct LibraryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     Text("Nativecade").font(.largeTitle.bold())
-                    Text("Connect a server and import Ocarina of Time, Mario Kart 64 or Star Fox 64.")
-                        .foregroundStyle(.secondary)
-                    if !library.importedROMs.isEmpty {
-                        Text(library.importedROMs.count == 1 ? "1 verified ROM saved locally" : "\(library.importedROMs.count) verified ROMs saved locally").font(.headline)
+                    let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
+                    if !favorites.isEmpty {
+                        Text("Favorites").font(.title2.bold())
+                        ScrollView(.horizontal) {
+                            LazyHStack(spacing: 32) {
+                                ForEach(favorites) { rom in GameCard(rom: rom, library: library) }
+                            }.padding(12)
+                        }
                     }
+                    let platforms = Set(library.importedROMs.compactMap { $0.game?.platform }).sorted()
+                    if platforms.isEmpty {
+                        Text("Connect a server and import Ocarina of Time, Mario Kart 64 or Star Fox 64.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Platforms").font(.title2.bold())
+                        ScrollView(.horizontal) {
+                            LazyHStack(spacing: 32) {
+                                ForEach(platforms, id: \.self) { platform in
+                                    let count = library.importedROMs.filter { $0.game?.platform == platform }.count
+                                    let games = count == 1 ? "1 game" : "\(count) games"
+                                    NavigationLink { PlatformView(platform: platform, library: library) } label: {
+                                        VStack(spacing: 16) {
+                                            Image(systemName: "gamecontroller.fill").font(.system(size: 80))
+                                            Text(platform).font(.headline)
+                                            Text(games).font(.caption).foregroundStyle(.secondary)
+                                        }
+                                        .frame(width: 330, height: 260)
+                                    }
+                                    .buttonStyle(.card)
+                                    .accessibilityLabel("\(platform), \(games)")
+                                }
+                            }.padding(12)
+                        }
+                    }
+                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
+                        .font(.callout).foregroundStyle(.secondary)
+                    Text("Connections").font(.title2.bold())
+                    Text("Browse a server to import games.").foregroundStyle(.secondary)
                     HStack(spacing: 24) {
                         Button("Add SMB share") { editing = LibrarySource(kind: .smb) }
                         Button("Add RomM") { editing = LibrarySource(kind: .romm) }
-                        if !library.importedROMs.isEmpty {
-                            Button("Clear ROM cache") { Task { await library.clearCache() } }
-                            Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
-                                Task { await library.refreshArtwork(force: true) }
-                            }
-                            .disabled(library.isRefreshingArtwork || library.isImporting)
-                        }
                     }
                     ForEach(library.sources) { source in
                         HStack(spacing: 24) {
@@ -46,19 +72,16 @@ struct LibraryView: View {
                                 .accessibilityLabel("Remove \(source.name)")
                         }
                     }
-                    Text(GameRuntime.available ? "Connect a game controller, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    ForEach(library.importedROMs) { rom in
-                        VStack(alignment: .leading, spacing: 16) {
-                            ROMResultView(rom: rom, library: library)
-                            if GameRuntime.available {
-                                Button("Play") { Task { await library.play(rom) } }
-                                    .accessibilityLabel("Play \(rom.name)")
-                                    .disabled(library.isImporting)
+                    HStack(spacing: 24) {
+                        if !library.importedROMs.isEmpty {
+                            Button("Clear ROM cache") { Task { await library.clearCache() } }
+                            Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
+                                Task { await library.refreshArtwork(force: true) }
                             }
+                            .disabled(library.isRefreshingArtwork || library.isImporting)
                         }
+                        Button("Third-party notices") { showingNotices = true }
                     }
-                    Button("Third-party notices") { showingNotices = true }
                 }
                 .padding(48)
             }
@@ -222,7 +245,16 @@ private struct SourceBrowserView: View {
             LazyVStack(alignment: .leading, spacing: 24) {
                 Text(browser.title).font(.title.bold())
                 if let artwork = browser.artwork {
-                    GameScreenshotGallery(artwork: artwork, source: browser.source, library: library)
+                    if GameRuntime.available {
+                        // A RomM game that is already imported can start from its own page.
+                        ForEach(library.importedROMs.filter { $0.artwork?.romID == artwork.romID && $0.artwork?.server == artwork.server }) { rom in
+                            Button { Task { await library.play(rom) } } label: {
+                                Label("Play \(rom.revision ?? rom.title)", systemImage: "play.fill")
+                            }
+                            .disabled(library.isImporting)
+                        }
+                    }
+                    GameScreenshotGallery(artwork: artwork, sourceID: browser.source.id, source: browser.source, library: library)
                 }
                 if browser.isPlatformList {
                     Text("Choose a platform").font(.headline).foregroundStyle(.secondary)
@@ -390,6 +422,87 @@ private struct ROMResultView: View {
     }
 }
 
+private extension ImportedROM {
+    /// RomM's title when the game came from RomM, otherwise the supported game's name.
+    var title: String { artwork?.title ?? game?.title ?? name }
+}
+
+@MainActor
+private struct PlatformView: View {
+    let platform: String
+    let library: LibraryModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                Text(platform).font(.title.bold())
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
+                          alignment: .leading, spacing: 36) {
+                    ForEach(library.importedROMs.filter { $0.game?.platform == platform }.sorted { $0.title < $1.title }) { rom in
+                        GameCard(rom: rom, library: library)
+                    }
+                }
+            }
+            .padding(48)
+        }
+    }
+}
+
+@MainActor
+private struct GameCard: View {
+    let rom: ImportedROM
+    let library: LibraryModel
+
+    var body: some View {
+        NavigationLink { GameView(rom: rom, library: library) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork,
+                    sourceID: rom.sourceID, library: library, width: 290, height: 220)
+                Text(rom.title).font(.headline).lineLimit(2)
+                    .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                    .frame(width: 290, height: 72, alignment: .topLeading)
+                Text(rom.revision ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    .frame(width: 290, alignment: .leading)
+            }
+            .padding(20)
+        }
+        .buttonStyle(.card)
+        .accessibilityLabel(rom.title)
+    }
+}
+
+@MainActor
+private struct GameView: View {
+    let rom: ImportedROM
+    let library: LibraryModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                Text(rom.title).font(.title.bold())
+                HStack(spacing: 24) {
+                    if GameRuntime.available {
+                        Button { Task { await library.play(rom) } } label: { Label("Play", systemImage: "play.fill") }
+                            .disabled(library.isImporting)
+                    }
+                    let favorite = library.favorites.contains(rom.id)
+                    Button { library.toggleFavorite(rom) } label: {
+                        Label(favorite ? "Remove from Favorites" : "Add to Favorites", systemImage: favorite ? "star.fill" : "star")
+                    }
+                }
+                if let artwork = rom.artwork {
+                    GameScreenshotGallery(artwork: artwork, sourceID: rom.sourceID, library: library)
+                } else {
+                    GameArtworkView(path: nil, artwork: nil, sourceID: rom.sourceID, library: library, width: 260, height: 240)
+                }
+                if let revision = rom.revision { Text(revision).font(.headline) }
+                Text(rom.name).font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(48)
+        }
+    }
+}
+
 @MainActor
 private struct GameArtworkView: View {
     let path: String?
@@ -495,7 +608,8 @@ struct ArtworkFixturePreview: View {
 @MainActor
 private struct GameScreenshotGallery: View {
     let artwork: RomMArtwork
-    let source: LibrarySource
+    let sourceID: UUID
+    var source: LibrarySource? = nil
     let library: LibraryModel
     @State private var selected: Screenshot?
     private struct Screenshot: Identifiable { let id: String }
@@ -503,7 +617,7 @@ private struct GameScreenshotGallery: View {
     var body: some View {
         HStack(alignment: .top, spacing: 28) {
             GameArtworkView(path: artwork.coverLarge ?? artwork.cover, artwork: artwork,
-                sourceID: source.id, source: source, library: library, width: 260, height: 240)
+                sourceID: sourceID, source: source, library: library, width: 260, height: 240)
             if !artwork.screenshots.isEmpty {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Screenshots").font(.headline)
@@ -511,7 +625,7 @@ private struct GameScreenshotGallery: View {
                         LazyHStack(spacing: 28) {
                             ForEach(artwork.screenshots, id: \.self) { path in
                                 Button { selected = Screenshot(id: path) } label: {
-                                    GameArtworkView(path: path, artwork: artwork, sourceID: source.id,
+                                    GameArtworkView(path: path, artwork: artwork, sourceID: sourceID,
                                         source: source, library: library, width: 340, height: 190)
                                 }
                                 .buttonStyle(.card)
@@ -525,7 +639,7 @@ private struct GameScreenshotGallery: View {
         .sheet(item: $selected) { screenshot in
             VStack(spacing: 28) {
                 Button("Done") { selected = nil }
-                GameArtworkView(path: screenshot.id, artwork: artwork, sourceID: source.id,
+                GameArtworkView(path: screenshot.id, artwork: artwork, sourceID: sourceID,
                     source: source, library: library, width: 1200, height: 650)
             }.padding(48)
         }

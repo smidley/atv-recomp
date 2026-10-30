@@ -65,14 +65,20 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
    while browsing, and imported games retain their cover art. Each playable game
    has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md) and
    [Star Fox](STARSHIP.md).
-3. Connect a compatible game controller and select **Play** on a verified ROM.
+3. Connect a compatible game controller. On the home screen, open the game's
+   platform (or **Favorites**), choose the game, and select **Play**. The game's
+   page can also add it to Favorites. A RomM game page shows **Play** once that
+   game is imported.
 4. Keep Nativecade open during its first preparation. It rechecks the cached
    ROM, extracts assets locally, checks the archive version and every entry's CRC,
    then enters the native game. Later launches reuse that ROM's prepared archive.
 
 ROMs and derived archives stay in the app's private storage. No commercial ROM,
 extracted game archive, save, or server credential is bundled with the app.
-tvOS can purge cached game data; reimport if needed. Save recovery and optional
+tvOS gives apps only caches and preferences as local storage, so each game's
+settings and saves live in `Library/Caches/Nativecade/Games`. tvOS can purge
+cached game data; reimport if needed. Ocarina keeps safety copies of its saves in
+preferences; Mario Kart and Star Fox saves don't have them yet. Save recovery and optional
 RomM backups are separate from the ROM cache. See
 [Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md) and
 [Apple TV performance](APPLE_TV_PERFORMANCE.md).
