@@ -20,7 +20,7 @@ struct LibraryView: View {
                             LazyHStack(spacing: 32) {
                                 ForEach(favorites) { rom in GameCard(rom: rom, library: library) }
                             }.padding(12)
-                        }
+                        }.scrollClipDisabled()
                     }
                     let platforms = Set(library.importedROMs.compactMap { $0.game?.platform }).sorted()
                     if platforms.isEmpty {
@@ -45,7 +45,7 @@ struct LibraryView: View {
                                     .accessibilityLabel("\(platform), \(games)")
                                 }
                             }.padding(12)
-                        }
+                        }.scrollClipDisabled()
                     }
                     Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
                         .font(.callout).foregroundStyle(.secondary)
