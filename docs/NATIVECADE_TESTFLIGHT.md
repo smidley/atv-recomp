@@ -1,8 +1,8 @@
 # Nativecade playable app and TestFlight
 
 The **Nativecade** scheme in `RecompTV.xcodeproj` combines the SwiftUI library,
-on-device Torch asset preparation, Shipwright 9.3.1, and SpaghettiKart 1.0.0
-with a shared Metal renderer.
+on-device Torch asset preparation, Shipwright 9.3.1, SpaghettiKart 1.0.0 and
+Starship v2.0.0 (Star Fox 64, in progress) with a shared Metal renderer.
 Its bundle identifier is `com.smidley.nativecade`; App Store Connect app ID is
 `6828252318`. The separate **RecompTV** scheme remains the lightweight diagnostics
 and network-source harness used by CI. It does not require the game framework.
@@ -11,8 +11,8 @@ and network-source harness used by CI. It does not require the game framework.
 
 Use a Mac with Xcode, the tvOS SDK, CMake 3.26 or newer, Ninja, and Python 3.
 The runtime script first downloads the upstream releases pinned in
-`upstream/shipwright-baseline.json` and `upstream/spaghettikart-baseline.json`
-into `build/upstream/` (see [Updating game runtimes](UPDATING_UPSTREAM.md)).
+`upstream/shipwright-baseline.json`, `upstream/spaghettikart-baseline.json` and
+`upstream/starship-baseline.json` into `build/upstream/` (see [Updating game runtimes](UPDATING_UPSTREAM.md)).
 The preparation scripts patch generated copies;
 they do not modify those checkouts or existing player data.
 
@@ -20,13 +20,15 @@ they do not modify those checkouts or existing player data.
 bash scripts/build-nativecade-runtime.sh
 python3 scripts/prepare-nativecade-resources.py
 python3 scripts/prepare-spaghettikart-resources.py
+python3 scripts/prepare-starship-resources.py
 swift scripts/package-nativecade-icons.swift
 open RecompTV.xcodeproj
 ```
 
 The runtime script builds arm64 `appletvsimulator` and `appletvos` slices and
-matching debug symbols, then assembles `NativecadeRuntime.xcframework` and
-`NativecadeSpaghetti.xcframework` under `build/nativecade-runtime`.
+matching debug symbols, then assembles `NativecadeRuntime.xcframework`,
+`NativecadeSpaghetti.xcframework` and `NativecadeStarship.xcframework` under
+`build/nativecade-runtime`.
 An explicit SDK argument builds just that slice. The resources script packs only
 the port's own support assets, extraction definitions, and third-party notices.
 It has no ROM argument and never reads `LocalData`. Both generated directories
@@ -57,11 +59,12 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
 
 1. Connect RomM or an SMB share reachable from the Apple TV. Follow
    [Network sources](NETWORK_SOURCES.md), including its token permissions.
-2. Browse a platform and import a supported Ocarina of Time ROM or Mario Kart 64
-   (USA), or use the
+2. Browse a platform and import a supported Ocarina of Time ROM, Mario Kart 64
+   (USA) or Star Fox 64 (USA), or use the
    platform's bulk verification/import action. RomM covers and screenshots appear
    while browsing, and imported games retain their cover art. Each playable game
-   has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md).
+   has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md) and
+   [Star Fox](STARSHIP.md).
 3. Connect a compatible game controller and select **Play** on a verified ROM.
 4. Keep Nativecade open during its first preparation. It rechecks the cached
    ROM, extracts assets locally, checks the archive version and every entry's CRC,
