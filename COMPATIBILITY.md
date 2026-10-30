@@ -1,6 +1,6 @@
 # Compatibility
 
-**Status:** Nativecade includes two experimental native ports as of 2026-10-28. Both have simulator rendering evidence; physical Apple TV qualification remains pending. A verified ROM is launchable in a development build without implying full gameplay or hardware support.
+**Status:** Nativecade includes five experimental native ports as of 2026-10-30. All have simulator rendering evidence; physical Apple TV qualification remains pending. A verified ROM is launchable in a development build without implying full gameplay or hardware support.
 
 ## Candidate matrix
 
@@ -8,6 +8,9 @@
 | --- | --- | --- | --- | --- |
 | The Legend of Zelda: Ocarina of Time | N64 | Shipwright / Ship of Harkinian 9.3.1 | [19 upstream SHA-1 references](upstream/shipwright-supported-roms.json); NTSC 1.0 US imported and extracted | Experimental; integrated app renders in tvOS Simulator; earlier simulator gameplay and controls confirmed by the user. [Evidence](docs/NATIVECADE_TESTFLIGHT.md) |
 | Mario Kart 64 | N64 | SpaghettiKart 1.0.0 | USA, SHA-1 `579c48e211ae952530ffc8738709f078d5dd215e` | Experimental; RomM import, extraction, title/demo, and Luigi Raceway acceleration through SDL controller input verified in tvOS Simulator. [Evidence and limits](docs/SPAGHETTIKART.md) |
+| Star Fox 64 | N64 | Starship v2.0.0 | USA 1.0 and 1.1, [SHA-1s](upstream/starship-baseline.json); 1.1 imported | Experimental; RomM import, extraction, and startup verified in tvOS Simulator; switches with the other games. [Evidence and limits](docs/STARSHIP.md) |
+| Super Mario 64 | N64 | Ghostship 3.0.0 | USA, SHA-1 `9bef1128717f958171a4afac3ed78ee2bb4e86ce` | Experimental; import, extraction, and title screen verified in tvOS Simulator; switches with the other games. [Evidence and limits](docs/GHOSTSHIP.md) |
+| Banjo-Kazooie | N64 | Lighthouse 1.2.2 | USA 1.0 and 1.1, Europe, Japan, [SHA-1s](upstream/lighthouse-baseline.json); USA 1.1 imported | Experimental; RomM import, extraction, and opening scene verified in tvOS Simulator; switches with the other games. [Evidence and limits](docs/LIGHTHOUSE.md) |
 | The Legend of Zelda: Majora's Mask | N64 | Zelda 64: Recompiled | Earlier audit only | Deferred candidate; isolated core/RT64 builds do not establish gameplay |
 
 Do not interpret upstream desktop support as RecompTV support. Add other titles only with their own runtime integration and test evidence.
@@ -77,8 +80,9 @@ recognizes and normalizes all three uncompressed byte orders from their headers;
 archives and modified ROMs are not accepted by the current allowlists.
 
 Synthetic tests cover all three byte orders. Live imports have matched the
-supported Ocarina NTSC 1.0 US and Mario Kart USA identities, and both native
-preparers recheck the ROM before extracting assets. A filename or RomM title
+supported Ocarina NTSC 1.0 US, Mario Kart USA, Star Fox 64 USA 1.1, Super Mario 64
+USA and Banjo-Kazooie USA 1.1 identities, and every native preparer rechecks the
+ROM before extracting assets. A filename or RomM title
 cannot select the wrong game's runtime.
 
 Do not use placeholder hashes, accept a filename as identity, or treat a server-reported checksum as a substitute for validating downloaded bytes. ROM hacks, translations, and other modifications are unsupported unless explicitly integrated and validated.

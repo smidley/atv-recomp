@@ -167,12 +167,30 @@ each game's page has Play and a favorite toggle. It also adds Star Fox 64. On
 update had arrived through the Mac App Store that evening. Its runtime frameworks
 match their debug symbols, and the archive contains no ROMs, extracted game
 archives, saves, or simulator test options. App Store Connect rejected the upload
-("Unsupported SDK or Xcode version"); builds 1 to 4 used Xcode 27.1. The upload is
-retried until App Store Connect accepts Xcode 27.2. In the tvOS 27.0 simulator,
+("Unsupported SDK or Xcode version"); builds 1 to 4 used Xcode 27.1. In the tvOS 27.0 simulator,
 the restart check passed twice with all three games, each game's archives were
 hard links in its own `Games` folder with no leftover temporary files, and a
 favorite appeared on the home screen and persisted across launches. The fix
 itself needs the Apple TV: the simulator also allowed `Documents`.
+
+Build **0.1.0 (6)** browses games in a cover flow and adds Super Mario 64. It was
+archived on 2026-10-29 from commit `aa9c295` and was never uploaded, for the same
+reason; build 7 replaces it.
+
+Build **0.1.0 (7)** adds game search with fuzzy matching, keeps large libraries
+smooth to browse, and adds Banjo-Kazooie. Every game now uses the newer
+libultraship and Torch that Lighthouse ships, so Mario Kart, Star Fox and Super
+Mario 64 prepare their assets again on first launch, and each game deletes its
+outdated prepared assets first. On 2026-10-30 it was archived from commit
+`ed2bc8f` with Xcode 27.2 (27B52) and the tvOS 27.2 SDK. All five runtime
+frameworks match their debug symbols, and the archive contains no ROMs,
+extracted game archives, saves, or simulator test options. App Store Connect
+rejected the upload ("Unsupported SDK or Xcode version"). Apple's
+[releases page](https://developer.apple.com/news/releases/) lists Xcode 27.2 RC
+(27B48) as the newest Xcode, not 27B52, so App Store Connect probably accepts
+only the RC until Apple lists 27B52. The upload is retried every 30 minutes.
+In the tvOS simulator, every game started and switched in one session, and
+Banjo-Kazooie played its opening.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks

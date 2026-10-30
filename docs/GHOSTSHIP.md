@@ -71,8 +71,8 @@ with a controller yet.
 
 ## Verification on 2026-10-29
 
-- The framework compiled and linked for the tvOS simulator (arm64). The device
-  slice has not been built yet.
+- The framework compiled and linked for the tvOS simulator (arm64). The Apple TV
+  slice was built for TestFlight builds 6 and 7.
 - A Super Mario 64 (USA) ROM from the user's RomM was imported and verified.
   The first preparation took a few seconds in the simulator and produced a 10 MB
   `sm64.o2r`.

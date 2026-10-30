@@ -72,8 +72,8 @@ is R. The port's settings menu has no input editor in this build; it logs
 
 ## Verification on 2026-10-29
 
-- The framework compiled and linked for the tvOS simulator (arm64). CI builds the
-  device slice; it has not been built locally yet.
+- The framework compiled and linked for the tvOS simulator (arm64). The Apple TV
+  slice was built locally for TestFlight builds 5 to 7.
 - A Star Fox 64 (U) (V1.1) ROM from the user's RomM was imported and verified.
   The first preparation took about 20 seconds in the simulator.
 - On the tvOS 27.0 Apple TV 4K simulator, the Nintendo 64 logo and the title
