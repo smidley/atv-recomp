@@ -136,16 +136,18 @@ class Handler(BaseHTTPRequestHandler):
                 # A second record for game 3, and a record whose file was deleted from the server.
                 {"id": 7, "name": "Synthetic Ocarina of Time fixture", "fs_name": "Fixture (copy)", **n64, "igdb_id": 1},
                 {"id": 8, "name": "Mario Kart 64 fixture", "fs_name": "Removed", **n64, "missing_from_fs": True},
+                # Paper Mario's metadata aliases contain every word of "Super Mario 64".
+                {"id": 9, "name": "Paper Mario fixture", "fs_name": "Paper", **n64, "aliases": ["Super Mario 64 RPG"]},
             ]
             platforms = query.get("platform_ids", [])
             if platforms:
                 rows = [row for row in rows if str(row["platform_id"]) in platforms]
             if query.get("missing") == ["false"]:
                 rows = [row for row in rows if not row.get("missing_from_fs")]
-            # RomM 5.4.1: any "|" alternative whose words all appear in the name or filename.
+            # RomM 5.4.1: any "|" alternative whose words all appear in the name, filename or aliases.
             terms = [term.lower().split() for term in query.get("search_term", [""])[0].split("|") if term.strip()]
             if terms:
-                rows = [row for row in rows if any(all(word in (row["name"] + " " + row["fs_name"]).lower()
+                rows = [row for row in rows if any(all(word in " ".join([row["name"], row["fs_name"], *row.get("aliases", [])]).lower()
                                                        for word in words) for words in terms)]
             if query.get("group_by_meta_id") == ["true"]:
                 # Like RomM, after filtering: one row per metadata ID and platform, first filename wins.
@@ -180,6 +182,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, {"id": 8, "files": [
                 {"id": 17, "file_name": "Removed.z64", "file_size_bytes": len(ROM)},
             ]})
+        if path == "/api/roms/9":
+            return self.send(200, {"id": 9, "files": []})
         if path in ["/api/roms/11/files/content/Fixture.z64", "/api/roms/13/files/content/Second.z64"]:
             return self.send(200, ROM, "application/octet-stream")
         return self.send(404, {})

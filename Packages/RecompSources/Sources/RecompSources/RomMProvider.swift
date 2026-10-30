@@ -145,8 +145,12 @@ struct RomMProvider: LibraryProvider {
             guard let roms = try await allPages(search: game.searchTerm, platformID: platformID, onePerGame: true) else {
                 throw LibraryError.message("RomM returned too many matches for \(game.title).")
             }
-            // A server that omits the platform slug keeps its matches.
-            for rom in roms where rom.platform_slug.map({ $0 == "n64" }) ?? true { found[rom.id] = rom }
+            // A server that omits the platform slug keeps its matches. RomM also matches metadata
+            // aliases, so Paper Mario can match "Super Mario 64"; the title or filename must contain it.
+            for rom in roms where rom.platform_slug.map({ $0 == "n64" }) ?? true
+                && [rom.name, rom.fs_name].contains(where: { $0?.localizedStandardContains(game.searchTerm) == true }) {
+                found[rom.id] = rom
+            }
         }
         return found.values.sorted {
             ($0.name ?? $0.fs_name).localizedStandardCompare($1.name ?? $1.fs_name) == .orderedAscending
