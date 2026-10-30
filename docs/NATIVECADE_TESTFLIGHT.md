@@ -84,7 +84,9 @@ ROMs and derived archives stay in the app's private storage. No commercial ROM,
 extracted game archive, save, or server credential is bundled with the app.
 tvOS gives apps only caches and preferences as local storage, so each game's
 settings and saves live in `Library/Caches/Nativecade/Games`. tvOS can purge
-cached game data; reimport if needed. Ocarina keeps safety copies of its saves in
+cached game data; reimport if needed. Prepared assets are kept per game release and
+Torch version in `Library/Caches/Nativecade/Prepared`; when an update changes either, the
+game's next preparation deletes its earlier copy first. Ocarina keeps safety copies of its saves in
 preferences; Mario Kart, Star Fox, Super Mario 64 and Banjo-Kazooie saves don't have them yet. Save recovery and optional
 RomM backups are separate from the ROM cache. See
 [Saves and controllers](APPLE_TV_SAVES_AND_CONTROLLERS.md) and

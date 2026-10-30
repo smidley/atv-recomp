@@ -143,7 +143,7 @@ list(FILTER game EXCLUDE REGEX "/speechsynthesizer/(SAPI|ESpeak)")
 list(APPEND game "${ship}/src/libultra/libc/sprintf.c"
     "${ship}/soh/Enhancements/speechsynthesizer/DarwinSpeechSynthesizer.mm")
 if(RECOMPTV_BUILD_RUNTIME_FRAMEWORK)
-    add_library(RecompTVShipwright SHARED ${game} NativecadeRuntime.mm NativecadeRuntime.h AppleTVPerformance.cpp
+    add_library(RecompTVShipwright SHARED ${game} NativecadeRuntime.mm NativecadeRuntime.h PreparedAssets.mm AppleTVPerformance.cpp
         AppleTVGameplay.cpp AppleTVSaveStore.mm AppleTVSaveUI.mm)
     set_target_properties(RecompTVShipwright PROPERTIES FRAMEWORK TRUE OUTPUT_NAME NativecadeRuntime
         PUBLIC_HEADER "NativecadeRuntime.h" MACOSX_FRAMEWORK_IDENTIFIER "com.smidley.nativecade.runtime"

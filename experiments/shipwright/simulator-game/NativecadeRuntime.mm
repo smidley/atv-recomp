@@ -128,6 +128,8 @@ bool NativecadePrepareGame(const char *romPath, const char *expectedSHA1, char *
         NSString *port = [resources stringByAppendingPathComponent:@"soh.o2r"];
         if (!ValidArchive(port) || ![files fileExistsAtPath:[definitions stringByAppendingPathComponent:@"config.yml"]])
             return Failure(error, capacity, "This app build is missing its game support files.");
+        NativecadeRemoveOutdatedPreparations([NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+            stringByAppendingPathComponent:@"Nativecade/Prepared"].fileSystemRepresentation, NATIVECADE_SHIPWRIGHT_RELEASE);
         NSString *cache = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
             stringByAppendingPathComponent:[@"Nativecade/Prepared/" NATIVECADE_SHIPWRIGHT_RELEASE stringByAppendingPathComponent:hash]];
         NSError *problem = nil;

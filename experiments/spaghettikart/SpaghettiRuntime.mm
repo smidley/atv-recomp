@@ -86,6 +86,8 @@ bool NativecadePrepareMarioKart(const char *romPath, const char *expectedSHA1, c
         NSString *port = [support stringByAppendingPathComponent:@"spaghetti.o2r"];
         if (!ValidArchive(port, "mods.toml") || ![files fileExistsAtPath:[support stringByAppendingPathComponent:@"config.yml"]])
             return Fail(error, capacity, "This app build is missing its Mario Kart support files.");
+        NativecadeRemoveOutdatedPreparations([NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+            stringByAppendingPathComponent:@"Nativecade/Prepared"].fileSystemRepresentation, NATIVECADE_KART_PREPARED);
         NSString *cache = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
             stringByAppendingPathComponent:@"Nativecade/Prepared/" NATIVECADE_KART_PREPARED];
         // Apple TV apps keep files in Library/Caches, like NativecadeRuntime.mm's game folders.

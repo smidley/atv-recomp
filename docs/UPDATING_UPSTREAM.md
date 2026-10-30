@@ -101,7 +101,8 @@ ignored. `python3 scripts/upstream.py releases` runs the same check locally.
   `xcrun simctl spawn <simulator> log show --last 5m --predicate 'eventMessage CONTAINS "RestartProbe"'`
   must end with `PASS`. New hooks or cached pointers upstream can break restarts.
 - [ ] The first launch prepares game assets again, because prepared assets are
-  stored per release, and existing saves still load.
+  stored per release and Torch version, removes the game's earlier prepared
+  assets, and existing saves still load.
 - [ ] Save identifiers are unchanged unless the save format changed. RomM
   backups use `recomptv-shipwright-9.3.1`; renaming it hides older backups.
 - [ ] The renderer test passes ([instructions](SHIPWRIGHT_RENDER_PROBE.md)).
