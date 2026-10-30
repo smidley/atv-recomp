@@ -238,17 +238,17 @@ final class SourceBrowserModel {
     private(set) var entries = [LibraryEntry]()
     private(set) var loading = false
     private(set) var nextOffset: Int?
-    private(set) var location = LibraryLocation.root
-    private(set) var title: String
+    // Each folder opens as its own navigation screen, so tvOS keeps focus and Back working.
+    let location: LibraryLocation
+    let title: String
     private(set) var artwork: RomMArtwork?
-    private(set) var history = [(LibraryLocation, String)]()
     var search = ""
     var error: String?
     @ObservationIgnored private var operation: Task<Void, Never>?
     @ObservationIgnored private var generation = UUID()
 
-    init(source: LibrarySource, location: LibraryLocation = .root) {
-        self.source = source; title = source.name; self.location = location
+    init(source: LibrarySource, location: LibraryLocation = .root, title: String? = nil) {
+        self.source = source; self.location = location; self.title = title ?? source.name
     }
 
     var isPlatformList: Bool { source.kind == .romm && location == .root }
@@ -260,17 +260,6 @@ final class SourceBrowserModel {
     }
     var searchPrompt: String {
         isPlatformList ? "Find a platform" : source.kind == .romm ? "Search this platform" : "Filter this folder"
-    }
-
-    func open(_ entry: LibraryEntry) {
-        guard let folder = entry.folder else { return }
-        history.append((location, title)); location = folder; title = entry.name
-        search = ""; refresh()
-    }
-
-    func back() {
-        guard let previous = history.popLast() else { return }
-        location = previous.0; title = previous.1; search = ""; refresh()
     }
 
     func cancel() { operation?.cancel(); generation = UUID(); loading = false }

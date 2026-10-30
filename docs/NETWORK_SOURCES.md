@@ -15,10 +15,12 @@ the RecompTV scheme remains the independent library/diagnostics harness.
 3. Enter the connection details below and select **Connect and save**. This tests
    access before saving the connection. Passwords/tokens are stored in Keychain,
    separately from the source address and display name.
-4. Select the saved connection. RomM opens a platform list with ROM counts; choose
-   a platform to browse its games. Search and pagination stay within that platform.
-   For SMB, use the server's platform folders (or configure the source directly to
-   a platform folder). RomM game entries open an individual file list.
+4. Select the saved connection. RomM lists only the platforms that hold a game
+   Nativecade plays, each with RomM's platform icon; choose one to see those games
+   (Ocarina of Time and Mario Kart 64 today). Each folder or game opens its own
+   screen, and Back returns to the previous one. For SMB, use the server's platform
+   folders (or configure the source directly to a platform folder). RomM game
+   entries open an individual file list.
 5. Choose **Import and verify** for one file, or **Verify and import all ROMs** on
    a platform/folder page. The batch scans every page and subfolder, including
    items hidden by the current search. It never requests a multi-file ZIP.
@@ -49,14 +51,20 @@ desktop filesystem paths are not implemented. Provide an explicit share name.
 
 RomM's implemented contract is checked against **5.4.1** source:
 
-- [`GET /api/platforms`](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/platform.py):
-  decode platform IDs, display names and ROM counts. If the token lacks the
-  optional `platforms.read` permission (403), or the endpoint is unavailable (404),
-  group all catalog metadata pages using the existing `roms.read` permission.
 - [`GET /api/roms`](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/roms/__init__.py):
-  `limit`, `offset`, `search_term`, `platform_ids`, `group_by_meta_id=false`;
+  `limit`, `offset`, `search_term`, `platform_ids`, `group_by_meta_id`;
   decode `items`, `total`, and `offset`. Reject mismatched platform IDs and invalid
   pagination so a platform import cannot silently include another platform.
+  Browsing sends one `search_term` per supported game ("Ocarina of Time",
+  "Mario Kart 64"), which RomM matches word by word against the title, filename
+  and aliases ([search](https://github.com/rommapp/romm/blob/5.4.1/backend/handler/database/roms_handler.py)).
+  It also sends `group_by_meta_id=true` and `missing=false`
+  ([filters](https://github.com/rommapp/romm/blob/5.4.1/backend/handler/database/rom_filters.py)),
+  so several records for one game show as one, as in RomM's gallery, and records
+  whose file is gone from the server are skipped. Matches outside `platform_slug`
+  `n64` are dropped, and the platform list is grouped from the remaining items,
+  so only `roms.read` is needed. Titles only narrow the list; an import still
+  verifies the exact revision by SHA-1.
 - `GET /api/roms/{rom_id}`: enumerate individual `files`.
 - [`GET /api/roms/{file_id}/files/content/{file_name}`](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/roms/files.py):
   download one file using its **file ID**, not the catalog ROM ID.
@@ -127,6 +135,8 @@ The implementation uses RomM's `path_cover_small`, `path_cover_large`, and
 [5.4.1 ROM response](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/responses/rom.py)
 and [resource paths](https://github.com/rommapp/romm/blob/5.4.1/backend/models/rom.py).
 It fetches images beneath `/assets/romm/resources` on the configured instance,
+plus the platform icon its web interface uses, `/assets/platforms/<slug>.ico`
+([PlatformIcon.vue](https://github.com/rommapp/romm/blob/5.4.1/frontend/src/components/common/Platform/PlatformIcon.vue)),
 preserving a reverse-proxy prefix. The existing Client API token authenticates
 these requests. Third-party `url_cover` links, redirects, path traversal, and
 non-resource URLs are not followed. No additional RomM write permission is needed.
@@ -150,9 +160,10 @@ fixtures and an on-device simulator probe for authenticated image download,
 ImageIO decoding, and offline reuse. Cover-card and screenshot layouts were
 inspected on the tvOS 27.0 Apple TV 4K simulator using synthetic color charts.
 Live artwork from the intended RomM server and physical remote focus still need
-an interactive pass. `--artwork-fixture-preview` (optionally with
-`--artwork-fixture-detail`) opens that fixed-loopback visual fixture in Debug
-simulator builds only; the fixture is absent from device and Release builds.
+an interactive pass. `--artwork-fixture-preview` opens that fixed-loopback visual
+fixture at its platform list (or, with `--artwork-fixture-detail`, at a game's file
+page) in Debug simulator builds only; the fixture is absent from device and
+Release builds.
 
 ## Automated verification
 

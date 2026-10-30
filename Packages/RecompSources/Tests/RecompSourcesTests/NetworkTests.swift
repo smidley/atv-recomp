@@ -8,18 +8,20 @@ struct NetworkTests {
         try RomMProvider(source: LibrarySource(kind: .romm, address: "http://127.0.0.1:18080\(prefix)", allowHTTP: true), token: "fixture-token")
     }
 
-    @Test func rommBrowsePaginationAndIndividualFileDownload() async throws {
+    @Test func rommBrowsesOnlyPlayableGamesAcrossPagesAndDownloadsIndividualFiles() async throws {
         let provider = try romm()
+        // The fixture serves one ROM per page. The 3DS title, the other N64 game, the second
+        // Ocarina record and the Mario Kart record whose file is gone all stay hidden.
         let platforms = try await provider.list(.root, search: "", offset: 0)
-        #expect(platforms.entries.map(\.name) == ["Nintendo 64", "SNES"])
+        #expect(platforms.entries.map(\.name) == ["Nintendo 64"])
+        #expect(platforms.entries.first?.detail == "2 games")
         #expect(platforms.entries.first?.folder == .platform(1))
-        let filtered = try await provider.list(.root, search: "snes", offset: 0)
-        #expect(filtered.entries.map(\.folder) == [.platform(2)])
-        let first = try await provider.list(.platform(1), search: "Ocarina & Zelda", offset: 0)
-        #expect(first.entries.count == 1)
-        #expect(first.nextOffset == 1)
-        let next = try await provider.list(.platform(1), search: "", offset: 1)
-        #expect(next.nextOffset == nil)
+        #expect(platforms.entries.first?.artwork?.cover == "/assets/platforms/n64.ico")
+        #expect(try await provider.list(.root, search: "3ds", offset: 0).entries.isEmpty)
+        let games = try await provider.list(.platform(1), search: "", offset: 0)
+        #expect(games.entries.map(\.name) == ["Mario Kart 64 fixture", "Synthetic Ocarina of Time fixture"])
+        #expect(games.nextOffset == nil)
+        #expect(try await provider.list(.platform(1), search: "kart", offset: 0).entries.map(\.folder) == [.rom(4)])
         let files = try await provider.list(.rom(3), search: "", offset: 0)
         let rom = try #require(files.entries.first { $0.isROM })
         #expect(rom.target == .romFile(11, "Fixture.z64"))
@@ -32,21 +34,14 @@ struct NetworkTests {
         await #expect(throws: (any Error).self) { try await provider.download(archive, to: downloaded, progress: { _ in }) }
     }
 
-    @Test func romsReadOnlyTokenStillGroupsEveryPlatformPage() async throws {
-        let provider = try romm("/roms-only")
-        let page = try await provider.list(.root, search: "", offset: 0)
-        #expect(page.entries.map(\.name) == ["Nintendo 64", "SNES"])
-        #expect(page.entries.map(\.detail) == ["2 ROMs", "1 ROM"])
-    }
-
     @Test func rommArtworkUsesAuthenticatedResourcesAndSurvivesOffline() async throws {
         let provider = try romm("/art-proxy")
         let page = try await provider.list(.platform(1), search: "", offset: 0)
-        let art = try #require(page.entries.first?.artwork)
+        let art = try #require(page.entries.first { $0.folder == .rom(3) }?.artwork)
         #expect(art.romID == 3)
         #expect(art.screenshots.count == 1) // A third-party URL must never receive the token.
         let files = try await provider.list(.rom(3), search: "", offset: 0)
-        #expect(files.artwork?.title == "Synthetic Ocarina fixture")
+        #expect(files.artwork?.title == "Synthetic Ocarina of Time fixture")
         #expect(files.entries.first?.artwork == files.artwork)
         let path = try #require(art.cover)
         let root = try temporaryFolder()
@@ -55,6 +50,9 @@ struct NetworkTests {
         let image = try await cache.image(at: path, artwork: art, sourceID: id, provider: provider)
         #expect(!image.isEmpty)
         #expect(try await cache.image(at: path, artwork: art, sourceID: id, provider: nil) == image)
+        let icon = try #require(try await provider.list(.root, search: "", offset: 0).entries.first?.artwork)
+        let decoded = try await cache.image(at: try #require(icon.cover), artwork: icon, sourceID: id, provider: provider)
+        #expect(decoded.starts(with: [0x89, 0x50, 0x4e, 0x47])) // The .ico was decoded and stored as PNG.
         await #expect(throws: LibraryError.self) {
             try await provider.imageData(at: "/assets/romm/resources/redirect.png")
         }
@@ -75,7 +73,7 @@ struct NetworkTests {
         #expect(report.total == 3)
         #expect(report.count(.unsupported) == 2)
         #expect(report.count(.skipped) == 1)
-        #expect(!report.results.contains { $0.name == "Other.sfc" })
+        #expect(!report.results.contains { ["Other.3ds", "Third.z64"].contains($0.name) })
     }
 
     @Test func deniedAccessAndRedirectsFailWithoutForwardingToken() async throws {

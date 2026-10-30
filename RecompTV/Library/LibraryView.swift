@@ -192,8 +192,29 @@ private struct SourceBrowserView: View {
     @State private var showingBatchResults = false
     let library: LibraryModel
 
-    init(source: LibrarySource, library: LibraryModel, location: LibraryLocation = .root) {
-        _browser = State(initialValue: SourceBrowserModel(source: source, location: location)); self.library = library
+    init(source: LibrarySource, library: LibraryModel, location: LibraryLocation = .root, title: String? = nil) {
+        _browser = State(initialValue: SourceBrowserModel(source: source, location: location, title: title))
+        self.library = library
+    }
+
+    private func browse(_ entry: LibraryEntry, in folder: LibraryLocation) -> some View {
+        SourceBrowserView(source: browser.source, library: library, location: folder, title: entry.name)
+    }
+
+    private func row(_ entry: LibraryEntry) -> some View {
+        HStack(spacing: 20) {
+            if let artwork = entry.artwork {
+                GameArtworkView(path: artwork.cover, artwork: artwork,
+                    sourceID: browser.source.id, source: browser.source, library: library, width: 120, height: 110)
+            } else { Image(systemName: entry.folder != nil ? "folder" : "doc") }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(entry.name)
+                Text(entry.detail).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let size = entry.size { Text(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)).font(.caption) }
+            Text(entry.folder != nil ? "Browse" : "Import and verify").font(.callout)
+        }
     }
 
     var body: some View {
@@ -205,12 +226,11 @@ private struct SourceBrowserView: View {
                 }
                 if browser.isPlatformList {
                     Text("Choose a platform").font(.headline).foregroundStyle(.secondary)
-                } else if browser.source.kind == .smb && browser.history.isEmpty {
+                } else if browser.source.kind == .smb && browser.location == .root {
                     Text("Open a platform folder, or import all ROMs from this folder.")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 HStack(spacing: 24) {
-                    if !browser.history.isEmpty { Button("Up one level") { browser.back() } }
                     TextField(browser.searchPrompt, text: $browser.search)
                         .onSubmit { browser.refresh() }
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -253,8 +273,8 @@ private struct SourceBrowserView: View {
                 if browser.isGameList {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
                               alignment: .leading, spacing: 36) {
-                        ForEach(browser.entries) { entry in
-                            Button { browser.open(entry) } label: {
+                        ForEach(browser.entries) { entry in if let folder = entry.folder {
+                            NavigationLink { browse(entry, in: folder) } label: {
                                 VStack(alignment: .leading, spacing: 16) {
                                     GameArtworkView(path: entry.artwork?.cover, artwork: entry.artwork,
                                         sourceID: browser.source.id, source: browser.source, library: library,
@@ -268,32 +288,21 @@ private struct SourceBrowserView: View {
                             }
                             .buttonStyle(.card)
                             .accessibilityLabel("\(entry.name), browse ROM files")
-                            .disabled(library.isImporting || browser.loading)
-                        }
+                            .disabled(library.isImporting)
+                        } }
                     }
                 } else { ForEach(browser.entries) { entry in
-                    Button {
-                        if entry.folder != nil { browser.open(entry) }
-                        else { library.acquire(entry, source: browser.source) }
-                    } label: {
-                        HStack(spacing: 20) {
-                            if let artwork = entry.artwork {
-                                GameArtworkView(path: artwork.cover, artwork: artwork,
-                                    sourceID: browser.source.id, source: browser.source, library: library, width: 120, height: 110)
-                            } else { Image(systemName: entry.folder != nil ? "folder" : "doc") }
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(entry.name)
-                                Text(entry.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if let size = entry.size { Text(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)).font(.caption) }
-                            Text(entry.folder != nil ? "Browse" : "Import and verify").font(.callout)
-                        }
+                    if let folder = entry.folder {
+                        NavigationLink { browse(entry, in: folder) } label: { row(entry) }
+                            .disabled(library.isImporting)
+                    } else {
+                        Button { library.acquire(entry, source: browser.source) } label: { row(entry) }
+                            .disabled(library.isImporting || browser.loading || !entry.isROM)
                     }
-                    .disabled(library.isImporting || browser.loading || (entry.folder == nil && !entry.isROM))
                 } }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text(browser.isPlatformList ? "No matching platforms." : "No matching ROMs in this platform or folder.")
+                    Text(browser.source.kind == .romm ? "No Ocarina of Time or Mario Kart 64 ROMs found here."
+                         : "No matching ROMs in this folder.")
                         .foregroundStyle(.secondary)
                 }
                 if browser.nextOffset != nil {
@@ -305,7 +314,8 @@ private struct SourceBrowserView: View {
         .sheet(isPresented: $showingBatchResults) {
             BatchResultsView(library: library)
         }
-        .onAppear { if !library.isImporting { browser.refresh() } }
+        // Returning from a folder keeps this screen's list, scroll position and focus.
+        .onAppear { if !library.isImporting && browser.entries.isEmpty { browser.refresh() } }
         .onDisappear {
             if !showingBatchResults { browser.cancel(); if library.isImporting { library.cancelImport() } }
         }
@@ -437,8 +447,10 @@ struct ArtworkFixturePreview: View {
     var body: some View {
         Group {
             if ready {
-                SourceBrowserView(source: source, library: library,
-                    location: ProcessInfo.processInfo.arguments.contains("--artwork-fixture-detail") ? .rom(3) : .platform(1))
+                NavigationStack {
+                    SourceBrowserView(source: source, library: library,
+                        location: ProcessInfo.processInfo.arguments.contains("--artwork-fixture-detail") ? .rom(3) : .root)
+                }
             }
             else { ProgressView("Loading artwork fixture…") }
         }

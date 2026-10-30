@@ -48,7 +48,9 @@ struct RomMAddress: Sendable {
         if components.first == "" { components.removeFirst() }
         let prefix = base.path.split(separator: "/").map(String.init)
         if !prefix.isEmpty && components.starts(with: prefix) { components.removeFirst(prefix.count) }
-        guard components.starts(with: ["assets", "romm", "resources"]), components.count > 3 else {
+        // Game art is a RomM resource; a platform icon is one file of RomM's web assets.
+        guard (components.starts(with: ["assets", "romm", "resources"]) && components.count > 3) ||
+              (components.starts(with: ["assets", "platforms"]) && components.count == 3) else {
             throw LibraryError.message("RomM returned an unsupported artwork location.")
         }
         var url = base
