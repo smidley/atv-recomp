@@ -1,0 +1,14 @@
+--- a/src/video/uikit/SDL_uikitwindow.m
++++ b/src/video/uikit/SDL_uikitwindow.m
+@@ -277,7 +277,10 @@
+      * we only allow one per display, in the iOS fashion.
+      * However, we use this entry point to rebind the context to the view
+      * during OnWindowRestored processing. */
+-    _this->GL_MakeCurrent(_this, _this->current_glwin, _this->current_glctx);
++    /* Nativecade's SDL has no OpenGL ES on tvOS, so there is no context to rebind. */
++    if (_this->GL_MakeCurrent) {
++        _this->GL_MakeCurrent(_this, _this->current_glwin, _this->current_glctx);
++    }
+ }
+ 
+ static void UIKit_UpdateWindowBorder(_THIS, SDL_Window * window)

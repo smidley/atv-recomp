@@ -59,6 +59,16 @@ if(NOT rumble_patch_applied EQUAL 0)
     execute_process(COMMAND git apply "${rumble_patch}"
         WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
 endif()
+# SDL_RaiseWindow on tvOS rebinds an OpenGL ES context, which this SDL is built without; Super Smash
+# Bros.' libultraship raises its window and crashed on the null call.
+set(raise_window_patch "${CMAKE_CURRENT_LIST_DIR}/sdl-raisewindow.patch")
+execute_process(COMMAND git apply --reverse --check "${raise_window_patch}"
+    WORKING_DIRECTORY "${recomptv_sdl_source}" RESULT_VARIABLE raise_window_patch_applied
+    OUTPUT_QUIET ERROR_QUIET)
+if(NOT raise_window_patch_applied EQUAL 0)
+    execute_process(COMMAND git apply "${raise_window_patch}"
+        WORKING_DIRECTORY "${recomptv_sdl_source}" COMMAND_ERROR_IS_FATAL ANY)
+endif()
 
 FetchContent_Declare(dr_libs GIT_REPOSITORY https://github.com/mackron/dr_libs.git
     GIT_TAG da35f9d6c7374a95353fd1df1d394d44ab66cf01)

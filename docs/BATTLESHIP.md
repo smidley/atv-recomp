@@ -8,9 +8,9 @@ release pinned in `upstream/battleship-baseline.json` (v1.6, recorded on 2026-10
 the game's assets on the Apple TV from the player's imported ROM. No ROM, nothing
 extracted from one, and no code generated from one is built or distributed.
 
-It is in progress: the framework builds for Apple TV and the simulator and the app prepares and
-starts it like the other games, but nothing has run with a ROM yet, because the USA ROM wasn't
-in the RomM library available to the build Mac.
+It is in progress. With the USA ROM it prepares its assets and plays in the simulator, but
+returning to the library crashes the app (below). In TestFlight build 9 it crashed before
+anything appeared, which the shared SDL now avoids.
 
 ## Supported game data
 
@@ -141,6 +141,21 @@ SDL. Known gaps, all unchecked: the hang watchdog only runs during the first sta
 the coroutine stacks of the emulated N64 threads (256 KB each) aren't freed between
 starts.
 
+## Known issues
+
+- **Starting crashed (fixed after build 9).** BattleShip's libultraship raises its window with
+  `SDL_RaiseWindow`. On tvOS, SDL's `UIKit_RaiseWindow` then rebinds an OpenGL ES context through
+  `_this->GL_MakeCurrent`, which is null in the shared runtime's SDL (built without OpenGL), so the
+  app crashed as the game started, right after preparing its assets. The shared runtime's SDL now
+  checks for it (`experiments/shipwright/simulator-game/sdl-raisewindow.patch`).
+- **Returning to the library crashes.** BattleShip's frames take their Metal drawable
+  (`GfxRenderingAPIMetal::NewFrame`) outside its per-frame autorelease pool, so every drawable
+  waits in the long-lived pool `RunApplication` holds and is released only after the game has torn
+  down its renderer, which crashes in `-[CAMetalDrawable dealloc]`. Draining a pool around each
+  `PortPushFrame` crashed by the fifth frame instead, in `-[CAMetalLayer nextDrawable]`, so
+  something BattleShip uses is kept alive only by that long-lived pool. Not fixed yet; the game
+  runs its N64 threads as coroutines, whose stack switches are a suspect.
+
 ## Verification on 2026-10-30
 
 - `NativecadeBattleShip.framework` compiled (935 build steps, Release) and linked for the
@@ -151,7 +166,11 @@ starts.
   symbols bound to `NativecadeRuntime`, 100 are SDL functions, all exported by the current
   runtime, and two are the game-runner API. Its Objective-C classes are ImGui's three,
   renamed.
-- There is no Super Smash Bros. ROM on the build Mac, the build reads none, and the
-  relocatable-data headers regenerate identically from their committed inputs.
-- Not yet checked: the app calling the framework, preparation with a ROM, rendering,
-  audio, controls, saves, restarts, performance and anything on a physical Apple TV.
+- The build reads no ROM, and the relocatable-data headers regenerate identically from their
+  committed inputs.
+- With the USA ROM imported in the tvOS 27.0 simulator (Debug, `NATIVECADE_RESTART_PROBE=smash`):
+  preparation extracted `BattleShip.o2r` in about 10 seconds, and with the SDL fix the game ran
+  about 1,700 frames in 30 seconds before the restart check's quit; the app then crashed returning
+  to the library (Known issues).
+- Not yet checked: audio, controls, saves, a second start, performance and anything on a physical
+  Apple TV beyond build 9's start crash.

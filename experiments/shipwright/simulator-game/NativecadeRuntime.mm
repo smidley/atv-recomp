@@ -16,6 +16,9 @@
 #include <thread>
 #include <vector>
 #include <unistd.h>
+#include <execinfo.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <mach/mach.h>
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
@@ -51,6 +54,48 @@ static bool FolderFailure(char *error, size_t capacity, NSError *problem) {
 static NSString *GameFolder(NSString *name) {
     return [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
         stringByAppendingPathComponent:[@"Nativecade/Games" stringByAppendingPathComponent:name]];
+}
+
+// The last game's console output, in Library/Caches/Nativecade/Logs/last-game.log, which the
+// Diagnostics tab shows. TestFlight builds run on the Apple TV without a debugger, so this is how a
+// failure there can be read afterwards. The log stays stdout and stderr until the next game starts,
+// so a crash on the way back to the library is caught too; a crash adds its signal and backtrace.
+static struct sigaction GameLogPrevious[NSIG];
+static constexpr int GameLogSignals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGABRT, SIGTRAP};
+
+static void GameLogCrash(int signal) {
+    static const char header[] = "\n[Nativecade] crashed with signal ";
+    write(STDERR_FILENO, header, sizeof header - 1);
+    const char number[] = {char('0' + signal / 10), char('0' + signal % 10), '\n'};
+    write(STDERR_FILENO, number, sizeof number);
+    void *frames[64];
+    backtrace_symbols_fd(frames, backtrace(frames, 64), STDERR_FILENO);
+    sigaction(signal, &GameLogPrevious[signal], nullptr);
+    raise(signal);
+}
+
+static void StartGameLog(NSString *game) {
+    NSString *folder = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+        stringByAppendingPathComponent:@"Nativecade/Logs"];
+    [NSFileManager.defaultManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:nil];
+    int log = open([folder stringByAppendingPathComponent:@"last-game.log"].fileSystemRepresentation,
+                   O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (log < 0) return;
+    fflush(stdout);
+    fflush(stderr);
+    dup2(log, STDOUT_FILENO);
+    dup2(log, STDERR_FILENO);
+    close(log);
+    setvbuf(stdout, nullptr, _IOLBF, 0);
+    NSString *build = NSBundle.mainBundle.infoDictionary[@"CFBundleVersion"] ?: @"?";
+    fprintf(stderr, "[Nativecade] %s, build %s, %s\n", game.UTF8String, build.UTF8String, NSDate.date.description.UTF8String);
+    static bool handlersInstalled;
+    if (handlersInstalled) return;
+    handlersInstalled = true;
+    struct sigaction action = {};
+    action.sa_handler = GameLogCrash;
+    sigemptyset(&action.sa_mask);
+    for (int signal : GameLogSignals) sigaction(signal, &action, &GameLogPrevious[signal]);
 }
 
 static NSString *ROMHash(NSData *data) {
@@ -311,6 +356,7 @@ static int RunApplication(int argc, char **argv) {
         NSString *root = GameDirectory ?: GameFolder(@"OcarinaOfTime");
         int status = 2;
         if (chdir(root.fileSystemRepresentation) == 0) {
+            StartGameLog(root.lastPathComponent);
             ResetGameGlobals();
 #if TARGET_OS_SIMULATOR
             // Simulator-only restart check: end the game after 30 seconds, as its Quit button does.

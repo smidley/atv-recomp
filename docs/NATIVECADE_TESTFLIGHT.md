@@ -116,6 +116,15 @@ Before build 9, only Ocarina's menu opened, and it couldn't be navigated: the
 menus' regions stopped the D-pad at their borders. Quitting and the menus on a
 physical Apple TV remain part of the hardware test pass.
 
+When a game fails on the Apple TV (a crash, or a screen that stays black), open
+**Diagnostics → Last game log**. While a game runs, its console output goes to
+`Library/Caches/Nativecade/Logs/last-game.log` instead of the console; a crash adds
+the signal and a backtrace, and the log stays open until the next game starts, so a
+crash on the way back to the library is recorded too. The screen shows the end of
+the log, a line per focus step. Its addresses can be matched against the archive's
+debug symbols on the Mac (`atos`), which is how hardware failures are diagnosed
+without pairing the Apple TV.
+
 Neither port was written to start twice in one process.
 [Switching games](GAME_SWITCHING.md) explains what Nativecade resets between games,
 the small upstream changes this needed, and how to check a new game.
