@@ -101,6 +101,7 @@ The source/import implementation is described in [Network sources](docs/NETWORK_
 | [Super Mario 64](docs/GHOSTSHIP.md) | Ghostship integration, its adaptations to the shared runtime, supported ROM, and simulator evidence |
 | [Banjo-Kazooie](docs/LIGHTHOUSE.md) | Lighthouse integration, the shared libraries it brought, supported ROMs, and simulator evidence |
 | [Shadows of the Empire](docs/SOTE.md) | SotE-Recomp, in progress: its game code run by the N64 interpreter, tvOS changes, and simulator limits |
+| [Controls and menus](docs/CONTROLS_AND_MENUS.md) | Quitting any game, and opening and moving through each game's settings menu with a controller |
 | [Super Smash Bros.](docs/BATTLESHIP.md) | BattleShip, in progress: its own libultraship and Torch, on-device preparation, and tvOS changes |
 | [Racer](docs/RACER.md) | Star Wars Episode I: Racer, in progress: the same interpreter, its own runtime versions, and simulator checks |
 | [N64 interpreter](docs/N64_INTERPRETER.md) | Runs a recompiled game's code and audio microcode from the player's ROM, so builds contain nothing from it |

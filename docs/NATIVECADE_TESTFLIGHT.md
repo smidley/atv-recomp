@@ -111,6 +111,7 @@ selects and B goes back; its red power button (Quit) also returns to the library
 In Star Fox 64, View shows the menu bar and X moves into it, as ImGui's controller
 layout does for menu bars.
 Shadows of the Empire keeps its settings in the game's own Options screen (Start).
+[Controls and menus](CONTROLS_AND_MENUS.md) has the details for each game.
 Before build 9, only Ocarina's menu opened, and it couldn't be navigated: the
 menus' regions stopped the D-pad at their borders. Quitting and the menus on a
 physical Apple TV remain part of the hardware test pass.
@@ -231,9 +232,11 @@ menu opened, it couldn't be navigated, and no game could be quit without it. On
 2026-10-30 it was archived with Xcode 27.2 (27B52). Besides the usual checks, every
 binary in the archive was compared with the Shadows of the Empire and Racer ROMs:
 the only shared 32-byte runs are counting sequences and SotE-Recomp's copy of the
-game's legal notice. Its upload stopped before sending anything, because Xcode's
-Apple Account needs signing in again (Accounts settings). Super Smash Bros. hasn't
-run with a ROM yet.
+game's legal notice. The first upload stopped because Xcode's Apple Account needed
+signing in again; the next was refused because Racer's framework gave its version
+as `v0.3.0`, and App Store Connect takes only numbers. With `0.3.0` (its CMake
+now strips the tag's `v`), the archive was made again and App Store Connect
+accepted it at 17:17. Super Smash Bros. hasn't run with a ROM yet.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks

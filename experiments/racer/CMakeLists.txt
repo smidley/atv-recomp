@@ -81,8 +81,10 @@ target_link_libraries(NativecadeRacer PRIVATE n64frontend rt64 "-Wl,-force_load,
     "-framework NativecadeRuntime" "-framework Foundation" "-framework UIKit" "-framework Metal"
     "-framework QuartzCore")
 endif()
+# App Store Connect takes only numbers in a bundle version; Racer tags its releases v0.3.0.
+string(REGEX REPLACE "^v" "" racer_version "${RECOMPTV_RACER_RELEASE}")
 set_target_properties(NativecadeRacer PROPERTIES FRAMEWORK TRUE OUTPUT_NAME NativecadeRacer
     PUBLIC_HEADER "${CMAKE_CURRENT_LIST_DIR}/RacerRuntime.h"
     MACOSX_FRAMEWORK_IDENTIFIER "com.smidley.nativecade.racer"
-    MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${RECOMPTV_RACER_RELEASE}" MACOSX_FRAMEWORK_BUNDLE_VERSION "1"
+    MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${racer_version}" MACOSX_FRAMEWORK_BUNDLE_VERSION "1"
     INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR TRUE XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")

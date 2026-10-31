@@ -20,7 +20,8 @@ check a new game. Expect a new game to hit some of the same cases.
    `NativecadeRunEpisodeOneRacer` for Racer, `NativecadeRunSuperSmashBros` for Super Smash Bros.).
 3. The red power button (Quit) in the game's menu closes libultraship's window, or
    holding View (or the Siri Remote's Play/Pause) for 1.5 seconds sends SDL's quit
-   event, which every game handles (`ArmQuitButtons` in `NativecadeRuntime.mm`).
+   event, which every game handles (`ArmQuitButtons` in `NativecadeRuntime.mm`;
+   [Controls and menus](CONTROLS_AND_MENUS.md)).
    The game's main loop ends, and its `main` returns.
 4. `RunApplication` cleans up (below) and shows the library again. SDL keeps
    UIKit running, so nothing else needs restarting.
