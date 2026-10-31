@@ -56,6 +56,9 @@ notices = [f"Nativecade uses Shipwright {release}, SpaghettiKart {kart_release},
            "https://github.com/sp00nznet/racer\n"
            "\nSuper Smash Bros. runs through BattleShip, with its own libultraship and Torch.\n"
            "https://github.com/JRickey/BattleShip\n"
+           "\nCruis'n USA and Cruis'n World run through navjack's Cruis'n recompilation setups (GPL-3.0),\n"
+           "on Racer's runtime and renderer.\n"
+           "https://github.com/navjack/cruisn-recomp\n"
            "https://github.com/N64Recomp/N64ModernRuntime\n"
            "https://github.com/N64Recomp/N64Recomp\n"
            "https://github.com/rt64/rt64\n"]
@@ -63,6 +66,7 @@ seen = set()
 for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "build/upstream/Starship",
                root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse", root / "build/upstream/SotE-Recomp",
                root / "build/upstream/racer", root / "build/upstream/racer-toolkits", root / "build/upstream/BattleShip",
+               root / "build/upstream/cruisn-recomp",
                host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
                root / "build/nativecade-runtime/appletvos/_deps"):
     if not source.exists():

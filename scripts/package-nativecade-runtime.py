@@ -25,6 +25,7 @@ frameworks = (
     ("NativecadeSote", Path("sote"), "experiments/sote/SoteRuntime.h"),
     ("NativecadeRacer", Path("racer"), "experiments/racer/RacerRuntime.h"),
     ("NativecadeBattleShip", Path("battleship"), "experiments/battleship/BattleShipRuntime.h"),
+    ("NativecadeCruisn", Path("cruisn"), "experiments/cruisn/CruisnRuntime.h"),
 )
 for name, folder, header in frameworks:
     output = build / f"{name}.xcframework"

@@ -17,7 +17,7 @@ what the game uses it for, which in most games is opening its menu.
 |---|---|---|---|---|
 | Ocarina of Time, Mario Kart 64, Super Mario 64, Banjo-Kazooie, Super Smash Bros. | View | D-pad | A / B | The red power button, top right |
 | Star Fox 64 | View shows the menu bar, then X moves into it | D-pad | A / B | Starship → Quit |
-| Star Wars Episode I: Racer | View | D-pad | A / B | Quit game |
+| Star Wars Episode I: Racer, Cruis'n USA, Cruis'n World | View | D-pad | A / B | Quit game |
 | Star Wars: Shadows of the Empire | Start, then the game's own Options screen | D-pad | A / B | None (hold View) |
 
 On a PlayStation controller, A is Cross and B is Circle. Press View again to

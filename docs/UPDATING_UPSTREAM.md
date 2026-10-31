@@ -26,6 +26,7 @@ Each game has one version file, `upstream/<game>-baseline.json`:
 | Star Wars: Shadows of the Empire | [SotE-Recomp](https://github.com/GTTeancum/SotE-Recomp) (`sote`) | Its own N64ModernRuntime, RT64 and N64Recomp, from the pinned commit's submodules |
 | Star Wars Episode I: Racer | [Racer](https://github.com/sp00nznet/racer) (`racer`) | Its own N64ModernRuntime, RT64 and N64Recomp forks, pinned separately |
 | Super Smash Bros. | [BattleShip](https://github.com/JRickey/BattleShip) (`battleship`) | Its own libultraship and Torch forks and the ssb-decomp-re decompilation, from the release's submodules |
+| Cruis'n USA and Cruis'n World | [cruisn-recomp](https://github.com/navjack/cruisn-recomp) (`cruisn`) | navjack's two game setups, followed by commit, and Racer's runtime, renderer, recompiler and frontend pins |
 
 The libultraship games build against one libultraship and one Torch, so exactly one game's
 release supplies them (`scripts/UpstreamTests.py` checks this). BattleShip is the exception: it
@@ -67,6 +68,8 @@ latest GitHub release differs from its pin. The issue links the release notes
 and the full comparison, counts the changed commits and files, and says whether
 the shared libraries changed. Pre-releases and development branches are
 ignored. `python3 scripts/upstream.py releases` runs the same check locally.
+A game whose repository publishes no releases (Cruis'n) is marked `"releases": false`: the
+check prints its pinned commit instead, and its pins are updated by hand.
 
 ## Updating
 

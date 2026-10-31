@@ -29,7 +29,7 @@ struct LibraryView: View {
                         CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
                     }
                     if shelf.platforms.isEmpty {
-                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Episode I: Racer or Super Smash Bros.")
+                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Episode I: Racer, Super Smash Bros., Cruis'n USA or Cruis'n World.")
                             .foregroundStyle(.secondary)
                     } else {
                         Text("Platforms").font(.title2.bold())
@@ -284,7 +284,7 @@ private struct SourceBrowserView: View {
                         Text("Includes every page and subfolder, even when search is active.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie, Shadows of the Empire (USA Rev 2), Episode I: Racer (USA) and Super Smash Bros. (USA) ROMs are saved. Other games and compressed files appear in the results.")
+                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie, Shadows of the Empire (USA Rev 2), Episode I: Racer (USA), Super Smash Bros. (USA), Cruis'n USA (USA Rev 2) and Cruis'n World (USA) ROMs are saved. Other games and compressed files appear in the results.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if library.isImporting {
@@ -338,7 +338,7 @@ private struct SourceBrowserView: View {
                     }
                 } }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Episode I: Racer or Super Smash Bros. ROMs found here."
+                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Episode I: Racer, Super Smash Bros., Cruis'n USA or Cruis'n World ROMs found here."
                          : "No matching ROMs in this folder.")
                         .foregroundStyle(.secondary)
                 }
@@ -739,6 +739,8 @@ struct ArtworkFixturePreview: View {
                 case "sote": .shadowsOfTheEmpire
                 case "racer": .episodeOneRacer
                 case "smash": .superSmashBros
+                case "cruisnusa": .cruisnUSA
+                case "cruisnworld": .cruisnWorld
                 default: .ocarinaOfTime
                 }
             } }

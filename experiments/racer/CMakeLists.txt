@@ -41,7 +41,7 @@ add_subdirectory("${RT64_DIR}" rt64)
 # the Objective-C runtime keeps one class per name in a process; Racer's copy gets its own names.
 set_source_files_properties("${RT64_DIR}/src/contrib/imgui/backends/imgui_impl_metal.mm" TARGET_DIRECTORY rt64
     PROPERTIES COMPILE_DEFINITIONS
-    "MetalBuffer=RacerImGuiMetalBuffer;FramebufferDescriptor=RacerImGuiFramebufferDescriptor;MetalContext=RacerImGuiMetalContext")
+    "MetalBuffer=RacerImGuiMetalBuffer;FramebufferDescriptor=RacerImGuiFramebufferDescriptor;MetalContext=RacerImGuiMetalContext;MetalTexture=RacerImGuiMetalTexture")
 add_subdirectory("${N64_MODERN_RUNTIME_DIR}" runtime)
 # As Racer's build: the game's libultra writes VI/AI/PI/MI registers (0xA4000000 and up), which
 # land in memory past KSEG0.
@@ -58,7 +58,7 @@ set_target_properties(NativecadeRacerGameCode PROPERTIES C_STANDARD 17)
 
 # Racer's host program, its audio microcode, and what Apple TV leaves out (experiments/sote).
 add_library(NativecadeRacerObjects OBJECT "${racer}/racer/src/main.cpp" "${racer}/racer/src/section_table.cpp"
-    RacerGame.cpp RacerRuntime.mm "${CMAKE_CURRENT_LIST_DIR}/../n64interp/N64RspInterpreter.cpp"
+    RacerGame.cpp RacerRuntime.mm HeadlessRenderer.cpp "${CMAKE_CURRENT_LIST_DIR}/../n64interp/N64RspInterpreter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/../sote/AppleTVStubs.cpp")
 add_dependencies(NativecadeRacerObjects rt64)
 set_source_files_properties("${racer}/racer/src/main.cpp" PROPERTIES COMPILE_DEFINITIONS "main=NativecadeRacerMain")

@@ -2,6 +2,7 @@
 // holds nothing from the ROM. It follows N64Recomp's generated C operation for operation
 // (recomp.h), so the same N64ModernRuntime, replaced libultra functions and hooks work with it.
 #pragma once
+#include <stdbool.h>
 #include <stdint.h>
 #include "recomp.h"
 
@@ -34,6 +35,11 @@ void n64interp_missing(uint32_t vram, const char *name);
 typedef struct { uint32_t rom; uint32_t value; } n64interp_rom_patch_t;
 void n64interp_set_rom_patches(const n64interp_rom_patch_t *patches, uint32_t count);
 void n64interp_rom_loaded(uint8_t *rdram, uint32_t rom, uint32_t vram, uint32_t size);
+
+// Called first by a game's generated registration, which passes itself as GAME. False when GAME's
+// tables are already in place; otherwise the previous game's are cleared, so one framework can hold
+// several games (Cruis'n USA and World).
+bool n64interp_begin_game(void (*game)(void));
 
 // Instructions run since start-up, for measuring speed.
 uint64_t n64interp_instruction_count(void);

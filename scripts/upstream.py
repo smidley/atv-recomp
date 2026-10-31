@@ -7,7 +7,9 @@ taken from that release's submodule, so its version always follows the game's.
 "prepare" lists the scripts that apply our tvOS patches to generated copies.
 A source with a "branch" follows that branch of its own repository instead of the
 game's release (Racer's setup clones its toolkits that way), so updating the game
-leaves it alone; "checkout" names its folder under build/upstream.
+leaves it alone; "checkout" names its folder under build/upstream. A game whose
+repository publishes no releases (Cruis'n) says "releases": false; its "release"
+is the date of the pinned commit.
 Only what the tvOS build compiles is pinned and fetched; other platforms'
 submodules and tooling are never downloaded.
 
@@ -203,6 +205,10 @@ def gh(*args):
 def releases(open_issues):
     for key, game in load_games().items():
         source = game_source(game)[1]
+        # "releases": false marks a game whose repository publishes none; its pins change by hand.
+        if game.get("releases") is False:
+            print(f"{key}: {source['repository']} publishes no releases; Nativecade builds {source['revision'][:12]}")
+            continue
         latest = gh("api", f"repos/{source['repository']}/releases/latest", "--jq", ".tag_name")
         if latest == game["release"]:
             print(f"{key}: {game['release']} is the latest release")

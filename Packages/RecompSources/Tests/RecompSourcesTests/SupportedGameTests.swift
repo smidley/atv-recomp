@@ -24,6 +24,9 @@ import Testing
     #expect(SupportedGame.identify(sha1: "3542d5597c8a56ea8f5c63bceae97a24c4c08d58") == .episodeOneRacer)
     // Super Smash Bros. (USA), NALE 1.0, the only release BattleShip's US build accepts.
     #expect(SupportedGame.identify(sha1: "e2929e10fccc0aa84e5776227e798abc07cedabf") == .superSmashBros)
+    // Cruis'n USA (USA) (Rev 2) and Cruis'n World (USA), the releases navjack's configurations describe.
+    #expect(SupportedGame.identify(sha1: "54a875ee0b482036fa401a6bc2b242699f0259f7") == .cruisnUSA)
+    #expect(SupportedGame.identify(sha1: "6da1a6a2bda687d50e798d80c342948ad1738202") == .cruisnWorld)
     #expect(SupportedGame.identify(sha1: String(repeating: "0", count: 40)) == nil)
     let record = ImportedROM(name: "Mario Kart 64.z64", revision: "NTSC 1.0 US", sha1: zelda,
         sha256: String(repeating: "a", count: 64), size: 33554432, sourceID: UUID())

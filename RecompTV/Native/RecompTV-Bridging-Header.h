@@ -8,4 +8,5 @@
 #include <NativecadeSote/SoteRuntime.h>
 #include <NativecadeRacer/RacerRuntime.h>
 #include <NativecadeBattleShip/BattleShipRuntime.h>
+#include <NativecadeCruisn/CruisnRuntime.h>
 #endif

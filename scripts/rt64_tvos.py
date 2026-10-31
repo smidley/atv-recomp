@@ -161,6 +161,49 @@ RUNTIME = {
 }
 
 
+# The SDL frontend in sp00nznet/racer's frontend/ (n64frontend, "shared by our N64 recomps"), which
+# Racer and Cruis'n use: keys are relative to that folder.
+FRONTEND = {
+    # A full-screen window, whose Metal layer RT64 draws into (plume's tvOS
+    # window code reads the layer), and a renderer that plays without RT64 in simulator smoke runs.
+    "src/app.cpp": [
+        ('#include "internal.hpp"\n',
+         '#include "internal.hpp"\n#include <TargetConditionals.h>\n'
+         "#if TARGET_OS_SIMULATOR\n"
+         "// experiments/racer/HeadlessRenderer.cpp: RT64 can't draw in the tvOS simulator.\n"
+         "std::unique_ptr<ultramodern::renderer::RendererContext> nativecade_headless_renderer(uint8_t*,\n"
+         "    ultramodern::renderer::WindowHandle, bool);\n"
+         "#endif\n"),
+        ("    Uint32 flags = SDL_WINDOW_RESIZABLE | (g_config.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);\n",
+         "    Uint32 flags = SDL_WINDOW_FULLSCREEN | SDL_WINDOW_ALLOW_HIGHDPI;\n"),
+        ("    SDL_MetalView view = SDL_Metal_CreateView(g_window);\n"
+         "    return { wminfo.info.cocoa.window, SDL_Metal_GetLayer(view) };\n",
+         "    void* layer = SDL_Metal_GetLayer(SDL_Metal_CreateView(g_window));\n"
+         "    return { layer, layer };\n"),
+        ("    cfg.renderer_callbacks.create_render_context = create_render_context;\n",
+         "    cfg.renderer_callbacks.create_render_context = create_render_context;\n"
+         "#if TARGET_OS_SIMULATOR\n"
+         '    if (const char* s = env("HEADLESS_SMOKE"); s && *s == \'1\')\n'
+         "        cfg.renderer_callbacks.create_render_context = nativecade_headless_renderer;\n"
+         "#endif\n"),
+        # The ROM is in the game folder, not beside the app (and the shared runtime's SDL leaves
+        # out SDL_GetBasePath, which no other game uses).
+        ("""    char* p = SDL_GetBasePath();
+    if (!p) return std::filesystem::current_path();
+    std::filesystem::path dir = std::filesystem::u8path(p);
+    SDL_free(p);
+    return dir;
+""", "    return std::filesystem::current_path();\n"),
+        # Nativecade returns to its library when a game ends, and quits SDL itself afterwards.
+        ("    fflush(nullptr);\n    std::_Exit(0);\n}", "    fflush(nullptr);\n    return 0;\n}"),
+    ],
+    # RT64 keeps its data in the game folder, which is in Caches; Apple TV apps can't write elsewhere.
+    "src/rt64_context.cpp": [
+        ("        app_config.detectDataPath = true;\n",
+         '        app_config.dataPath = std::filesystem::current_path() / "rt64";\n'),
+    ],
+}
+
 def apply(root, table, script):
     """Applies TABLE's replacements to the files under ROOT. A "#" suffix on a key lets one file
     have several commented groups."""

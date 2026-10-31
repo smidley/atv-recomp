@@ -31,7 +31,10 @@ Only the generated code is replaced:
   would emit no relocations: the interpreter runs whatever is loaded, so an overlay
   needs only its table entry. The game's host code applies instruction patches as
   it copies the cartridge into RDRAM (`n64interp_rom_loaded`). Hooks and
-  replacements can't sit where overlays share an address.
+  replacements can't sit where overlays share an address. With `--prefix`, the game's own
+  function names start with a prefix, so one framework can hold several games (Cruis'n USA and
+  World); each game's registration calls `n64interp_begin_game`, which clears the previous
+  game's replacements, hooks and patches.
 - `N64RspInterpreter.cpp` runs RSP microcode from RDRAM, as rspboot loads it into
   IMEM, following RSPRecomp's generated code with N64ModernRuntime's vector unit,
   DMEM and DMA. A game can replace one instruction with a patch, as SotE does for

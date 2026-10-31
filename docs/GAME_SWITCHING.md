@@ -17,7 +17,8 @@ check a new game. Expect a new game to hit some of the same cases.
    `NativecadeRunMarioKart` for Mario Kart, `NativecadeRunStarFox` for Star Fox,
    `NativecadeRunSuperMario` for Super Mario 64, `NativecadeRunBanjoKazooie` for
    Banjo-Kazooie, `NativecadeRunShadowsOfTheEmpire` for Shadows of the Empire,
-   `NativecadeRunEpisodeOneRacer` for Racer, `NativecadeRunSuperSmashBros` for Super Smash Bros.).
+   `NativecadeRunEpisodeOneRacer` for Racer, `NativecadeRunSuperSmashBros` for Super Smash Bros.,
+   `NativecadeRunCruisnUSA` and `NativecadeRunCruisnWorld` for Cruis'n).
 3. The red power button (Quit) in the game's menu closes libultraship's window, or
    holding View (or the Siri Remote's Play/Pause) for 1.5 seconds sends SDL's quit
    event, which every game handles (`ArmQuitButtons` in `NativecadeRuntime.mm`;
@@ -54,6 +55,10 @@ are 139 KB and 2.8 MB.
   renderer can't draw, so it never reaches Quit ([Shadows of the Empire](SOTE.md)).
   Its interpreter keeps its tables between starts; the game's code is read from RDRAM each time.
   N64ModernRuntime, its runtime, also expects a new process for each start.
+- Racer's second start in one session crashes (SIGSEGV soon after the game starts again;
+  [Racer](RACER.md)). Its runtime leaves the first run's game threads waiting, which is the
+  likeliest cause but isn't confirmed. Cruis'n's runtime ends them at shutdown (navjack's patch);
+  it hasn't been tried with a ROM.
 - On 2026-10-30, the sequence `banjo,oot,kart,fox,mario,banjo` stalled in two of
   three runs: Banjo-Kazooie's second start waited in `osRecvMesg` for a controller
   message during `game_init`. The third run passed, as did one run with the
@@ -87,7 +92,7 @@ are 139 KB and 2.8 MB.
 ### Restart check
 
 Debug simulator builds start each game listed in `NATIVECADE_RESTART_PROBE`
-(`oot`, `kart`, `fox`, `mario`, `banjo`, `sote`, `racer` or `smash`), one each time the library appears, and end each game
+(`oot`, `kart`, `fox`, `mario`, `banjo`, `sote`, `racer`, `smash`, `cruisnusa` or `cruisnworld`), one each time the library appears, and end each game
 after 30 seconds as Quit does. The timer applies to every game started in that
 app session, including one started with Play:
 

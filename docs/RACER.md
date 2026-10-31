@@ -33,7 +33,9 @@ the checkouts, then:
   RT64's Metal shaders for tvOS, plume's tvOS window and device code, no live recompiler, and the
   smaller memory reservation if tvOS lacks address space;
 - draws into a full-screen SDL Metal view, returns to the library when the game ends instead of
-  ending the process, and keeps RT64's data in the game folder;
+  ending the process, and keeps RT64's data in the game folder. These frontend changes
+  (`rt64_tvos.FRONTEND`) and the simulator's headless renderer (`experiments/racer/HeadlessRenderer.cpp`)
+  also serve [Cruis'n](CRUISN.md), which uses Racer's frontend;
 - writes the interpreter's tables (`scripts/generate-n64interp.py`). Besides the symbol file, they
   take from Racer's own sources the functions N64Recomp split off at calls into other functions
   (`src/section_table.cpp`) and the two functions `tools/post_recomp_patches.py` sends to host code.
@@ -75,8 +77,11 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=racer SIMCTL_CHILD_SWE1R_HEADLESS_SMOKE=1 
 - Six audio tasks saved from such a run (`N64INTERP_RSP_CAPTURE`), five of them writing 3.7 to 4.6 KB
   of sound, gave byte-identical DMEM and RDRAM through the RSP interpreter and through the microcode
   RSPRecomp generated from the ROM on the Mac (`experiments/n64interp/RspSpike.cpp`).
-- Not yet checked: anything on a physical Apple TV (picture, speed, controls, saves) and a second
-  start in the same session.
+- A second start in the same session (`NATIVECADE_RESTART_PROBE=racer,racer`, 2026-10-30) crashes:
+  the game starts again and the app ends with SIGSEGV shortly after, before the first audio task,
+  without a crash report. The cause isn't known yet; N64ModernRuntime doesn't end the first run's game
+  threads (see [Switching games](GAME_SWITCHING.md#known-issues)).
+- Not yet checked: anything on a physical Apple TV (picture, speed, controls, saves).
 
 ## Licensing
 

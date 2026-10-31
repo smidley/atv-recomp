@@ -3,6 +3,7 @@
 // macros and helpers, so results match the recompiled code on the same CPU.
 #include "N64Interpreter.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -80,6 +81,20 @@ static uint32_t rom_patch_count;
 void n64interp_set_rom_patches(const n64interp_rom_patch_t *patches, uint32_t count) {
     rom_patches = patches;
     rom_patch_count = count;
+}
+
+bool n64interp_begin_game(void (*game)(void)) {
+    static void (*current)(void);
+    if (current == game) return false;
+    current = game;
+    Tables &t = tables();
+    std::fill(t.replacement_bits.begin(), t.replacement_bits.end(), 0);
+    std::fill(t.hook_bits.begin(), t.hook_bits.end(), 0);
+    t.replacements.clear();
+    t.hooks.clear();
+    rom_patches = nullptr;
+    rom_patch_count = 0;
+    return true;
 }
 
 void n64interp_rom_loaded(uint8_t *rdram, uint32_t rom, uint32_t vram, uint32_t size) {
