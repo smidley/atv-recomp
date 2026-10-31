@@ -69,10 +69,11 @@ and the display; this is not a measured performance guarantee on physical A15 ha
 ## Development checks
 
 The Debug simulator launcher accepts `--nativecade-play-mario-kart` to play an
-already verified cache entry. `--import-mario-kart-from-romm` is an explicit
-simulator-only integration helper that uses a configured RomM account and normal
-provider/verification paths. It writes a sanitized success report and never
-exports Keychain credentials. Neither Swift helper is included in device or
+already verified cache entry. `--import-mario-kart-from-romm` (or
+`--import-from-romm <game>` for any supported game, such as `cruisnUSA`) is an explicit
+simulator-only integration helper in the RecompTV test app that uses a configured RomM account
+and normal provider/verification paths. It writes a sanitized success report
+(`Documents/romm-import-<game>.json`) and never exports Keychain credentials. Neither Swift helper is included in device or
 Release builds.
 
 For an automated simulator input check, launch the cached Mario Kart ROM with

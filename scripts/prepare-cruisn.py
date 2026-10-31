@@ -226,6 +226,45 @@ extern "C" void osPiReadIo_recomp(RDRAM_ARG recomp_context * ctx) {
     ],
 }
 rt64_tvos.apply(destination / "N64ModernRuntime", RUNTIME, "prepare-cruisn.py")
+# Nativecade starts games again in the same process (docs/GAME_SWITCHING.md); the runtime expects a
+# new process for each. navjack's patch ends the game's threads at Quit. Each start also clears the
+# quit flag, and Quit empties the running queue and the messages, which the whole process shares
+# (as Racer's RESTART in prepare-racer.py).
+RESTART = {
+    "librecomp/src/recomp.cpp": [
+        ("void recomp::start(const recomp::Configuration& cfg) {\n    project_version = cfg.project_version;\n",
+         "void recomp::start(const recomp::Configuration& cfg) {\n    exited.store(false);\n"
+         "    game_status.store(GameStatus::None);\n    project_version = cfg.project_version;\n"),
+        ("    ultramodern::join_saving_thread();\n    \n    // rdram is left for the OS to free at exit",
+         "    ultramodern::join_saving_thread();\n    ultramodern::clear_thread_queues(rdram);\n"
+         "    \n    // rdram is left for the OS to free at exit"),
+    ],
+    "ultramodern/include/ultramodern/ultramodern.hpp": [
+        ("void shutdown_game_threads();\n",
+         "void shutdown_game_threads();\n// Empties the running queue and the external messages after Quit.\n"
+         "void clear_thread_queues(RDRAM_ARG1);\n"),
+    ],
+    "ultramodern/src/mesgqueue.cpp": [
+        ("bool do_send(RDRAM_ARG PTR(OSMesgQueue) mq_, OSMesg msg, bool jam, bool block);\n",
+         "void ultramodern::clear_thread_queues(RDRAM_ARG1) {\n    QueuedMessage stale;\n"
+         "    while (external_messages.try_dequeue(stale)) {}\n"
+         "    while (!thread_queue_empty(PASS_RDRAM running_queue)) thread_queue_pop(PASS_RDRAM running_queue);\n}\n\n"
+         "bool do_send(RDRAM_ARG PTR(OSMesgQueue) mq_, OSMesg msg, bool jam, bool block);\n"),
+    ],
+    # As Racer's: retraces stop at Quit, so a thread waiting for a new frame ends there.
+    "ultramodern/src/events.cpp": [
+        ('extern "C" PTR(void) osViGetCurrentFramebuffer() {\n',
+         'extern "C" PTR(void) osViGetCurrentFramebuffer() {\n    ultramodern::check_for_thread_shutdown();\n'),
+    ],
+    "ultramodern/src/threads.cpp": [
+        ("    host_contexts_empty.wait(lock, [] { return host_contexts.empty(); });\n",
+         "    // ponytail: a thread looping in game code without calling the OS never ends, so Quit leaves it\n"
+         "    // after a second; give the call its loop polls an end point, as osViGetCurrentFramebuffer has.\n"
+         "    if (!host_contexts_empty.wait_for(lock, std::chrono::seconds{1}, [] { return host_contexts.empty(); })) {\n"
+         "        fprintf(stderr, \"[Thread] %zu game threads didn't end at Quit\\n\", host_contexts.size());\n    }\n"),
+    ],
+}
+rt64_tvos.apply(destination / "N64ModernRuntime", RESTART, "prepare-cruisn.py")
 rt64_tvos.adapt(destination / "rt64", destination / "N64ModernRuntime", "RECOMPTV_CRUISN", "prepare-cruisn.py")
 rt64_tvos.apply(destination / "frontend", rt64_tvos.FRONTEND, "prepare-cruisn.py")
 rt64_tvos.apply(destination / "frontend", {

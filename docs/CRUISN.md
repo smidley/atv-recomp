@@ -58,6 +58,10 @@ patches on top, so no second copy of either is checked out.
   instruction patches in Cruis'n USA's overlay are applied as it loads (`n64interp_rom_loaded`);
 - clears the runtime's overlay tables and the frontend's ROM search at each start, since the two
   games share them in one process;
+- lets a game start again in the same process, as Racer's fix does (`RESTART`): navjack's patch ends
+  the game's threads at Quit, and each start also clears the runtime's quit flag, while Quit empties
+  the running queue and the message queue the whole process shares, ends threads waiting for a new
+  frame, and stops waiting after a second for a thread looping in game code;
 - writes both games' interpreter tables (`scripts/generate-n64interp.py --prefix=cruisn_usa_` and
   `--prefix=cruisn_world_`). navjack's N64Recomp also has the runtime replace `osPiWriteIo` and
   `cruisnPiRomRead`. Cruis'n USA's configuration hooks 92 traces into the game for navjack's
@@ -122,7 +126,8 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=cruisnusa,cruisnworld SIMCTL_CHILD_CRUISN_
   rebuilt with them on 2026-10-30, have navjack's `cruisn_world_seed_boot_state` and still export only
   the two preparation functions.
 - Not yet checked: everything with a ROM (neither is in the RomM library), a second start in one
-  session (Racer's crashes, see [Racer](RACER.md)), and anything on a physical Apple TV.
+  session (Racer's passes since its restart fix, which Cruis'n now has too), and anything on a
+  physical Apple TV.
 
 ## Licensing
 

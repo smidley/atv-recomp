@@ -25,7 +25,7 @@ struct RecompTVRootView: View {
         #if DEBUG && targetEnvironment(simulator)
         .task {
             await SourceSimulatorProbe.runIfRequested()
-            await MarioKartSimulatorImport.runIfRequested()
+            await RomMSimulatorImport.runIfRequested()
         }
         #endif
     }
