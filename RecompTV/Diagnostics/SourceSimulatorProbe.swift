@@ -118,11 +118,14 @@ import RecompSources
                 let sources = try JSONDecoder().decode([LibrarySource].self, from: data).filter { $0.kind == .romm }
                 var found: ImportedROM?
                 var checked = 0
+                // What the server listed, so a failed import says why (sizes in bytes, no credentials).
+                var listed: [String] = [], tried: [String] = []
                 for source in sources {
                     let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
                     let platforms = try await provider.list(.root, search: "64", offset: 0)
                     for platform in platforms.entries {
                         guard let location = platform.folder else { continue }
+                        listed += try await provider.list(location, search: "", offset: 0).entries.map { "\(platform.name)/\($0.name)" }
                         let entries = try await provider.list(location, search: game.searchTerm, offset: 0)
                         for entry in entries.entries {
                             guard let location = entry.folder, checked < 12 else { continue }
@@ -131,6 +134,7 @@ import RecompSources
                             for file in files.entries where file.isROM && (file.size ?? 0) <= 64 * 1024 * 1024 && checked < 12 {
                                 checked += 1
                                 let rom = try await cache.acquire(file, sourceID: source.id, provider: provider, progress: { _ in })
+                                tried.append("\(file.name) \(file.size ?? -1) \(rom.game?.rawValue ?? rom.sha1)")
                                 if rom.game == game { found = rom; break }
                             }
                             if found != nil { break }
@@ -139,6 +143,8 @@ import RecompSources
                     }
                     if found != nil { break }
                 }
+                report["listed"] = listed
+                report["tried"] = tried
                 guard let found else {
                     throw LibraryError.message("No supported, uncompressed \(game.title) ROM was found in the configured RomM library.")
                 }
