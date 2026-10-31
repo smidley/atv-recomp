@@ -5,7 +5,8 @@ on-device Torch asset preparation, Shipwright 9.3.1, SpaghettiKart 1.0.0 and
 Starship v2.0.0 (Star Fox 64, in progress), Ghostship 3.0.0 (Super Mario 64, in
 progress), Lighthouse 1.2.2 (Banjo-Kazooie, in progress) and BattleShip v1.6 (Super Smash
 Bros., in progress) with a shared Metal renderer, and the recompilations SotE-Recomp (Shadows of
-the Empire) and Racer (Episode I: Racer) through the [N64 interpreter](N64_INTERPRETER.md).
+the Empire), Racer (Episode I: Racer) and navjack's Cruis'n USA and Cruis'n World through the
+[N64 interpreter](N64_INTERPRETER.md).
 Its bundle identifier is `com.smidley.nativecade`; App Store Connect app ID is
 `6828252318`. The separate **RecompTV** scheme remains the lightweight diagnostics
 and network-source harness used by CI. It does not require the game framework.
@@ -72,7 +73,8 @@ The deployment floor is tvOS 17; the intended performance target is Apple TV 4K
    [Network sources](NETWORK_SOURCES.md), including its token permissions.
 2. Browse a platform and import a supported Ocarina of Time ROM, Mario Kart 64
    (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie, Shadows of the Empire
-   (USA Rev 2), Episode I: Racer (USA) or Super Smash Bros. (USA), or use the
+   (USA Rev 2), Episode I: Racer (USA), Super Smash Bros. (USA), Cruis'n USA (USA Rev 2) or
+   Cruis'n World (USA), or use the
    platform's bulk verification/import action. RomM covers and screenshots appear
    while browsing, and imported games retain their cover art. Each playable game
    has its own pinned ROM allowlist; see [Mario Kart](SPAGHETTIKART.md) and
@@ -265,6 +267,20 @@ frameworks share small regions, at most 11 KB (Mario Kart 64's), of data tables 
 debug strings from their published decompilations and libultra tables common to N64
 games. The Cruis'n ROMs aren't on the Mac. Known: Super Smash Bros. crashes on its way
 back to the library, and neither Cruis'n game has run yet (RomM hasn't scanned them).
+
+Build **0.1.0 (11)** gets Cruis'n World past its copy protection. World reads its boot values
+through the console's uncached addresses (0xA0000000 and up), which the runtime gave separate,
+empty memory, so seven of its checks failed and the game stopped; the uncached half is now mapped
+as a second view of the cached half, as on the console ([Cruis'n](CRUISN.md)). Build 10's World is
+expected to stop at that check. The Cruis'n framework also logs the first RSP tasks. It is the only
+framework that changed: the others have build 10's build UUIDs. On 2026-10-31 it was archived from
+commit `8594ff1` with Xcode 27.2 (27B52) and uploaded at 13:00. Every binary was compared with the
+ten ROMs now on the build Mac, including both Cruis'n ROMs. The counts match build 10's except for
+16 more runs in the shared runtime: 384 bytes of standard tables (a digit and letter table, a
+counting sequence and a monotonic 16-bit table) that Cruis'n World also contains. The Cruis'n
+framework shares nothing with either Cruis'n ROM. World's eight approved boot values are 4-byte
+words, too short for this comparison. Known from the simulator: World is silent for its first 30
+seconds, and USA after its first second.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
