@@ -307,7 +307,8 @@ which also passed these checks of what differs on the Apple TV:
   don't explain the recompiled games either, though RT64 itself never draws in the simulator.
 
 The log in build 12 opens at its end, where a failure is, and keeps its first three lines when
-it is cut to its last 600. On 2026-10-31 build 12 was archived with Xcode 27.2 (27B52). The
+it is cut to its last 600. On 2026-10-31 build 12 was archived from commit `5c6c2bf` with Xcode
+27.2 (27B52) and uploaded at 16:37, when App Store Connect began processing it. The
 runtime script rebuilt every framework, but only the shared runtime (17 KB larger) and the app
 changed: the eight game frameworks have the same sizes as build 11's and byte-identical code.
 Compared with the ten ROMs on the build Mac, every binary shares as many 32-byte runs as in build
