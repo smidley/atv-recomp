@@ -43,6 +43,8 @@ check a new game. Expect a new game to hit some of the same cases.
 | Star Fox's C++ timer list and audio pacing counters | A timer still pending at Quit, such as the logo screen's, would fire during the next start and change a game variable at the wrong moment. | `NativecadeRunStarFox` calls `NativecadeStarshipReset`, which `prepare-starship.py` adds to `Engine.cpp`. | `starship/StarshipRestart.cpp`, `scripts/prepare-starship.py` |
 | Banjo-Kazooie's emulated N64 threads, timers and graphics tasks | Lighthouse runs them on real threads, and their shutdown flags only go one way. On the next start, every game thread would leave at once and timers would never fire. A graphics task still pending at Quit pointed into game memory that the next start had reset, so the renderer read a null display list and crashed. | `NativecadeRunBanjoKazooie` calls reset functions that `prepare-lighthouse.py` adds to Lighthouse's `Game.cpp`, `OS_Threads.cpp`, `OS_RCP.cpp` and `OS_Timer.cpp`. | `lighthouse/LighthouseRestart.cpp`, `scripts/prepare-lighthouse.py` |
 | Nativecade's own observers and hooks | The app-lifecycle observers and the save-backup hook were added again on every start. | Observers are installed once per app session. The hook is registered each start, since the tables are cleared. | `AppleTVGameplay.cpp` |
+| Racer's runtime (N64ModernRuntime): its quit flag, the game's threads and timer thread, and the running queue and message queue that the whole process shares | Quit left the flag set, so the second start shut down at once. The first start's threads, still waiting, woke into the second and took its threads off the running queue. The runtime then aborted with "No threads left to run!", or the app crashed with SIGSEGV. | Each start clears the flag. At Quit, each game thread ends at its next wait (a message call, an idle wait, or Racer's wait for a new frame), the timer thread is joined, and both queues are emptied. | `scripts/prepare-racer.py` |
+| The controller list of Racer's frontend, which Cruis'n also uses | It kept the controllers that SDL freed when the game quit, so the next start would read freed memory for player 1. | `input_init` empties the list, and SDL reports the connected controllers again. | `scripts/rt64_tvos.py` (`FRONTEND`) |
 
 Sizes measured in the simulator build: Ocarina's game globals are 377 KB of
 initialized data and 101 MB of zeroed data; Mario Kart's are 826 KB and 277 MB;
@@ -55,10 +57,14 @@ are 139 KB and 2.8 MB.
   renderer can't draw, so it never reaches Quit ([Shadows of the Empire](SOTE.md)).
   Its interpreter keeps its tables between starts; the game's code is read from RDRAM each time.
   N64ModernRuntime, its runtime, also expects a new process for each start.
-- Racer's second start in one session crashes (SIGSEGV soon after the game starts again;
-  [Racer](RACER.md)). Its runtime leaves the first run's game threads waiting, which is the
-  likeliest cause but isn't confirmed. Cruis'n's runtime ends them at shutdown (navjack's patch);
-  it hasn't been tried with a ROM.
+- Cruis'n's runtime ends its game threads at Quit (navjack's patch). It doesn't clear the quit
+  flag or empty the running and message queues, as Racer's runtime didn't before the changes above,
+  so a second Cruis'n start probably shuts down at once. Cruis'n hasn't run with a ROM;
+  `prepare-racer.py` shows what its runtime needs.
+- A Racer game thread that loops in game code without calling the runtime doesn't end at Quit.
+  The runtime gives up on it after a second and logs `[Thread] N game threads didn't end at Quit`.
+  Racer's wait for a new frame was such a loop and is now an end point; no such thread was left in
+  six starts in one session.
 - On 2026-10-30, the sequence `banjo,oot,kart,fox,mario,banjo` stalled in two of
   three runs: Banjo-Kazooie's second start waited in `osRecvMesg` for a controller
   message during `game_init`. The third run passed, as did one run with the

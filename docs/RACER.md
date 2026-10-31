@@ -33,9 +33,14 @@ the checkouts, then:
   RT64's Metal shaders for tvOS, plume's tvOS window and device code, no live recompiler, and the
   smaller memory reservation if tvOS lacks address space;
 - draws into a full-screen SDL Metal view, returns to the library when the game ends instead of
-  ending the process, and keeps RT64's data in the game folder. These frontend changes
-  (`rt64_tvos.FRONTEND`) and the simulator's headless renderer (`experiments/racer/HeadlessRenderer.cpp`)
-  also serve [Cruis'n](CRUISN.md), which uses Racer's frontend;
+  ending the process, forgets the controllers SDL closed when the game ended, and keeps RT64's data
+  in the game folder. These frontend changes (`rt64_tvos.FRONTEND`) and the simulator's headless
+  renderer (`experiments/racer/HeadlessRenderer.cpp`) also serve [Cruis'n](CRUISN.md), which uses
+  Racer's frontend;
+- lets Racer start again in the same app session ([Switching games](GAME_SWITCHING.md)), which
+  N64ModernRuntime doesn't expect. Each start clears the runtime's quit flag. At Quit, each game
+  thread ends at its next wait, including Racer's wait for a new frame, and the timer thread ends
+  too. The runtime's running queue and message queue, which the whole process shares, are emptied;
 - writes the interpreter's tables (`scripts/generate-n64interp.py`). Besides the symbol file, they
   take from Racer's own sources the functions N64Recomp split off at calls into other functions
   (`src/section_table.cpp`) and the two functions `tools/post_recomp_patches.py` sends to host code.
@@ -63,6 +68,9 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=racer SIMCTL_CHILD_SWE1R_HEADLESS_SMOKE=1 
     xcrun simctl launch --console <simulator> com.smidley.nativecade
 ```
 
+Racer's output goes to `Library/Caches/Nativecade/Logs/last-game.log` in the app's data container,
+which each game start replaces.
+
 ## Verification on 2026-10-30
 
 - `NativecadeRacer.framework` built for the tvOS simulator (12.6 MB), depending only on the shared
@@ -77,10 +85,17 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=racer SIMCTL_CHILD_SWE1R_HEADLESS_SMOKE=1 
 - Six audio tasks saved from such a run (`N64INTERP_RSP_CAPTURE`), five of them writing 3.7 to 4.6 KB
   of sound, gave byte-identical DMEM and RDRAM through the RSP interpreter and through the microcode
   RSPRecomp generated from the ROM on the Mac (`experiments/n64interp/RspSpike.cpp`).
-- A second start in the same session (`NATIVECADE_RESTART_PROBE=racer,racer`, 2026-10-30) crashes:
-  the game starts again and the app ends with SIGSEGV shortly after, before the first audio task,
-  without a crash report. The cause isn't known yet; N64ModernRuntime doesn't end the first run's game
-  threads (see [Switching games](GAME_SWITCHING.md#known-issues)).
+- Starting Racer a second time in one session (`NATIVECADE_RESTART_PROBE=racer,racer`) used to end
+  the app soon after the second start: once with SIGSEGV, and once, under the debugger, with an abort
+  ("No threads left to run!"). The first Quit had left the runtime's quit flag set, so the second
+  start shut down at once. The first start's threads, still waiting, woke into the second start
+  and took its threads off the shared running queue. With the restart changes above, `racer,racer`
+  passes (`PASS: 2 games started in one session`). The second start ran at the first one's pace,
+  about 110 display lists and 20 audio tasks a second. It also gave the simulator's controller to
+  player 1 again, as controller 0. `racer` alone still passes. Six starts in one
+  session passed, and no game, timer or event thread was left after the last Quit. The app's
+  memory footprint grew about 7 MB a start (95 MB after two starts, 123 MB after six), probably from
+  game memory the runtime never releases.
 - Not yet checked: anything on a physical Apple TV (picture, speed, controls, saves).
 
 ## Licensing

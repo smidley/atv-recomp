@@ -202,6 +202,13 @@ FRONTEND = {
         ("        app_config.detectDataPath = true;\n",
          '        app_config.dataPath = std::filesystem::current_path() / "rt64";\n'),
     ],
+    # A game's SDL_Quit freed its controllers; the next start must not read them. SDL reports the
+    # connected ones again after it starts.
+    "src/input.cpp": [
+        ("void input_init() { input_rebuild(); }\n",
+         "void input_init() {\n    {\n        std::lock_guard lock{ g_mutex };\n        g_pads.clear();\n    }\n"
+         "    input_rebuild();\n}\n"),
+    ],
 }
 
 def apply(root, table, script):
