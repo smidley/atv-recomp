@@ -247,6 +247,25 @@ as `v0.3.0`, and App Store Connect takes only numbers. With `0.3.0` (its CMake
 now strips the tag's `v`), the archive was made again and App Store Connect
 accepted it at 17:17. Super Smash Bros. hasn't run with a ROM yet.
 
+Build **0.1.0 (10)** adds Cruis'n USA and Cruis'n World ([Cruis'n](CRUISN.md)), with
+World's eight approved boot values. It fixes Super Smash Bros. crashing as it started
+on the Apple TV in build 9 (SDL's tvOS `SDL_RaiseWindow` called a null OpenGL hook;
+[Super Smash Bros.](BATTLESHIP.md)) and Racer crashing when started a second time in
+one session ([Racer](RACER.md)), and stops Racer's and Cruis'n's frameworks both
+defining the Objective-C class `MetalTexture`. **Diagnostics → Last game log** is new:
+it shows the last game's console output and any crash backtrace, for reading build 9's
+remaining failures on the Apple TV (Racer crashing at start, Shadows of the Empire
+staying black), which don't happen in the simulator. On 2026-10-31 it was archived
+from commit `1b35acc` with Xcode 27.2 (27B52) and uploaded. Every binary in the
+archive was compared with the eight ROMs on the build Mac (Ocarina of Time, Mario
+Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Racer and
+Super Smash Bros.; build 9 was compared with two). The recompiled games' frameworks
+share only counting sequences and zlib's length tables with them. The source ports'
+frameworks share small regions, at most 11 KB (Mario Kart 64's), of data tables and
+debug strings from their published decompilations and libultra tables common to N64
+games. The Cruis'n ROMs aren't on the Mac. Known: Super Smash Bros. crashes on its way
+back to the library, and neither Cruis'n game has run yet (RomM hasn't scanned them).
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
