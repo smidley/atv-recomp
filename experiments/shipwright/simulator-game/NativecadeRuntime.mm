@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
 #import <GameController/GameController.h>
+#import <Metal/Metal.h>
 #include <SDL.h>
 #include <SDL_main.h>
 #include <zip.h>
@@ -22,6 +23,8 @@
 #include <mach/mach.h>
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
+#include <os/proc.h>
+#include <sys/sysctl.h>
 #if __has_feature(address_sanitizer)
 #include <sanitizer/asan_interface.h>
 #endif
@@ -89,6 +92,14 @@ static void StartGameLog(NSString *game) {
     setvbuf(stdout, nullptr, _IOLBF, 0);
     NSString *build = NSBundle.mainBundle.infoDictionary[@"CFBundleVersion"] ?: @"?";
     fprintf(stderr, "[Nativecade] %s, build %s, %s\n", game.UTF8String, build.UTF8String, NSDate.date.description.UTF8String);
+    // Which Apple TV this is: RT64's games need tier-2 argument buffers (docs/SOTE.md).
+    char machine[32] = "?";
+    size_t length = sizeof machine;
+    sysctlbyname("hw.machine", machine, &length, nullptr, 0);
+    id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();
+    fprintf(stderr, "[Nativecade] %s, tvOS %s, %s GPU, argument buffers tier %d, %zu MB available\n", machine,
+            UIDevice.currentDevice.systemVersion.UTF8String, gpu ? gpu.name.UTF8String : "no",
+            gpu ? int(gpu.argumentBuffersSupport) + 1 : 0, os_proc_available_memory() >> 20);
     static bool handlersInstalled;
     if (handlersInstalled) return;
     handlersInstalled = true;
@@ -96,6 +107,19 @@ static void StartGameLog(NSString *game) {
     action.sa_handler = GameLogCrash;
     sigemptyset(&action.sa_mask);
     for (int signal : GameLogSignals) sigaction(signal, &action, &GameLogPrevious[signal]);
+    // tvOS ends an app over its memory limit without a signal, so the log just stops. These lines
+    // show whether memory ran out first.
+    static dispatch_source_t memory = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
+        dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
+    dispatch_source_set_timer(memory, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC), 10 * NSEC_PER_SEC, NSEC_PER_SEC);
+    dispatch_source_set_event_handler(memory, ^{
+        task_vm_info_data_t info;
+        mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+        if (LaunchRequested.load() && task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&info, &count) == KERN_SUCCESS)
+            fprintf(stderr, "[Nativecade] memory: %llu MB used, %zu MB available\n", info.phys_footprint >> 20,
+                    os_proc_available_memory() >> 20);
+    });
+    dispatch_resume(memory);
 }
 
 static NSString *ROMHash(NSData *data) {

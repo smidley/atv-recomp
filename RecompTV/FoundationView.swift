@@ -112,21 +112,26 @@ private struct MetalEvidenceView: View {
 /// The last game's console output, which NativecadeRuntime.mm keeps while a game runs, with a
 /// backtrace when it crashes. TestFlight builds run without a debugger; this shows a failure on the
 /// Apple TV itself. Menu closes it; each line takes focus, so the remote scrolls through them.
-private struct GameLogView: View {
+/// The library's home screen opens it too, since Release builds have no Diagnostics tab.
+struct GameLogView: View {
     let lines: [String]
+    @FocusState private var focused: Int?
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 4) {
                 ForEach(lines.indices, id: \.self) { index in
                     Text(lines[index].isEmpty ? " " : lines[index])
                         .font(.system(size: 22, design: .monospaced))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .focusable()
+                        .focused($focused, equals: index)
                 }
             }
             .padding(48)
         }
+        // A failure is at the end, so the log opens there; swipe up for the start.
+        .defaultFocus($focused, lines.count - 1)
         .background(Color(white: 0.07))
         .preferredColorScheme(.dark)
     }
@@ -135,8 +140,8 @@ private struct GameLogView: View {
         let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Nativecade/Logs/last-game.log")
         guard let data = try? Data(contentsOf: url), !data.isEmpty else { return ["No game has run since the app was installed."] }
-        // The end of the log, where a failure is.
-        let text = String(decoding: data.suffix(96 * 1024), as: UTF8.self)
-        return text.split(separator: "\n", omittingEmptySubsequences: false).suffix(600).map(String.init)
+        let lines = String(decoding: data, as: UTF8.self).split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        // The first lines name the game, build and Apple TV; the rest of a long log is cut to its end.
+        return lines.count <= 600 ? lines : Array(lines.prefix(3)) + ["…"] + lines.suffix(596)
     }
 }

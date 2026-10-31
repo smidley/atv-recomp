@@ -118,14 +118,20 @@ Before build 9, only Ocarina's menu opened, and it couldn't be navigated: the
 menus' regions stopped the D-pad at their borders. Quitting and the menus on a
 physical Apple TV remain part of the hardware test pass.
 
-When a game fails on the Apple TV (a crash, or a screen that stays black), open
-**Diagnostics → Last game log**. While a game runs, its console output goes to
-`Library/Caches/Nativecade/Logs/last-game.log` instead of the console; a crash adds
-the signal and a backtrace, and the log stays open until the next game starts, so a
-crash on the way back to the library is recorded too. The screen shows the end of
-the log, a line per focus step. Its addresses can be matched against the archive's
-debug symbols on the Mac (`atos`), which is how hardware failures are diagnosed
-without pairing the Apple TV.
+When a game fails on the Apple TV (a crash, or a screen that stays black), choose
+**Last game log** at the bottom of the library's home screen (Debug builds also have it
+under **Diagnostics**). While a game runs, its console output goes to
+`Library/Caches/Nativecade/Logs/last-game.log` instead of the console. Its first lines
+name the game, the build, the Apple TV model (`AppleTV14,1` is the 4K 3rd generation),
+the tvOS version, the GPU, its argument-buffer tier (RT64's games need tier 2) and the
+memory available; every 10 seconds a line gives the memory used and still available,
+since tvOS ends an app over its memory limit without a signal. A crash adds the signal
+and a backtrace, and the log stays open until the next game starts, so a crash on the
+way back to the library is recorded too. The screen shows the end of the log, a line
+per focus step. Its addresses can be matched against the archive's debug symbols on
+the Mac (`atos`), which is how hardware failures are diagnosed without pairing the
+Apple TV. Builds 10 and 11 kept the log viewer in the Diagnostics tab, which Release
+builds don't show, so it couldn't be opened from TestFlight.
 
 Neither port was written to start twice in one process.
 [Switching games](GAME_SWITCHING.md) explains what Nativecade resets between games,
@@ -281,6 +287,32 @@ counting sequence and a monotonic 16-bit table) that Cruis'n World also contains
 framework shares nothing with either Cruis'n ROM. World's eight approved boot values are 4-byte
 words, too short for this comparison. Known from the simulator: World is silent for its first 30
 seconds, and USA after its first second.
+
+Build **0.1.0 (12)** makes the game log readable on the Apple TV: **Last game log** is now on the
+library's home screen, and the log names the Apple TV, its GPU and the memory free (see above). On
+the user's Apple TV 4K (3rd generation), build 10 or 11 starts Ocarina of Time, Mario Kart 64,
+Star Fox 64 and Super Mario 64, but not Banjo-Kazooie, Super Smash Bros., Shadows of the Empire,
+Racer or either Cruis'n game; SotE's screen stays black. None of that happens in the simulator,
+which also passed these checks of what differs on the Apple TV:
+
+- With the main thread's stack cut to the Apple TV's 1 MB (the simulator's is 8 MB), every game
+  started.
+- With each game's files and the ROM cache on a case-sensitive disk image, as on the Apple TV,
+  every game started.
+- Banjo-Kazooie and Super Smash Bros. peak at about 200 MB while playing, less than Mario Kart 64
+  (360 MB) and Super Mario 64 (280 MB); preparing Banjo-Kazooie's assets peaks at 535 MB.
+- The TestFlight app holds the same resource files as the simulator app, no framework is compiled
+  for a particular CPU, and every framework's minimum is tvOS 17.
+- The A15 has the tier-2 argument buffers and Metal 3 that RT64 needs, so RT64's requirements
+  don't explain the recompiled games either, though RT64 itself never draws in the simulator.
+
+The log in build 12 opens at its end, where a failure is, and keeps its first three lines when
+it is cut to its last 600. On 2026-10-31 build 12 was archived with Xcode 27.2 (27B52). The
+runtime script rebuilt every framework, but only the shared runtime (17 KB larger) and the app
+changed: the eight game frameworks have the same sizes as build 11's and byte-identical code.
+Compared with the ten ROMs on the build Mac, every binary shares as many 32-byte runs as in build
+11, and the app none. The archive contains no ROMs, extracted game archives or saves, and its
+signature verifies.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks

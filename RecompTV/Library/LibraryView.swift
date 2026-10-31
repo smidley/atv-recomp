@@ -7,6 +7,7 @@ struct LibraryView: View {
     @State private var library = LibraryModel()
     @State private var editing: LibrarySource?
     @State private var showingNotices = false
+    @State private var gameLog: [String]?
     @State private var favorite = 0
 
     var body: some View {
@@ -86,9 +87,13 @@ struct LibraryView: View {
                             .disabled(library.isRefreshingArtwork || library.isImporting)
                         }
                         Button("Third-party notices") { showingNotices = true }
+                        Button("Last game log") { gameLog = GameLogView.load() }
                     }
                 }
                 .padding(48)
+            }
+            .fullScreenCover(isPresented: Binding(get: { gameLog != nil }, set: { if !$0 { gameLog = nil } })) {
+                GameLogView(lines: gameLog ?? [])
             }
             .sheet(item: $editing) { source in SourceEditorView(source: source, library: library) }
             .sheet(isPresented: $showingNotices) {
