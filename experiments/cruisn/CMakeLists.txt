@@ -79,9 +79,10 @@ target_include_directories(NativecadeCruisnObjects PRIVATE "${cruisn}/native"
     "${RT64_DIR}/src/contrib/nativefiledialog-extended/src/include" "${CMAKE_CURRENT_LIST_DIR}/../shipwright/simulator-game" "${CMAKE_CURRENT_LIST_DIR}/../n64interp" ${SDL2_INCLUDE_DIRS})
 
 # Cruis'n World's copy protection compares eight values its boot leaves in memory, five of them
-# instructions of the cartridge's boot code. navjack's cruisn_world_boot.cpp writes them; without this
-# option CruisnGame.cpp leaves them out, and World stops at the check (docs/CRUISN.md).
-option(RECOMPTV_CRUISN_WORLD_BOOT_WORDS "Write the boot values Cruis'n World checks (navjack's cruisn_world_boot.cpp)" OFF)
+# instructions of the cartridge's boot code. navjack's cruisn_world_boot.cpp writes them, which the
+# owner approved for builds on 2026-10-30; turned off, CruisnGame.cpp leaves them out and World stops
+# at the check (docs/CRUISN.md).
+option(RECOMPTV_CRUISN_WORLD_BOOT_WORDS "Write the boot values Cruis'n World checks (navjack's cruisn_world_boot.cpp)" ON)
 if(RECOMPTV_CRUISN_WORLD_BOOT_WORDS)
     target_sources(NativecadeCruisnObjects PRIVATE "${cruisn}/world/native/cruisn_world_boot.cpp")
     target_compile_definitions(NativecadeCruisnObjects PRIVATE RECOMPTV_CRUISN_WORLD_BOOT_WORDS)

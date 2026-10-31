@@ -86,7 +86,7 @@ for runtime_sdk in "${@:-appletvsimulator appletvos}"; do
             -DCMAKE_OSX_SYSROOT="$runtime_platform" -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 -DCMAKE_FIND_ROOT_PATH="$runtime_sdk_path" \
             -DRECOMPTV_CRUISN_SOURCE="$runtime_root/build/cruisn/source" -DRECOMPTV_RUNTIME_BUILD="$runtime_build" \
-            -DRECOMPTV_CRUISN_HOST_TOOLS="$runtime_root/build/racer/rt64-host-tools"
+            -DRECOMPTV_CRUISN_HOST_TOOLS="$runtime_root/build/racer/rt64-host-tools" -DRECOMPTV_CRUISN_WORLD_BOOT_WORDS=ON
         cmake --build "$runtime_build/cruisn" --target NativecadeCruisn --parallel "${NATIVECADE_BUILD_JOBS:-4}"
         for runtime_relative in NativecadeRuntime.framework spaghettikart/NativecadeSpaghetti.framework \
                 starship/NativecadeStarship.framework ghostship/NativecadeGhostship.framework \

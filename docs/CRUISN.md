@@ -84,12 +84,15 @@ saves. navjack's Controller Pak emulation is built in but, as in navjack's build
 Cruis'n World's copy protection compares state that the cartridge's boot process leaves behind:
 eight words in low RDRAM and the RSP's memories, and the cartridge's boot code itself. The runtime
 starts the game without that boot process, so navjack's `cruisn_world_boot.cpp` writes the eight
-words before the check. Five of them are instructions of the cartridge's boot code, so they are data
-from the ROM.
+words before the check and copies the boot code from the player's ROM. Five of the eight words are
+instructions of the cartridge's boot code, so they are data from the ROM: 20 bytes, there only to
+pass the check.
 
-By default the framework leaves them out: `CruisnGame.cpp` copies the boot code from the player's
-ROM but writes none of the eight words, and World is expected to stop at its check. Configuring
-`experiments/cruisn` with `-DRECOMPTV_CRUISN_WORLD_BOOT_WORDS=ON` compiles navjack's file instead.
+Builds include them, as an exception to keeping ROM data out of builds that the owner approved on
+2026-10-30. `RECOMPTV_CRUISN_WORLD_BOOT_WORDS` is on by default in `experiments/cruisn/CMakeLists.txt`,
+and `scripts/build-nativecade-runtime.sh` passes it. Configured with
+`-DRECOMPTV_CRUISN_WORLD_BOOT_WORDS=OFF`, the framework uses `CruisnGame.cpp`'s versions instead, which
+copy only the boot code, and World is expected to stop at its check.
 
 ## Checking it in the simulator
 
@@ -115,7 +118,9 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=cruisnusa,cruisnworld SIMCTL_CHILD_CRUISN_
   tests pass, including the two new identities.
 - SotE's and Racer's interpreter tables are unchanged apart from the registration call
   (`n64interp_begin_game`), and Racer's restart check still passes with one start.
-- The build reads no ROM, and World's boot values are left out by default.
+- The build reads no ROM. The only data from one in it are World's eight boot values: both slices,
+  rebuilt with them on 2026-10-30, have navjack's `cruisn_world_seed_boot_state` and still export only
+  the two preparation functions.
 - Not yet checked: everything with a ROM (neither is in the RomM library), a second start in one
   session (Racer's crashes, see [Racer](RACER.md)), and anything on a physical Apple TV.
 
