@@ -66,7 +66,7 @@ A seventh, **Star Wars Episode I: Racer** with **Racer** v0.3.0, runs the same w
 
 An eighth, **Super Smash Bros. (USA)** with **BattleShip** v1.6, a source port of the complete decompilation with its own libultraship and Torch, is in progress: it builds for Apple TV and prepares its assets on the device from the player's ROM, but hasn't run with a ROM yet. See [Super Smash Bros.](docs/BATTLESHIP.md).
 
-A ninth and tenth, **Cruis'n USA** and **Cruis'n World** with navjack's Cruis'n recompilations, run through the same interpreter as Racer, on Racer's runtime with navjack's patches. They are in progress: both build for Apple TV, but haven't run with a ROM yet. See [Cruis'n](docs/CRUISN.md).
+A ninth and tenth, **Cruis'n USA** and **Cruis'n World** with navjack's Cruis'n recompilations, run through the same interpreter as Racer, on Racer's runtime with navjack's patches. They are in progress: headless in the simulator both start, run and return to the library, but they haven't been seen or heard on an Apple TV yet. See [Cruis'n](docs/CRUISN.md).
 
 The integrated games need device testing; network browsing and verified imports can still be developed and tested independently with the RecompTV harness. Desktop or macOS support is useful starting evidence, but does not establish tvOS compatibility. See [POC.md](POC.md) for the checkpoints and required evidence.
 

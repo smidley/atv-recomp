@@ -11,8 +11,8 @@ Pak code and patches, Racer's runtime, renderer and frontend, and tables written
 configurations; none of it comes from a ROM.
 
 It is in progress: both games build into `NativecadeCruisn.framework` for Apple TV and the simulator,
-and the app lists them, but neither has run with a ROM yet, because neither ROM is in the RomM
-library available to the build Mac.
+and in the simulator both start, run their game code and return to the library, also one after the
+other. Nothing has been seen or heard on an Apple TV yet, and World's first 30 seconds are silent.
 
 ## Supported game data
 
@@ -58,6 +58,10 @@ patches on top, so no second copy of either is checked out.
   instruction patches in Cruis'n USA's overlay are applied as it loads (`n64interp_rom_loaded`);
 - clears the runtime's overlay tables and the frontend's ROM search at each start, since the two
   games share them in one process;
+- maps the uncached half of game memory (0xA0000000 to 0xBFFFFFFF) as a second view of the cached
+  half, as the console sees it, so game code reading RDRAM or the cartridge through KSEG1 sees the same
+  bytes. World's copy protection reads its boot values that way; without it, seven of its checks
+  failed;
 - lets a game start again in the same process, as Racer's fix does (`RESTART`): navjack's patch ends
   the game's threads at Quit, and each start also clears the runtime's quit flag, while Quit empties
   the running queue and the message queue the whole process shares, ends threads waiting for a new
@@ -125,9 +129,29 @@ SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=cruisnusa,cruisnworld SIMCTL_CHILD_CRUISN_
 - The build reads no ROM. The only data from one in it are World's eight boot values: both slices,
   rebuilt with them on 2026-10-30, have navjack's `cruisn_world_seed_boot_state` and still export only
   the two preparation functions.
-- Not yet checked: everything with a ROM (neither is in the RomM library), a second start in one
-  session (Racer's passes since its restart fix, which Cruis'n now has too), and anything on a
-  physical Apple TV.
+
+## Simulator checks on 2026-10-31
+
+Both ROMs came from RomM through the RecompTV test app's import check (`--import-from-romm cruisnUSA`)
+and went into Nativecade through its import share (`--import-from-share`, the same check); the copies
+were deleted afterwards. Headless (`CRUISN_HEADLESS_SMOKE=1`), each start ran for 30 seconds:
+
+- Cruis'n USA: started, loaded its overlays as the game copied them in (including the one with navjack's
+  32 instruction patches), drew about 20 display lists and ran about 20 audio tasks a second, read the
+  controller, and quit to the library. Its sound (`CRUISN_AUDIODUMP`) peaked at 3,491 in the first
+  second and was silent afterwards.
+- Cruis'n World: its copy-protection self-test reported `mask=00000000` (every check passed) once the
+  uncached view was mapped, and `000003F8` before. It then loaded its gameplay overlay at 0x80050400,
+  drew about 20 display lists and ran about 40 audio tasks a second, and quit to the library. Its sound
+  was silent for the whole run.
+- Fifteen of World's audio tasks, saved in the simulator (`N64INTERP_RSP_CAPTURE`), gave identical DMEM
+  and RDRAM through the RSP interpreter and through the microcode RSPRecomp made from the ROM on the
+  Mac (`RspSpike.cpp`). So the audio microcode isn't the cause of the silence: the game mixed nothing
+  then, perhaps because nothing plays before the player presses a button. Hearing it on an Apple TV
+  will tell.
+- `cruisnusa,cruisnworld,cruisnusa` in one session: `PASS: 3 games started in one session`.
+- Not yet checked: the picture (RT64 can't draw in the simulator), controls, saves, sound beyond the
+  first 30 seconds, and anything on a physical Apple TV.
 
 ## Licensing
 

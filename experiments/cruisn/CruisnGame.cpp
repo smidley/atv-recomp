@@ -24,6 +24,12 @@ RspExitReason aspMain(uint8_t *rdram, uint32_t ucode_addr) { return n64interp_rs
 RspExitReason no_microcode(uint8_t *, uint32_t) { return RspExitReason::Broke; }
 
 RspUcodeFunc *get_rsp_microcode(const OSTask *task) {
+    // The first tasks and every 600th, as Racer's host logs them, so a silent game shows whether
+    // its audio tasks arrive.
+    static uint32_t tasks = 0;
+    if (++tasks <= 3 || tasks % 600 == 0)
+        std::printf("[cruisn] RSP task %u: type %u, microcode %08X, data %08X\n", tasks, (unsigned)task->t.type,
+                    (uint32_t)task->t.ucode, (uint32_t)task->t.ucode_data);
     return task->t.type == M_AUDTASK ? aspMain : no_microcode;
 }
 

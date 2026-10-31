@@ -93,18 +93,21 @@ import RecompSources
 }
 
 /// Manual integration check against an already configured account: `--import-from-romm GAME`
-/// (a SupportedGame case, such as cruisnUSA) imports that game, and `--import-mario-kart-from-romm`
+/// (a SupportedGame case, such as cruisnUSA) imports that game from RomM, `--import-from-share GAME`
+/// from the top folder of an SMB share (Nativecade's import share), and `--import-mario-kart-from-romm`
 /// Mario Kart 64. Credentials stay in Keychain; only the normal provider and ROM verifier can
 /// import a playable identity. The report is Documents/romm-import-GAME.json.
 @MainActor enum RomMSimulatorImport {
     static func runIfRequested() async {
         let arguments = ProcessInfo.processInfo.arguments
         let game: SupportedGame
+        var kind = SourceKind.romm
         if arguments.contains("--import-mario-kart-from-romm") {
             game = .marioKart64
-        } else if let index = arguments.firstIndex(of: "--import-from-romm"), index + 1 < arguments.count,
-                  let named = SupportedGame(rawValue: arguments[index + 1]) {
+        } else if let index = arguments.firstIndex(where: { $0 == "--import-from-romm" || $0 == "--import-from-share" }),
+                  index + 1 < arguments.count, let named = SupportedGame(rawValue: arguments[index + 1]) {
             game = named
+            if arguments[index] == "--import-from-share" { kind = .smb }
         } else {
             return
         }
@@ -115,13 +118,24 @@ import RecompSources
                 report = ["passed": true, "sha1": existing.sha1]
             } else {
                 let data = UserDefaults.standard.data(forKey: "library.sources.v1") ?? Data("[]".utf8)
-                let sources = try JSONDecoder().decode([LibrarySource].self, from: data).filter { $0.kind == .romm }
+                let sources = try JSONDecoder().decode([LibrarySource].self, from: data).filter { $0.kind == kind }
                 var found: ImportedROM?
                 var checked = 0
                 // What the server listed, so a failed import says why (sizes in bytes, no credentials).
                 var listed: [String] = [], tried: [String] = []
                 for source in sources {
                     let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
+                    if kind == .smb {
+                        for file in try await provider.list(.root, search: "", offset: 0).entries
+                        where file.isROM && file.name.localizedStandardContains(game.searchTerm) && checked < 12 {
+                            checked += 1
+                            let rom = try await cache.acquire(file, sourceID: source.id, provider: provider, progress: { _ in })
+                            tried.append("\(file.name) \(file.size ?? -1) \(rom.game?.rawValue ?? rom.sha1)")
+                            if rom.game == game { found = rom; break }
+                        }
+                        if found != nil { break }
+                        continue
+                    }
                     let platforms = try await provider.list(.root, search: "64", offset: 0)
                     for platform in platforms.entries {
                         guard let location = platform.folder else { continue }
@@ -146,7 +160,7 @@ import RecompSources
                 report["listed"] = listed
                 report["tried"] = tried
                 guard let found else {
-                    throw LibraryError.message("No supported, uncompressed \(game.title) ROM was found in the configured RomM library.")
+                    throw LibraryError.message("No supported, uncompressed \(game.title) ROM was found in the configured \(kind.title).")
                 }
                 report = ["passed": true, "sha1": found.sha1, "files_checked": checked]
             }

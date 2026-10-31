@@ -103,6 +103,34 @@ apply_patch(patches / "N64Recomp-cop0-registers.patch", "N64ModernRuntime/N64Rec
 
 RUNTIME = {
     "librecomp/src/recomp.cpp": [
+        # On the console, KSEG1 (0xA0000000) shows the same physical memory as KSEG0 (0x80000000). Cruis'n
+        # World's copy protection reads RDRAM and the cartridge through it, so the uncached half is mapped
+        # again as a second view of the cached half, which navjack's boot values and boot code fill.
+        ("#    include <sys/mman.h>\n", "#    include <sys/mman.h>\n#    include <mach/mach.h>\n"),
+        ("""#endif
+
+    if (alloc_failed) {
+        ultramodern::error_handling::message_box("Failed to allocate memory!");
+        return;
+    }
+""", """#endif
+
+    if (alloc_failed) {
+        ultramodern::error_handling::message_box("Failed to allocate memory!");
+        return;
+    }
+#ifdef __APPLE__
+    static_assert(mem_size >= 0x40000000, "the uncached view needs RECOMP_MEM_SIZE_MB of 1024 or more");
+    vm_address_t uncached = reinterpret_cast<vm_address_t>(rdram) + 0x20000000;
+    vm_prot_t current_protection, max_protection;
+    if (vm_remap(mach_task_self(), &uncached, 0x20000000, 0, VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE, mach_task_self(),
+                 reinterpret_cast<vm_address_t>(rdram), FALSE, &current_protection, &max_protection,
+                 VM_INHERIT_NONE) != KERN_SUCCESS) {
+        ultramodern::error_handling::message_box("Failed to map the uncached view of game memory!");
+        return;
+    }
+#endif
+"""),
         # navjack: other status bits have no effect here, so a game may set them (Cruis'n sets CU1).
         ("""    // If any other bits were changed, assert false as they're not handled currently
     if (changed) {
