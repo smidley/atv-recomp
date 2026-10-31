@@ -17,14 +17,21 @@ Only the generated code is replaced:
   odd single-precision registers, division by zero as ARM64 computes it, and calls
   that return through `$ra` like C calls. A jump or call to a function the runtime
   replaces (such as `osRecvMesg`) runs the replacement, and a hook runs before the
-  instruction it is attached to.
+  instruction it is attached to. Loads into `$zero` are skipped, as N64Recomp
+  drops them. Compiled with `N64INTERP_COP0_REGISTERS`, it keeps the COP0
+  registers besides Status in the context, as navjack's N64Recomp patch for
+  Cruis'n does.
 - `scripts/generate-n64interp.py` writes the files N64Recomp would (`funcs.h`,
   `recomp_overlays.inl`, `lookup.cpp`) and `n64interp_game.c`: for every game
   function, a C function that interprets it, so the runtime and hooks can call it
   by name; the replacements; and the configuration's hooks as functions. It reads
   only the project's N64Recomp configuration and symbol file, and N64Recomp's lists
-  of libultra functions. It handles `stubs`, `ignored`, `renamed` and `hook`
-  patches and fixed sections; overlays (relocatable sections) aren't supported yet.
+  of libultra functions. It handles `stubs`, `ignored`, `renamed`, `hook` and
+  `instruction` patches, and overlays (relocatable sections) for which N64Recomp
+  would emit no relocations: the interpreter runs whatever is loaded, so an overlay
+  needs only its table entry. The game's host code applies instruction patches as
+  it copies the cartridge into RDRAM (`n64interp_rom_loaded`). Hooks and
+  replacements can't sit where overlays share an address.
 - `N64RspInterpreter.cpp` runs RSP microcode from RDRAM, as rspboot loads it into
   IMEM, following RSPRecomp's generated code with N64ModernRuntime's vector unit,
   DMEM and DMA. A game can replace one instruction with a patch, as SotE does for

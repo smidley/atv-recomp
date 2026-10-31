@@ -74,6 +74,22 @@ void n64interp_missing(uint32_t vram, const char *name) {
     std::abort();
 }
 
+static const n64interp_rom_patch_t *rom_patches;
+static uint32_t rom_patch_count;
+
+void n64interp_set_rom_patches(const n64interp_rom_patch_t *patches, uint32_t count) {
+    rom_patches = patches;
+    rom_patch_count = count;
+}
+
+void n64interp_rom_loaded(uint8_t *rdram, uint32_t rom, uint32_t vram, uint32_t size) {
+    for (uint32_t i = 0; i < rom_patch_count; ++i) {
+        const uint32_t offset = rom_patches[i].rom - rom;
+        if (rom_patches[i].rom >= rom && offset + 4 <= size)
+            MEM_W(0, (gpr)(int32_t)(vram + offset)) = (int32_t)rom_patches[i].value;
+    }
+}
+
 uint64_t n64interp_instruction_count(void) {
     return executed.load(std::memory_order_relaxed);
 }
@@ -133,8 +149,11 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
             else { next = npc + 4; next2 = npc + 8; }
         };
         auto jump = [&](uint32_t target) { next2 = target; };
+        // IDO probes memory with loads into $zero. N64Recomp with navjack's zero-register patch
+        // (Cruis'n) drops them, stock N64Recomp can't compile them, and a probed register would fault.
+        const bool probe = rt == 0 && (op == 0x1A || op == 0x1B || (op >= 0x20 && op <= 0x27) || op == 0x30 || op == 0x37);
 
-        switch (op) {
+        if (!probe) switch (op) {
         case 0x00: // SPECIAL
             switch (fn) {
             case 0x00: r[rd] = S32(r[rt] << sa); break;                      // sll
@@ -250,13 +269,22 @@ void n64interp_call(uint8_t *rdram, recomp_context *ctx, uint32_t vram) {
         case 0x0D: r[rt] = r[rs] | imm; break;                               // ori
         case 0x0E: r[rt] = r[rs] ^ imm; break;                               // xori
         case 0x0F: r[rt] = S32((uint32_t)imm << 16); break;                  // lui
-        case 0x10: // COP0: N64Recomp handles only the status register.
+        case 0x10: // COP0: N64Recomp handles only the status register; with navjack's
+                   // N64Recomp-cop0-registers.patch (Cruis'n) the context keeps the others.
             if (rs == 0x00) {                                                // mfc0
+#ifdef N64INTERP_COP0_REGISTERS
+                if (rt != 0) r[rt] = cop0_read(ctx, rd);
+#else
                 if (rd == 12) r[rt] = cop0_status_read(ctx);
                 else { warn_once("mfc0", pc); r[rt] = 0; }
+#endif
             } else if (rs == 0x04) {                                         // mtc0
+#ifdef N64INTERP_COP0_REGISTERS
+                cop0_write(ctx, rd, r[rt]);
+#else
                 if (rd == 12) cop0_status_write(ctx, r[rt]);
                 else warn_once("mtc0", pc);
+#endif
             } else {
                 warn_once("cop0 operation", pc);
             }

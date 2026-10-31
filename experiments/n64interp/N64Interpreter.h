@@ -27,6 +27,14 @@ void n64interp_set_hook(uint32_t vram, n64interp_hook_t *hook);
 // recompilations but that nothing implements here. A recompiled build couldn't run it either.
 void n64interp_missing(uint32_t vram, const char *name);
 
+// A configuration's instruction patches (patches.instruction), by cartridge offset: VALUE replaces
+// the instruction at ROM whenever the runtime copies it into RDRAM, so a patch in an overlay applies
+// only while that overlay is loaded. The game's host code calls n64interp_rom_loaded after every
+// copy from the cartridge into RDRAM.
+typedef struct { uint32_t rom; uint32_t value; } n64interp_rom_patch_t;
+void n64interp_set_rom_patches(const n64interp_rom_patch_t *patches, uint32_t count);
+void n64interp_rom_loaded(uint8_t *rdram, uint32_t rom, uint32_t vram, uint32_t size);
+
 // Instructions run since start-up, for measuring speed.
 uint64_t n64interp_instruction_count(void);
 
