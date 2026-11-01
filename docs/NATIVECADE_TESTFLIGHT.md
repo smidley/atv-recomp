@@ -383,7 +383,8 @@ macOS-only Core Audio player, so tvOS dropped every sample ([Super Smash Bros.](
 also adds the Bluetooth purpose string. In the simulator, the first start turned the saved
 `coreaudio` into `sdl` and the game submitted its sound to SDL, with no audio errors. Its first
 framework build ran out of disk space; regenerable caches were removed and it was rebuilt. On
-2026-11-01 build 16 was archived with Xcode 27.2 (27B52). Only the BattleShip framework's code
+2026-11-01 build 16 was archived from commit `924b596` with Xcode 27.2 (27B52) and uploaded at 15:02,
+when App Store Connect began processing it. Only the BattleShip framework's code
 changed from build 15, and compared with the ten ROMs it shares as many 32-byte runs as before; the
 app differs only in its Info.plist. The archive contains no ROMs, extracted game archives or saves,
 and its signature verifies. Only those three frameworks changed from build 14, each by about
