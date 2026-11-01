@@ -37,7 +37,9 @@ the checkouts, then:
   in the game folder (`rt64`). Before build 13 that last change didn't take: RT64 detects its own
   data folder unless told not to, and made a hidden one in the app's home folder, which the
   simulator allows and an Apple TV doesn't, so Racer and both Cruis'n games ended at start on the
-  Apple TV. These frontend changes (`rt64_tvos.FRONTEND`) and the simulator's headless
+  Apple TV. From build 14, RT64 renders at 4x (1280x960) where the settings ask to fill the
+  screen in whole multiples: on a 4K screen that was 9x with MSAA, and Cruis'n USA reached 2 GB,
+  about all tvOS lets an app use. These frontend changes (`rt64_tvos.FRONTEND`) and the simulator's headless
   renderer (`experiments/racer/HeadlessRenderer.cpp`) also serve [Cruis'n](CRUISN.md), which uses
   Racer's frontend;
 - lets Racer start again in the same app session ([Switching games](GAME_SWITCHING.md)), which

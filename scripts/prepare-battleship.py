@@ -156,6 +156,26 @@ def adapt(relative, text):
         text = swap(text, "    sigaltstack(&ss, nullptr);\n", "    sigaltstack(&ss, nullptr);\n#endif\n", relative)
         text = swap(text, "    struct sigaction csa;\n", "#if !defined(RECOMPTV_TVOS)\n    struct sigaction csa;\n", relative)
         text = swap(text, "    sigaction(SIGABRT, &csa, nullptr);\n", "    sigaction(SIGABRT, &csa, nullptr);\n#endif\n", relative)
+    if relative == "port/coroutine_android.cpp":
+        # The game runs in coroutines. coroutine_posix.cpp makes them with getcontext/swapcontext,
+        # which Apple implements only for macOS: the simulator borrows the Mac's, but on an Apple TV
+        # they fail, so the game never started (builds 9 to 13). Android's backend switches stacks
+        # itself (coroutine_aarch64.S) and works on any arm64 system.
+        text = swap(text, "#if defined(__ANDROID__)\n", "#if defined(__ANDROID__) || defined(RECOMPTV_TVOS)\n", relative)
+    if relative == "port/coroutine_aarch64.S":
+        # Apple's C symbols carry a leading underscore.
+        text = swap(text, "#if defined(__aarch64__)\n",
+                    "#if defined(__aarch64__)\n#if defined(__APPLE__)\n"
+                    "#define port_coroutine_swap _port_coroutine_swap\n"
+                    "#define port_coroutine_trampoline_aarch64 _port_coroutine_trampoline_aarch64\n"
+                    "#define port_coroutine_trampoline_c _port_coroutine_trampoline_c\n#endif\n", relative)
+    if relative == "port/port_log.c":
+        # The port's own log goes into Nativecade's game log, which the Apple TV can show.
+        text = swap(text, '\tsLogFile = fopen(path, "w");\n',
+                    '#ifdef RECOMPTV_TVOS\n\t(void)path;\n\tsLogFile = stderr;\n#else\n\tsLogFile = fopen(path, "w");\n#endif\n',
+                    relative)
+        text = swap(text, "\t\tfclose(sLogFile);\n", "#ifdef RECOMPTV_TVOS\n\t\tif (sLogFile != stderr)\n#endif\n\t\tfclose(sLogFile);\n",
+                    relative)
     if relative == "port/bridge/lbreloc_byteswap.cpp":
         # tvOS has no shell; this debug dump folder is made directly.
         text = "#include <sys/stat.h>\n" + swap(text, '\tstd::system("mkdir -p tex_dump");', '\tmkdir("tex_dump", 0755);', relative)
@@ -188,7 +208,7 @@ for folder in folders:
                 or re.match(r"(libultraship/tests|torch/test)/", relative)):
             continue
         data = original.read_bytes()
-        if original.suffix in {".c", ".cpp", ".h", ".hpp", ".mm", ".cmake", ".txt", ".patch"}:
+        if original.suffix in {".c", ".cpp", ".h", ".hpp", ".mm", ".S", ".cmake", ".txt", ".patch"}:
             text = data.decode("utf-8", "surrogateescape")
             data = adapt(relative, text).encode("utf-8", "surrogateescape")
         write(destination / relative, data)

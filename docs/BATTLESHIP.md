@@ -86,7 +86,13 @@ release. Compared with a desktop build, they:
   Core Audio code, or the ios-cmake toolchain; keep its files in the folder Nativecade
   names (`NATIVECADE_GAME_DIRECTORY`); leave `SDL_Quit` to Nativecade; and skip depth
   clamping in the simulator, as the shared libultraship does;
-- write the log and the save beside the game's files instead of asking `SDL_GetPrefPath`,
+- run the game's coroutines on BattleShip's Android backend, which switches stacks in
+  `port/coroutine_aarch64.S` (with Apple's leading underscore on its symbols), instead of the
+  POSIX one's `getcontext` and `swapcontext`. Apple implements those only for macOS; the
+  simulator borrows the Mac's, but on an Apple TV they fail (Known issues);
+- send the port's own log (`port_log`) to Nativecade's game log instead of `ssb64.log`, so
+  the Apple TV can show it;
+- write the save beside the game's files instead of asking `SDL_GetPrefPath`,
   which shows a storage alert on tvOS; make the debug texture-dump folder without a shell;
   and keep the hang watchdog but not its process-wide crash handlers, which would outlive
   the game (tvOS has no `sigaltstack` either);
@@ -148,6 +154,11 @@ starts.
   `_this->GL_MakeCurrent`, which is null in the shared runtime's SDL (built without OpenGL), so the
   app crashed as the game started, right after preparing its assets. The shared runtime's SDL now
   checks for it (`experiments/shipwright/simulator-game/sdl-raisewindow.patch`).
+- **The game never started on the Apple TV (builds 10 to 13; fixed in build 14, unconfirmed).**
+  Build 13's game log showed the window opening and nothing after it. The game runs in
+  coroutines, and the POSIX backend made them with `getcontext`, `makecontext` and `swapcontext`,
+  which Apple's libplatform implements only for macOS and DriverKit; elsewhere they return
+  `ENOTSUP`. The simulator uses the Mac's, so the game played there.
 - **Returning to the library crashes.** BattleShip's frames take their Metal drawable
   (`GfxRenderingAPIMetal::NewFrame`) outside its per-frame autorelease pool, so every drawable
   waits in the long-lived pool `RunApplication` holds and is released only after the game has torn

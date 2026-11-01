@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.26)
 # build, whose libultraship, torch and ImGui targets have the same names. Everything here is
 # linked into NativecadeBattleShip.framework with hidden symbols; only SDL and the game-runner API
 # come from NativecadeRuntime.framework.
-project(NativecadeBattleShip LANGUAGES C CXX OBJC OBJCXX)
+project(NativecadeBattleShip LANGUAGES C CXX OBJC OBJCXX ASM)
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     message(FATAL_ERROR "NativecadeBattleShip is built with the tvOS SDK")
 endif()
@@ -125,10 +125,13 @@ set_source_files_properties("${bs}/decomp/src/libultra/gu/sinf.c" "${bs}/decomp/
 
 # The port layer, without what tvOS can't run or Nativecade replaces: the first-run extractor and
 # file dialog (they start Torch and osascript as processes), the updater, Discord and the shader
-# downloader (as on Android), mods (DISABLE_SCRIPTING) and the other platforms' coroutines.
+# downloader (as on Android), mods (DISABLE_SCRIPTING) and the other platforms' coroutines. The game's
+# coroutines use Android's backend, which switches stacks in coroutine_aarch64.S: the POSIX one's
+# getcontext/swapcontext fail on an Apple TV (prepare-battleship.py).
 file(GLOB_RECURSE port_sources CONFIGURE_DEPENDS "${bs}/port/*.cpp" "${bs}/port/*.c" "${bs}/debug_tools/*.c")
 list(FILTER port_sources EXCLUDE REGEX "/port/(stubs|mods)/|/port/resource/RelocFileTable\\.jp\\.cpp$")
-list(FILTER port_sources EXCLUDE REGEX "/port/(first_run|native_dialog|android_[a-z_]+|coroutine_(android|win32|test))\\.cpp$")
+list(FILTER port_sources EXCLUDE REGEX "/port/(first_run|native_dialog|android_[a-z_]+|coroutine_(posix|win32|test))\\.cpp$")
+list(APPEND port_sources "${bs}/port/coroutine_aarch64.S")
 list(FILTER port_sources EXCLUDE REGEX "/port/enhancements/(Updater|DiscordRichPresence|ShaderDownloader)\\.cpp$")
 # Nativecade restores the original game's C globals before each later start (NativecadeRuntime.mm).
 set(game_c ${game_sources} ${stubs} ${port_sources})

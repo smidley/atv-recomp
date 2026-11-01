@@ -339,6 +339,25 @@ uploaded on 2026-11-01 at 09:49, when App Store Connect began processing it. Onl
 Cruis'n frameworks changed; compared with the ten ROMs they share as many 32-byte runs as before.
 The archive contains no ROMs, extracted game archives or saves, and its signature verifies.
 
+On the Apple TV, build 13 starts Banjo-Kazooie. Racer starts with garbled graphics. Cruis'n USA runs
+with a black screen, though its menu draws over it, and its log showed 2,028 MB used with 69 MB
+available. Super Smash Bros.' log ended after its window opened.
+
+Build **0.1.0 (14)** makes two changes:
+
+- Super Smash Bros. runs its game coroutines on BattleShip's Android backend, which switches stacks
+  in assembly. The POSIX backend's `getcontext` and `swapcontext` work only on macOS, which the
+  simulator borrows, so on the Apple TV the game never started
+  ([Super Smash Bros.](BATTLESHIP.md)). The port's own log now goes to the game log.
+- Racer and Cruis'n render at 4x (1280x960) where their settings ask to fill the screen in whole
+  multiples. On a 4K screen that was 9x with MSAA ([Racer](RACER.md)).
+
+In the simulator, Super Smash Bros. plays its intro on the new coroutines, and neither framework
+imports the `ucontext` functions any more. On 2026-11-01 build 14 was archived with Xcode 27.2
+(27B52). Only the BattleShip, Racer and Cruis'n frameworks changed; compared with the ten ROMs they
+share as many 32-byte runs as before. The archive contains no ROMs, extracted game archives or
+saves, and its signature verifies.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.

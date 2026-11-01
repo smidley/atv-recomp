@@ -204,6 +204,14 @@ FRONTEND = {
         ("        app_config.detectDataPath = true;\n",
          '        app_config.dataPath = std::filesystem::current_path() / "rt64";\n'
          "        app_config.detectDataPath = false;\n"),
+        # Filling a 4K screen in whole multiples (the default) renders at 9x with RT64's MSAA, which
+        # took Cruis'n USA to 2 GB on the Apple TV, about all tvOS lets an app use. 4x is 1280x960.
+        ("    u.developerMode = g_config.developerMode; // read at setup only\n",
+         "    u.developerMode = g_config.developerMode; // read at setup only\n"
+         "    if (u.resolution == U::Resolution::WindowIntegerScale) {\n"
+         "        u.resolution = U::Resolution::Manual;\n"
+         "        u.resolutionMultiplier = 4.0;\n"
+         "    }\n"),
     ],
     # A game's SDL_Quit freed its controllers; the next start must not read them. SDL reports the
     # connected ones again after it starts.
