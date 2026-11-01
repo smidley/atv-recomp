@@ -154,7 +154,12 @@ starts.
   `_this->GL_MakeCurrent`, which is null in the shared runtime's SDL (built without OpenGL), so the
   app crashed as the game started, right after preparing its assets. The shared runtime's SDL now
   checks for it (`experiments/shipwright/simulator-game/sdl-raisewindow.patch`).
-- **The game never started on the Apple TV (builds 10 to 13; fixed in build 14, unconfirmed).**
+- **No sound on the Apple TV (builds 9 to 15; fixed in build 16, unconfirmed).** BattleShip's
+  libultraship picks Core Audio on any Apple platform, by default and in the saved
+  `BattleShip.cfg.json`. Its Core Audio player is macOS-only and left out of tvOS builds, so `Audio`
+  fell to its null player and every sample was dropped; the simulator showed the game producing
+  sound, which then went nowhere. tvOS now plays through SDL, and a saved `coreaudio` becomes `sdl`.
+- **The game never started on the Apple TV (builds 10 to 13; fixed in build 14, confirmed in build 15).**
   Build 13's game log showed the window opening and nothing after it. The game runs in
   coroutines, and the POSIX backend made them with `getcontext`, `makecontext` and `swapcontext`,
   which Apple's libplatform implements only for macOS and DriverKit; elsewhere they return

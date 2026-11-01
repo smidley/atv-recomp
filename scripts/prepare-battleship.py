@@ -85,6 +85,17 @@ def adapt(relative, text):
     if relative == "libultraship/src/ship/audio/Audio.cpp":
         # Core Audio's HAL player is macOS-only; tvOS uses the SDL backend.
         text = "#ifdef __APPLE__\n#include <TargetConditionals.h>\n#endif\n" + swap(text, "#ifdef __APPLE__", TVOS_ONLY_ON_MAC, relative)
+    if relative == "libultraship/src/ship/config/Config.cpp":
+        # The default and saved audio backend on Apple platforms is Core Audio, whose player tvOS
+        # leaves out (above), so Audio fell to its null player and Super Smash Bros. was silent on
+        # the Apple TV. tvOS plays through SDL, and a saved "coreaudio" becomes "sdl".
+        text = "#ifdef __APPLE__\n#include <TargetConditionals.h>\n#endif\n" + text
+        text = swap(text, '    if (backendName == "coreaudio") {\n        return AudioBackend::COREAUDIO;\n    }\n',
+                    '    if (backendName == "coreaudio") {\n#if defined(__APPLE__) && !TARGET_OS_OSX\n'
+                    "        SetCurrentAudioBackend(AudioBackend::SDL);\n        return AudioBackend::SDL;\n#else\n"
+                    "        return AudioBackend::COREAUDIO;\n#endif\n    }\n", relative)
+        text = swap(text, "#ifdef __APPLE__\n    return AudioBackend::COREAUDIO;\n#endif\n",
+                    TVOS_ONLY_ON_MAC + "\n    return AudioBackend::COREAUDIO;\n#endif\n", relative)
     if relative == "libultraship/src/fast/backends/gfx_sdl2.cpp":
         text = swap(text, '#include "ship/utils/macUtils.h"',
                     '#include <TargetConditionals.h>\n#if TARGET_OS_OSX\n#include "ship/utils/macUtils.h"\n#endif', relative)

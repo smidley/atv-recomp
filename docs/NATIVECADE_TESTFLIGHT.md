@@ -373,7 +373,20 @@ archived from commit `b2dc530` with Xcode 27.2 (27B52) and uploaded at 13:04, wh
 began processing it. App Store Connect warned (ITMS-90683) that the app references Bluetooth without
 `NSBluetoothAlwaysUsageDescription`: the shared runtime's SDL links Core Bluetooth for Steam
 Controllers over Bluetooth LE (`src/hidapi/ios/hid.m`), which it starts only when that driver is on.
-`RecompTV/Nativecade-Info.plist` has the purpose string from build 16. Only those three frameworks changed from build 14, each by about
+`RecompTV/Nativecade-Info.plist` has the purpose string from build 16.
+
+On the Apple TV, build 15 plays Super Smash Bros., without sound. Cruis'n USA's log showed the 4x
+cap working (599 MB used, 1,498 MB available), and no failed GPU work in its last 20 seconds.
+
+Build **0.1.0 (16)** gives Super Smash Bros. sound on tvOS: BattleShip's libultraship chose its
+macOS-only Core Audio player, so tvOS dropped every sample ([Super Smash Bros.](BATTLESHIP.md)). It
+also adds the Bluetooth purpose string. In the simulator, the first start turned the saved
+`coreaudio` into `sdl` and the game submitted its sound to SDL, with no audio errors. Its first
+framework build ran out of disk space; regenerable caches were removed and it was rebuilt. On
+2026-11-01 build 16 was archived with Xcode 27.2 (27B52). Only the BattleShip framework's code
+changed from build 15, and compared with the ten ROMs it shares as many 32-byte runs as before; the
+app differs only in its Info.plist. The archive contains no ROMs, extracted game archives or saves,
+and its signature verifies. Only those three frameworks changed from build 14, each by about
 1.7 KB; compared with the ten ROMs they share as many 32-byte runs as before. The archive contains no
 ROMs, extracted game archives or saves, and its signature verifies.
 
