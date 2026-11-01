@@ -334,7 +334,8 @@ folder, and Racer and Cruis'n World get past RT64's start, keeping its data in t
 its second display list; RT64 can't draw in the simulator, so that doesn't predict the Apple TV.
 SotE's log from build 12 shows it running on the Apple TV at full speed, with sound and about 60
 presented frames a second, while the screen stays black, and using 1.7 GB of memory with 379 MB
-left. On 2026-10-31 build 13 was archived with Xcode 27.2 (27B52). Only the Lighthouse, Racer and
+left. On 2026-10-31 build 13 was archived from commit `12a0a39` with Xcode 27.2 (27B52), and it was
+uploaded on 2026-11-01 at 09:49, when App Store Connect began processing it. Only the Lighthouse, Racer and
 Cruis'n frameworks changed; compared with the ten ROMs they share as many 32-byte runs as before.
 The archive contains no ROMs, extracted game archives or saves, and its signature verifies.
 
