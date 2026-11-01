@@ -198,9 +198,12 @@ FRONTEND = {
         ("    fflush(nullptr);\n    std::_Exit(0);\n}", "    fflush(nullptr);\n    return 0;\n}"),
     ],
     # RT64 keeps its data in the game folder, which is in Caches; Apple TV apps can't write elsewhere.
+    # Its detectDataPath is on by default and would replace the folder with a hidden one in the home
+    # folder, which the simulator allows but an Apple TV doesn't: creating it ended Racer at start.
     "src/rt64_context.cpp": [
         ("        app_config.detectDataPath = true;\n",
-         '        app_config.dataPath = std::filesystem::current_path() / "rt64";\n'),
+         '        app_config.dataPath = std::filesystem::current_path() / "rt64";\n'
+         "        app_config.detectDataPath = false;\n"),
     ],
     # A game's SDL_Quit freed its controllers; the next start must not read them. SDL reports the
     # connected ones again after it starts.

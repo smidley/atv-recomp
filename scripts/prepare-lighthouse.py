@@ -73,6 +73,20 @@ def adapt(relative, text):
     if relative == "src/port/Enhancements/Trackers/DisplayOverlay.cpp":
         # Upstream reaches the header through its libultraship submodule folder.
         text = swap(text, "#include <libultraship/include/libultraship/libultra/gbi.h>", "#include <libultraship/libultra/gbi.h>")
+    # These folders were fixed when the framework loaded, before Nativecade names the game's folder
+    # (NATIVECADE_GAME_DIRECTORY), so libultraship gave Documents, which an Apple TV app can't write:
+    # creating the randomizer folder ended the game at start. Find them each time they're used.
+    if relative == "src/port/Rando/Rando.cpp":
+        text = swap(text, 'const fs::path randomizerFolderPath(Ship::Context::GetPathRelativeToAppDirectory("randomizer", "bk64"));',
+                    '#define randomizerFolderPath fs::path(Ship::Context::GetPathRelativeToAppDirectory("randomizer", "bk64"))')
+    if relative == "src/port/Rando/Spoiler/RefreshOptions.cpp":
+        text = swap(text, 'const std::filesystem::path randomizerFolderPath(Ship::Context::GetPathRelativeToAppDirectory("randomizer", "bk64"));',
+                    '#define randomizerFolderPath std::filesystem::path(Ship::Context::GetPathRelativeToAppDirectory("randomizer", "bk64"))')
+    if relative == "src/port/Save/SaveManager.cpp":
+        text = swap(text, 'const std::string savesFolderPathString(Ship::Context::GetPathRelativeToAppDirectory("saves"));\n'
+                          'const std::filesystem::path savesFolderPath(savesFolderPathString);',
+                    '#define savesFolderPathString std::string(Ship::Context::GetPathRelativeToAppDirectory("saves"))\n'
+                    '#define savesFolderPath std::filesystem::path(savesFolderPathString)')
     if relative == "src/port/Engine.cpp":
         # Nativecade prepares bk.o2r before the game starts, so the first-run extractor never runs.
         text = swap(text, "    instance->RunExtract(argc, argv);\n", "")

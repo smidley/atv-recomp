@@ -53,7 +53,9 @@ patches on top, so no second copy of either is checked out.
 - applies navjack's RT64 patch (Cruis'n's graphics microcode is F3DEX2; framebuffers are never
   copied to address 0) and the part of navjack's N64Recomp patch that keeps every COP0 register in
   `recomp_context`, which the runtime and the interpreter (`N64INTERP_COP0_REGISTERS`) share;
-- applies the tvOS changes Racer gets (`scripts/rt64_tvos.py`), including those to the frontend;
+- applies the tvOS changes Racer gets (`scripts/rt64_tvos.py`), including those to the frontend,
+  which keep RT64's data in the game folder (in builds 10 to 12 RT64 still made a hidden folder in
+  the app's home folder, and both games ended at start on the Apple TV; [Racer](RACER.md));
 - calls the interpreter whenever the runtime copies cartridge data into RDRAM, so navjack's 32
   instruction patches in Cruis'n USA's overlay are applied as it loads (`n64interp_rom_loaded`);
 - clears the runtime's overlay tables and the frontend's ROM search at each start, since the two

@@ -34,7 +34,10 @@ the checkouts, then:
   smaller memory reservation if tvOS lacks address space;
 - draws into a full-screen SDL Metal view, returns to the library when the game ends instead of
   ending the process, forgets the controllers SDL closed when the game ended, and keeps RT64's data
-  in the game folder. These frontend changes (`rt64_tvos.FRONTEND`) and the simulator's headless
+  in the game folder (`rt64`). Before build 13 that last change didn't take: RT64 detects its own
+  data folder unless told not to, and made a hidden one in the app's home folder, which the
+  simulator allows and an Apple TV doesn't, so Racer and both Cruis'n games ended at start on the
+  Apple TV. These frontend changes (`rt64_tvos.FRONTEND`) and the simulator's headless
   renderer (`experiments/racer/HeadlessRenderer.cpp`) also serve [Cruis'n](CRUISN.md), which uses
   Racer's frontend;
 - lets Racer start again in the same app session ([Switching games](GAME_SWITCHING.md)), which

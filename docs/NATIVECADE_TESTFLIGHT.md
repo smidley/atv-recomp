@@ -315,6 +315,29 @@ Compared with the ten ROMs on the build Mac, every binary shares as many 32-byte
 11, and the app none. The archive contains no ROMs, extracted game archives or saves, and its
 signature verifies.
 
+Build **0.1.0 (13)** fixes the two causes build 12's log showed on the Apple TV. Both were folders
+the simulator lets an app create and an Apple TV doesn't:
+
+- Banjo-Kazooie ended at start creating `Documents/randomizer` (Lighthouse fixes its randomizer and
+  save folders when the framework loads, before the game's folder is known; [Lighthouse](LIGHTHOUSE.md)).
+- Racer and both Cruis'n games ended at start when RT64 created a hidden settings folder in the
+  app's home folder (`.swe1racer` for Racer), though the frontend meant it to use the game folder
+  ([Racer](RACER.md)).
+
+With the app's home folder and `Documents` made unwritable in the simulator, build 12 ends the same
+four games with the same errors the Apple TV logged. Shadows of the Empire keeps RT64's data in its
+game folder and doesn't end; on the Apple TV its screen stays black, which its log should explain.
+Super Smash Bros. runs in the simulator with the same restrictions, so its cause is still unknown.
+With them, build 13 starts Banjo-Kazooie, whose randomizer and save folders are now in its game
+folder, and Racer and Cruis'n World get past RT64's start, keeping its data in the game folder's
+`rt64`. Cruis'n USA then stopped inside the simulator's Metal driver while RT64 made a buffer for
+its second display list; RT64 can't draw in the simulator, so that doesn't predict the Apple TV.
+SotE's log from build 12 shows it running on the Apple TV at full speed, with sound and about 60
+presented frames a second, while the screen stays black, and using 1.7 GB of memory with 379 MB
+left. On 2026-10-31 build 13 was archived with Xcode 27.2 (27B52). Only the Lighthouse, Racer and
+Cruis'n frameworks changed; compared with the ten ROMs they share as many 32-byte runs as before.
+The archive contains no ROMs, extracted game archives or saves, and its signature verifies.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
