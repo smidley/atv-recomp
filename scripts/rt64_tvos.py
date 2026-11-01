@@ -114,6 +114,21 @@ def rt64(prefix):
         if (interfaceQueryPool->sampleBuffer == nullptr) return;
 """),
         ],
+        # plume never checks whether the GPU finished a command buffer, so on the Apple TV a frame
+        # whose work fails leaves the picture black without a word. The game log says why.
+        "src/contrib/plume/plume_metal.cpp#gpu-errors": [
+            ("    void MetalCommandList::commit() {\n        mtl->commit();\n",
+             "    void MetalCommandList::commit() {\n"
+             "        mtl->addCompletedHandler([](MTL::CommandBuffer *buffer) {\n"
+             "            static std::atomic<int> reported{0};\n"
+             "            if (buffer->status() == MTL::CommandBufferStatusError && reported.fetch_add(1) < 20) {\n"
+             "                NS::Error *error = buffer->error();\n"
+             '                fprintf(stderr, "[plume] GPU work failed: %s\\n",\n'
+             '                        error != nullptr ? error->localizedDescription()->utf8String() : "no reason given");\n'
+             "            }\n"
+             "        });\n"
+             "        mtl->commit();\n"),
+        ],
         # RT64 uses hlslpp's scalar code on Apple silicon, which calls labs without declaring it.
         "src/contrib/hlslpp/include/hlsl++/platforms/scalar.h": [
             ("#include <math.h>\n#include <stdint.h>\n", "#include <math.h>\n#include <stdint.h>\n#include <stdlib.h>\n"),

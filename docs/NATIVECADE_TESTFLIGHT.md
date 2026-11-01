@@ -356,7 +356,22 @@ In the simulator, Super Smash Bros. plays its intro on the new coroutines, and n
 imports the `ucontext` functions any more. On 2026-11-01 build 14 was archived with Xcode 27.2
 (27B52). Only the BattleShip, Racer and Cruis'n frameworks changed; compared with the ten ROMs they
 share as many 32-byte runs as before. The archive contains no ROMs, extracted game archives or
-saves, and its signature verifies.
+saves, and its signature verifies. It wasn't uploaded; build 15 includes it.
+
+On the Apple TV, Cruis'n USA stayed black in build 13 even with its graphics menu set to Original
+or 2x, so memory isn't why; its menu draws over the black picture. The `newRenderPipelineState`
+error both the simulator and RT64 log (texture slot 46, over Metal's 31 on Apple TV GPUs) comes from
+`DebugPS`, a debug view RT64 doesn't draw with in play. RT64's Metal backend (plume) never checked
+whether the GPU finished a frame's work, so a failure there would leave the picture black silently.
+
+Build **0.1.0 (15)** is build 14 plus that check: the first 20 command buffers that fail write
+`[plume] GPU work failed` and Metal's error, whose code gives the kind (3, a GPU page fault; 7, out
+of memory; 8, an invalid resource). It applies to Shadows of the Empire, Racer and both Cruis'n
+games, which share the change through `scripts/rt64_tvos.py`. In the simulator, where RT64 can't
+draw, Cruis'n World logged one (`MTLCommandBufferErrorDomain error 1`). On 2026-11-01 build 15 was
+archived with Xcode 27.2 (27B52). Only those three frameworks changed from build 14, each by about
+1.7 KB; compared with the ten ROMs they share as many 32-byte runs as before. The archive contains no
+ROMs, extracted game archives or saves, and its signature verifies.
 
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
