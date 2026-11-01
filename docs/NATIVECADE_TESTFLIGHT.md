@@ -370,7 +370,10 @@ of memory; 8, an invalid resource). It applies to Shadows of the Empire, Racer a
 games, which share the change through `scripts/rt64_tvos.py`. In the simulator, where RT64 can't
 draw, Cruis'n World logged one (`MTLCommandBufferErrorDomain error 1`). On 2026-11-01 build 15 was
 archived from commit `b2dc530` with Xcode 27.2 (27B52) and uploaded at 13:04, when App Store Connect
-began processing it. Only those three frameworks changed from build 14, each by about
+began processing it. App Store Connect warned (ITMS-90683) that the app references Bluetooth without
+`NSBluetoothAlwaysUsageDescription`: the shared runtime's SDL links Core Bluetooth for Steam
+Controllers over Bluetooth LE (`src/hidapi/ios/hid.m`), which it starts only when that driver is on.
+`RecompTV/Nativecade-Info.plist` has the purpose string from build 16. Only those three frameworks changed from build 14, each by about
 1.7 KB; compared with the ten ROMs they share as many 32-byte runs as before. The archive contains no
 ROMs, extracted game archives or saves, and its signature verifies.
 
