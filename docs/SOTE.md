@@ -77,7 +77,10 @@ copy to `build/sote/source` without changing the checkout. The pin is upstream's
   the 4 GB of address space it asks for (the rest only catches stray addresses);
 - leaves out the PC cutscene decoder (LGPL-2.1 `sandec`), since Apple TV has no
   PC game files; the N64 cutscenes play;
-- keeps the process's output instead of sending it to SotE's log files.
+- keeps the process's output instead of sending it to SotE's log files;
+- runs the progress watchdog in `main.cpp` on a `std::thread` that stops and joins when `main`
+  returns, instead of a `std::jthread`: the libc++ in the CI Mac's Xcode has `std::jthread` and
+  `std::stop_token` only as experimental features, so the runtime checks failed there.
 
 `experiments/sote/CMakeLists.txt` builds `NativecadeSote.framework` inside the
 shared runtime build, with the interpreter, N64ModernRuntime and RT64 hidden and

@@ -112,6 +112,31 @@ SWAPS = {
         ("        ((!smoke_test && !frontend_smoke_test) ||\n         std::getenv(\"SOTE_FORCE_FILE_LOG\") != nullptr)) {\n",
          "        std::getenv(\"SOTE_FORCE_FILE_LOG\") != nullptr) {\n"),
     ],
+    # std::jthread and std::stop_token are experimental in the libc++ of the CI Mac's Xcode, so the
+    # progress watchdog is a std::thread that stops and joins when main returns, as jthread would.
+    "src/main.cpp#watchdog": [
+        ("""    std::jthread diagnostic_watchdog([](std::stop_token stop) {
+        while (!stop.stop_requested()) {
+            log_diagnostic_progress();
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+    });
+""", """    struct DiagnosticWatchdog {
+        std::atomic<bool> stop{false};
+        std::thread thread;
+        ~DiagnosticWatchdog() {
+            stop = true;
+            if (thread.joinable()) thread.join();
+        }
+    } diagnostic_watchdog;
+    diagnostic_watchdog.thread = std::thread([&stop = diagnostic_watchdog.stop] {
+        while (!stop.load()) {
+            log_diagnostic_progress();
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+    });
+"""),
+    ],
     "src/rt64_renderer.cpp": [
         ("        core.window = window_handle;\n", "        core.window = {window_handle.window, window_handle.view};\n"),
         ("RT64::UserConfiguration::GraphicsAPI::Vulkan;", "RT64::UserConfiguration::GraphicsAPI::Metal;"),
