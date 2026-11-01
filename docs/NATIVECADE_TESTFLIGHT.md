@@ -369,7 +369,8 @@ Build **0.1.0 (15)** is build 14 plus that check: the first 20 command buffers t
 of memory; 8, an invalid resource). It applies to Shadows of the Empire, Racer and both Cruis'n
 games, which share the change through `scripts/rt64_tvos.py`. In the simulator, where RT64 can't
 draw, Cruis'n World logged one (`MTLCommandBufferErrorDomain error 1`). On 2026-11-01 build 15 was
-archived with Xcode 27.2 (27B52). Only those three frameworks changed from build 14, each by about
+archived from commit `b2dc530` with Xcode 27.2 (27B52) and uploaded at 13:04, when App Store Connect
+began processing it. Only those three frameworks changed from build 14, each by about
 1.7 KB; compared with the ten ROMs they share as many 32-byte runs as before. The archive contains no
 ROMs, extracted game archives or saves, and its signature verifies.
 
