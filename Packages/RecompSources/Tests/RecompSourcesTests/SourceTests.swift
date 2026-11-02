@@ -135,3 +135,15 @@ private struct FixtureProvider: LibraryProvider {
     #expect(!cancelled.append(Data(repeating: 0, count: 64), offset: 0, total: 64))
     #expect(throws: CancellationError.self) { try cancelled.finish(nil).get() }
 }
+
+@Test func cancellingATransferAsItStartsThrowsInsteadOfCrashing() async throws {
+    // A closed loopback port: a request that isn't cancelled first fails quickly too.
+    let request = URLRequest(url: try #require(URL(string: "http://127.0.0.1:9/")))
+    for attempt in 0..<1_000 {
+        let transfer = Task { try await HTTPTransfer(limit: 1024).run(request) }
+        // Land the cancellation at different points while the transfer sets up its session.
+        for _ in 0..<(attempt % 7) { await Task.yield() }
+        transfer.cancel()
+        await #expect(throws: (any Error).self) { try await transfer.value }
+    }
+}

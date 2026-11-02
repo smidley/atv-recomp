@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// One request per instance. Mutable transfer state is confined to the serial delegate queue
 /// after the continuation is installed and before the task is resumed. Cancellation touches
@@ -40,12 +41,21 @@ final class HTTPTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable 
         queue.maxConcurrentOperationCount = 1
         let session = URLSession(configuration: configuration, delegate: self, delegateQueue: queue)
         defer { session.finishTasksAndInvalidate() }
+        // Cancellation can arrive on another thread while the task is being created. URLSession
+        // raises an exception for a task on an invalidated session, so the two never overlap.
+        let cancelled = OSAllocatedUnfairLock(initialState: false)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 self.continuation = continuation
-                session.dataTask(with: request).resume()
+                let started = cancelled.withLock { cancelled in
+                    guard !cancelled else { return false }
+                    session.dataTask(with: request).resume()
+                    return true
+                }
+                if !started { self.continuation = nil; continuation.resume(throwing: CancellationError()) }
             }
         } onCancel: {
+            cancelled.withLock { $0 = true }
             session.invalidateAndCancel()
         }
     }
