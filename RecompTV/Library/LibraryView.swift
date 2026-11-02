@@ -144,7 +144,7 @@ struct LibraryView: View {
 }
 
 @MainActor
-private struct SourceEditorView: View {
+struct SourceEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var source: LibrarySource
     @State private var secret = ""
@@ -153,18 +153,26 @@ private struct SourceEditorView: View {
     @State private var connection: Task<Void, Never>?
     @State private var loadedCredential = false
     let library: LibraryModel
+    /// Guided setup's Connect step: no name field or Cancel, just what setup needs.
+    let setup: Bool
+    let onSaved: ((LibrarySource) -> Void)?
 
     // A sheet owns a single editing draft; changes are committed only after successful access.
-    init(source: LibrarySource, library: LibraryModel) {
-        _source = State(initialValue: source); self.library = library
+    init(source: LibrarySource, library: LibraryModel, setup: Bool = false, onSaved: ((LibrarySource) -> Void)? = nil) {
+        _source = State(initialValue: source); self.library = library; self.setup = setup; self.onSaved = onSaved
     }
 
     var body: some View {
+        // Plain HTTP stays an explicit choice for each connection; setup offers it once the address asks for it.
+        let http = source.address.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("http://")
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text("Connect \(source.kind.title)").font(.title.bold())
-                TextField("Connection name", text: $source.name)
-                TextField(source.kind == .smb ? "smb://server/share/folder" : "https://romm.example.com", text: $source.address)
+                if !setup {
+                    Text("Connect \(source.kind.title)").font(.title.bold())
+                    TextField("Connection name", text: $source.name)
+                }
+                TextField(source.kind == .smb ? "smb://server/share/folder"
+                          : setup ? "Server, such as https://romm.example.com" : "https://romm.example.com", text: $source.address)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if source.kind == .smb {
                     TextField("Username (empty for guest)", text: $source.username)
@@ -176,21 +184,24 @@ private struct SourceEditorView: View {
                     Text("Use an account with read access. Include the share name in the address; folders are optional.")
                         .font(.caption).foregroundStyle(.secondary)
                 } else {
-                    SecureField("Client API token", text: $secret)
-                    Toggle("Allow HTTP for this server", isOn: $source.allowHTTP)
-                    Text("In RomM, create a Client API token with roms.read permission. HTTP sends the token without encryption; use it only on a trusted network.")
+                    SecureField(setup ? "RomM API token" : "Client API token", text: $secret)
+                    if !setup || http { Toggle("Allow HTTP for this server", isOn: $source.allowHTTP) }
+                    Text((setup ? "Give the token the roms.read and platforms.read permissions."
+                          : "In RomM, create a Client API token with roms.read and platforms.read permissions.")
+                         + (!setup || http ? " HTTP sends the token without encryption; use it only on a trusted network." : ""))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if let error { Text(error).foregroundStyle(.orange).font(.callout) }
                 HStack(spacing: 24) {
-                    Button(connecting ? "Connecting…" : "Connect and save") { connect() }
+                    Button(connecting ? "Connecting…" : setup ? "Connect" : "Connect and save") { connect() }
                         .disabled(connecting || !loadedCredential)
-                    Button("Cancel") { connection?.cancel(); dismiss() }
+                    if !setup { Button("Cancel") { connection?.cancel(); dismiss() } }
                 }
                 if connecting { ProgressView() }
             }
-            .padding(64)
-            .frame(maxWidth: 1400)
+            .padding(setup ? 0 : 64)
+            .frame(maxWidth: 1400, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: setup ? .leading : .center)
         }
         .task {
             do { secret = try CredentialStore.load(source.id); loadedCredential = true }
@@ -210,9 +221,11 @@ private struct SourceEditorView: View {
                 try Task.checkCancellation()
                 var saved = draft
                 saved.address = saved.address.trimmingCharacters(in: .whitespacesAndNewlines)
-                if saved.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { saved.name = saved.kind.title }
+                if saved.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    saved.name = setup ? saved.serverName : saved.kind.title
+                }
                 try library.save(saved, secret: credential)
-                dismiss()
+                if let onSaved { onSaved(saved) } else { dismiss() }
             } catch { if !Task.isCancelled { self.error = userFacingNetworkError(error) } }
         }
     }
@@ -747,6 +760,7 @@ struct ArtworkFixturePreview: View {
 struct SetupFixturePreview: View {
     let step: String
     @State private var library: LibraryModel?
+    @State private var detection: PlatformDetection?
     private let source = LibrarySource(id: UUID(uuidString: "5E7C1F8A-3B2D-4C6E-9A1F-2D3E4F5A6B7C") ?? UUID(),
         name: "Fixture RomM", kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
 
@@ -759,12 +773,18 @@ struct SetupFixturePreview: View {
     var body: some View {
         Group {
             if let library {
-                NavigationStack {
-                    switch step {
-                    case "games": PlatformScanView(platform: .nintendo64, library: library, mode: .setup)
-                    case "results": PlatformScanView(platform: .nintendo64, library: library, mode: .library)
-                    default: Text("Unknown setup step “\(step)”.")
-                    }
+                switch step {
+                case "welcome": SetupFlowView(library: library)
+                case "connect": SetupFlowView(library: library, path: [.connect(.romm)])
+                case "detect": SetupFlowView(library: library, path: [.connect(.romm), .findPlatforms(source)])
+                case "platforms":
+                    if let detection {
+                        SetupFlowView(library: library, path: [.connect(.romm), .findPlatforms(source),
+                                                               .choosePlatforms(source, detection)])
+                    } else { Text("The fixture server didn't answer Detect platforms.") }
+                case "games": NavigationStack { PlatformScanView(platform: .nintendo64, library: library, mode: .setup) }
+                case "results": NavigationStack { PlatformScanView(platform: .nintendo64, library: library, mode: .library) }
+                default: Text("Unknown setup step “\(step)”.")
                 }
             } else { ProgressView("Loading setup fixture…") }
         }
@@ -776,6 +796,7 @@ struct SetupFixturePreview: View {
             let model = LibraryModel(cache: cache, defaults: defaults)
             if step != "welcome" { try? model.save(source, secret: "fixture-token") }
             await model.restoreCache()
+            if step == "platforms" { detection = try? await model.detectPlatforms(source) }
             library = model
         }
         .onDisappear { try? CredentialStore.remove(source.id) }

@@ -10,6 +10,8 @@ struct PlatformScanView: View {
     let platform: SupportedPlatform
     let library: LibraryModel
     let mode: Mode
+    /// An SMB setup, which has no platform step.
+    var skipsPlatforms = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @State private var report: ScanReport?
@@ -26,8 +28,8 @@ struct PlatformScanView: View {
         let added = importing && !library.isImporting ? library.batchReport?.count(.imported) ?? 0 : 0
         VStack(alignment: .leading, spacing: 24) {
             if mode == .setup {
-                StepPills(current: .games)
-                Kicker(text: "Step 3 of 3")
+                StepPills(current: .games, skipsPlatforms: skipsPlatforms)
+                Kicker(text: skipsPlatforms ? "Step 2 of 2" : "Step 3 of 3")
             }
             Text(platform.title).font(.title.bold())
             if let report {
