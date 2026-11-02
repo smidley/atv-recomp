@@ -119,8 +119,8 @@ menus' regions stopped the D-pad at their borders. Quitting and the menus on a
 physical Apple TV remain part of the hardware test pass.
 
 When a game fails on the Apple TV (a crash, or a screen that stays black), choose
-**Last game log** at the bottom of the library's home screen (Debug builds also have it
-under **Diagnostics**). While a game runs, its console output goes to
+**Last game log** in **Settings**, the gear next to Search on the library's home screen
+(Debug builds also have it under **Diagnostics**). While a game runs, its console output goes to
 `Library/Caches/Nativecade/Logs/last-game.log` instead of the console. Its first lines
 name the game, the build, the Apple TV model (`AppleTV14,1` is the 4K 3rd generation),
 the tvOS version, the GPU, its argument-buffer tier (RT64's games need tier 2) and the
