@@ -414,6 +414,28 @@ processing it. Every framework's code is unchanged from build 17; only the app c
 with the ten ROMs it shares no 32-byte runs. The archive contains no ROMs, extracted game archives or
 saves, and its signature verifies.
 
+Build **0.1.0 (19)** is a diagnostic build for the games RT64 draws (Shadows of the Empire, Racer
+and both Cruis'n games), which show a black or garbled picture on the Apple TV with no GPU error.
+Cruis'n World's log from build 18 showed the game running normally: its video interface points at
+its framebuffer (`0x680`, which is `0x400` plus one row, where Cruis'n keeps it), it sends a display
+list every other frame, and no `[plume] GPU work failed` line appears. RT64 can't draw in the
+simulator, so every 120 frames its game log now says:
+
+- `[rt64-frame] #N images=I draws=D 0xADDR/WIDTH:DRAWS ...`: what a frame draws, with the address,
+  width and draw count of up to four images it draws into.
+- `[rt64-present] #N vi=1 fb=0xADDR WxH found=F target=T WxH frames=P`: what the screen gets.
+  `found=1 target=ok` means RT64 shows the image it drew (then the picture is lost in the last draw
+  to the screen); `found=0` with a target means no drawn image starts at the VI's address, so RT64
+  shows the game's memory there instead, black when that memory is empty; `target=none` or `empty`
+  means it shows nothing.
+
+It also heads each platform's shelf on the home with its name, "Nintendo 64 ›", instead of a card among
+its games. On 2026-11-02 build 19 was archived from commit `0643894` with Xcode 27.2 (27B52) and
+uploaded at 14:13, when App Store Connect began processing it. Only the SotE, Racer and Cruis'n
+frameworks changed from build 18, each with both log lines; compared with the ten ROMs they share as
+many 32-byte runs as before, and the app none. The archive contains no ROMs, extracted game archives or
+saves, and its signature verifies. Their simulator slices are build 18's: RT64 can't draw there.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
