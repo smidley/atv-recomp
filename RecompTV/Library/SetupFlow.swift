@@ -31,6 +31,8 @@ struct SetupFlowView: View {
                     case .choosePlatforms(let source, let detection):
                         ChoosePlatformsView(library: library, detection: detection, serverName: source.serverName) {
                             if let first = detection.platforms.map(\.platform).first(where: library.setup.platforms.contains) {
+                                // Set up from here on, so a relaunch opens the library rather than the welcome.
+                                library.completeSetup()
                                 path.append(.games(first, skipsPlatforms: false))
                             }
                         }
@@ -45,6 +47,7 @@ struct SetupFlowView: View {
         if source.kind == .romm { path.append(.findPlatforms(source)); return }
         // ponytail: one platform today; SMB setups enable them all until shares get a platform step
         for platform in SupportedPlatform.allCases { library.setPlatform(platform, enabled: true) }
+        library.completeSetup()
         path.append(.games(SupportedPlatform.allCases[0], skipsPlatforms: true))
     }
 }
@@ -96,7 +99,9 @@ private struct ConnectView: View {
         SetupScreen(stage: .connect, skipsPlatforms: kind == .smb) {
             Kicker(text: kind == .smb ? "Step 1 of 2" : "Step 1 of 3")
             Text(kind == .romm ? "Connect RomM" : "Connect an SMB share").font(.title.bold())
-            SourceEditorView(source: LibrarySource(kind: kind), library: library, setup: true, onSaved: connected)
+            // Coming back to setup reuses its saved connection rather than adding another.
+            SourceEditorView(source: library.sources.last(where: { $0.kind == kind }) ?? LibrarySource(kind: kind),
+                             library: library, setup: true, onSaved: connected)
         }
     }
 }
@@ -178,8 +183,13 @@ struct ChoosePlatformsView: View {
             }
             .padding(.vertical, 24)
             if let onContinue {
-                Button("Continue") { onContinue() }
-                    .disabled(!rows.contains { library.setup.platforms.contains($0.platform) })
+                if rows.isEmpty {
+                    // Nothing here to turn on; setup still leads into the library and its Settings.
+                    Button("Go to library") { library.finishSetup() }
+                } else {
+                    Button("Continue") { onContinue() }
+                        .disabled(!rows.contains { library.setup.platforms.contains($0.platform) })
+                }
             }
         }
         .onAppear {

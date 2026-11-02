@@ -29,6 +29,27 @@ public struct PlatformScan: Equatable, Sendable {
     public var unsupportedCount: Int?
 }
 
+/// A button on a platform's scan page, in the order shown; the first gets focus.
+public enum ScanPageAction: Hashable, Sendable {
+    case startPlaying, done, addAll(Int), scanAgain, goToLibrary
+}
+
+public extension PlatformScan {
+    /// The scan page's buttons. Setup always offers a way into the library, so no server can trap
+    /// a first-time user; once an import has run here, Add all gives way to Scan again.
+    func actions(owned: Set<SupportedGame>, setup: Bool, importFinished: Bool, added: Int) -> [ScanPageAction] {
+        let new = candidates.filter { !owned.contains($0.game) }.count
+        let present = candidates.count - new
+        var actions = [ScanPageAction]()
+        if setup && present > 0 { actions.append(.startPlaying) }
+        if !setup && added > 0 { actions.append(.done) }
+        if new > 0 && !importFinished { actions.append(.addAll(new)) }
+        actions.append(.scanAgain)
+        if setup && present == 0 { actions.append(.goToLibrary) }
+        return actions
+    }
+}
+
 /// A connection to scan, with the name a failure message uses.
 public struct ScanConnection: Sendable {
     public let name: String

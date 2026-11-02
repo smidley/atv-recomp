@@ -38,15 +38,9 @@ struct PlatformScanView: View {
                     ForEach(report.failures, id: \.self) { Text($0).foregroundStyle(.orange).font(.callout) }
                 }
                 HStack(spacing: 28) {
-                    if added > 0 {
-                        Button(mode == .setup ? "Start playing" : "Done") {
-                            if mode == .setup { library.completeSetup() } else { dismiss() }
-                        }
-                    } else if !new.isEmpty {
-                        Button("Add all \(new.count)") { importing = true; library.addAll(candidates, title: platform.title) }
-                            .disabled(library.isImporting)
-                    }
-                    Button("Scan again") { scan() }.disabled(library.isImporting || scanning != nil)
+                    ForEach(report.scan.actions(owned: owned, setup: mode == .setup,
+                                                importFinished: importing && !library.isImporting, added: added),
+                            id: \.self) { button($0, candidates: candidates) }
                 }
                 if importing { importProgress }
             } else if scanning != nil {
@@ -110,6 +104,18 @@ struct PlatformScanView: View {
             lines.append(more == 1 ? "1 more isn't supported yet." : "\(more) more aren't supported yet.")
         }
         return lines
+    }
+
+    @ViewBuilder private func button(_ action: ScanPageAction, candidates: [ScanCandidate]) -> some View {
+        switch action {
+        case .startPlaying: Button("Start playing") { library.finishSetup() }.disabled(library.isImporting)
+        case .done: Button("Done") { dismiss() }
+        case .addAll(let count):
+            Button("Add all \(count)") { importing = true; library.addAll(candidates, title: platform.title) }
+                .disabled(library.isImporting)
+        case .scanAgain: Button("Scan again") { scan() }.disabled(library.isImporting || scanning != nil)
+        case .goToLibrary: Button("Go to library") { library.finishSetup() }.disabled(library.isImporting)
+        }
     }
 
     @ViewBuilder private var importProgress: some View {

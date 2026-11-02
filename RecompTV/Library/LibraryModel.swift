@@ -22,6 +22,9 @@ final class LibraryModel {
     private(set) var restored = false
     /// Whether guided setup has finished, and which platforms the home shows.
     private(set) var setup = LibrarySetup()
+    /// Guided setup's screens stay up until the user leaves them for the library, though setup
+    /// is saved as complete as soon as a platform's games step is reached.
+    private(set) var inSetup = false
     var error: String?
     @ObservationIgnored private var cache: ROMCache?
     @ObservationIgnored private var transfer: Task<Void, Never>?
@@ -68,6 +71,7 @@ final class LibraryModel {
             setupNeedsMigration = false
             saveSetup(LibrarySetup.migrate(hasSources: !sources.isEmpty, games: importedROMs.compactMap(\.game)))
         }
+        if !restored { inSetup = !setup.complete }
         restored = true
     }
 
@@ -83,6 +87,12 @@ final class LibraryModel {
         var next = setup
         next.complete = true
         saveSetup(next)
+    }
+
+    /// Leaves guided setup for the library.
+    func finishSetup() {
+        completeSetup()
+        inSetup = false
     }
 
     private func saveSetup(_ next: LibrarySetup) {

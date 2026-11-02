@@ -12,7 +12,7 @@ struct LibraryView: View {
         Group {
             if !library.restored {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background { CalmBackdrop() }
-            } else if !library.setup.complete {
+            } else if library.inSetup {
                 SetupFlowView(library: library)
             } else {
                 LibraryHomeView(library: library)

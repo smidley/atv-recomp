@@ -39,3 +39,21 @@ private func candidate(_ game: SupportedGame, _ sourceID: UUID) -> ScanCandidate
     #expect(report.scan.unsupportedCount == 5)
     #expect(report.failures == ["Couldn't scan Attic. RomM returned HTTP 503. Try again after checking the server."])
 }
+
+@Test func scanPageAlwaysOffersAWayOutOfSetup() {
+    let den = UUID()
+    let scan = PlatformScan(candidates: [candidate(.marioKart64, den), candidate(.ocarinaOfTime, den)], unsupportedCount: nil)
+    let none = PlatformScan(candidates: [], unsupportedCount: nil)
+    // A fresh setup: add the games, or skip into the library.
+    #expect(scan.actions(owned: [], setup: true, importFinished: false, added: 0) == [.addAll(2), .scanAgain, .goToLibrary])
+    // Nothing Nativecade plays was found, or every connection failed.
+    #expect(none.actions(owned: [], setup: true, importFinished: false, added: 0) == [.scanAgain, .goToLibrary])
+    // Every dump was a different version: nothing was added, and Add all again wouldn't help.
+    #expect(scan.actions(owned: [], setup: true, importFinished: true, added: 0) == [.scanAgain, .goToLibrary])
+    // Some games were added, or were already there after going back a step.
+    #expect(scan.actions(owned: [.marioKart64], setup: true, importFinished: true, added: 1) == [.startPlaying, .scanAgain])
+    #expect(scan.actions(owned: [.marioKart64, .ocarinaOfTime], setup: true, importFinished: false, added: 0) == [.startPlaying, .scanAgain])
+    // A platform's page after setup: Done once games were added; Back leaves otherwise.
+    #expect(scan.actions(owned: [.ocarinaOfTime], setup: false, importFinished: false, added: 0) == [.addAll(1), .scanAgain])
+    #expect(scan.actions(owned: [.marioKart64, .ocarinaOfTime], setup: false, importFinished: true, added: 1) == [.done, .scanAgain])
+}
