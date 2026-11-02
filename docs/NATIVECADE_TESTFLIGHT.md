@@ -401,6 +401,19 @@ and its signature verifies. Only those three frameworks changed from build 14, e
 1.7 KB; compared with the ten ROMs they share as many 32-byte runs as before. The archive contains no
 ROMs, extracted game archives or saves, and its signature verifies.
 
+Build **0.1.0 (18)** replaces the library's button-list home with a guided setup: Connect RomM (or
+an SMB share), Detect platforms, Choose platforms, then Scan for games and Add all, with a ribbon saying
+which platforms are supported now and that more arrive over time ([connection guide](NETWORK_SOURCES.md)).
+An existing library skips setup and opens on its home; connections, Platforms, the cache tools,
+Third-party notices and Last game log move to Settings. It also stops a download cancelled as it starts
+from ending the app. Installed over a simulator with ten imported games, it opened on the home with all
+ten. RomM tokens now need `platforms.read` as well as `roms.read` for the platform count; without it,
+setup still finds Nintendo 64. On 2026-11-02 build 18 was archived from commit `97b5277`, the tree merged
+to main as `ba04a36`, with Xcode 27.2 (27B52) and uploaded at 12:48, when App Store Connect began
+processing it. Every framework's code is unchanged from build 17; only the app changed, and compared
+with the ten ROMs it shares no 32-byte runs. The archive contains no ROMs, extracted game archives or
+saves, and its signature verifies.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
