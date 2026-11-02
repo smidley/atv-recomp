@@ -373,7 +373,7 @@ private struct SourceBrowserView: View {
 }
 
 @MainActor
-private struct BatchResultsView: View {
+struct BatchResultsView: View {
     @Environment(\.dismiss) private var dismiss
     let library: LibraryModel
 
@@ -442,24 +442,41 @@ private struct PlatformView: View {
         let roms = library.shelf.games[platform] ?? []
         VStack(alignment: .leading, spacing: 40) {
             Text(platform.title).font(.title.bold())
-            if !roms.isEmpty { CoverFlow(roms: roms, selected: $selected, library: library) }
+            if roms.isEmpty { Text("No games yet.").foregroundStyle(.secondary) }
+            else { CoverFlow(roms: roms, selected: $selected, library: library) }
             Spacer(minLength: 0)
+            // Below the Cover Flow, so the covers keep the screen's first focus.
+            NavigationLink("Scan for games") { PlatformScanView(platform: platform, library: library, mode: .library) }
+                .disabled(library.isImporting)
+            SupportRibbon()
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background { if let rom = roms[safe: selected] { CoverBackdrop(rom: rom, library: library) } }
+        .background {
+            if let rom = roms[safe: selected] { CoverBackdrop(rom: rom, library: library) } else { CalmBackdrop() }
+        }
     }
 }
 
-/// The game's cover, blurred, tinting the whole screen.
+/// A game's cover, blurred, tinting the whole screen.
 @MainActor
-private struct CoverBackdrop: View {
-    let rom: ImportedROM
+struct CoverBackdrop: View {
+    let artwork: RomMArtwork?
+    let sourceID: UUID
+    let title: String
     let library: LibraryModel
 
+    init(artwork: RomMArtwork?, sourceID: UUID, title: String, library: LibraryModel) {
+        self.artwork = artwork; self.sourceID = sourceID; self.title = title; self.library = library
+    }
+
+    init(rom: ImportedROM, library: LibraryModel) {
+        self.init(artwork: rom.artwork, sourceID: rom.sourceID, title: rom.title, library: library)
+    }
+
     var body: some View {
-        GameArtworkView(path: rom.artwork?.coverLarge ?? rom.artwork?.cover, artwork: rom.artwork,
-            sourceID: rom.sourceID, library: library, width: 1920, height: 1080, title: rom.title, fill: true)
+        GameArtworkView(path: artwork?.coverLarge ?? artwork?.cover, artwork: artwork,
+            sourceID: sourceID, library: library, width: 1920, height: 1080, title: title, fill: true)
             .blur(radius: 60).opacity(0.4).ignoresSafeArea()
     }
 }
@@ -570,7 +587,7 @@ private struct TitleArt: View {
 }
 
 @MainActor
-private struct GameView: View {
+struct GameView: View {
     let rom: ImportedROM
     let library: LibraryModel
 
@@ -646,7 +663,7 @@ private struct GameTile: View {
 }
 
 @MainActor
-private struct GameArtworkView: View {
+struct GameArtworkView: View {
     let path: String?
     let artwork: RomMArtwork?
     let sourceID: UUID
@@ -719,6 +736,47 @@ struct ArtworkFixturePreview: View {
         .task {
             do { try CredentialStore.save("fixture-token", for: source.id); ready = true }
             catch { ready = false }
+        }
+        .onDisappear { try? CredentialStore.remove(source.id) }
+    }
+}
+
+/// Guided setup screens on fixture data for simulator screenshots: `--setup-fixture-step results`.
+/// Its own settings suite and an empty temporary ROM cache keep the real library untouched;
+/// `NATIVECADE_SYNTHETIC_LIBRARY` adds games that count as already imported.
+struct SetupFixturePreview: View {
+    let step: String
+    @State private var library: LibraryModel?
+    private let source = LibrarySource(id: UUID(uuidString: "5E7C1F8A-3B2D-4C6E-9A1F-2D3E4F5A6B7C") ?? UUID(),
+        name: "Fixture RomM", kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
+
+    static var requestedStep: String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "--setup-fixture-step"), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
+
+    var body: some View {
+        Group {
+            if let library {
+                NavigationStack {
+                    switch step {
+                    case "games": PlatformScanView(platform: .nintendo64, library: library, mode: .setup)
+                    case "results": PlatformScanView(platform: .nintendo64, library: library, mode: .library)
+                    default: Text("Unknown setup step “\(step)”.")
+                    }
+                }
+            } else { ProgressView("Loading setup fixture…") }
+        }
+        .task {
+            let suite = "nativecade.setup-fixture"
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("setup-fixture-\(UUID().uuidString)")
+            guard let defaults = UserDefaults(suiteName: suite), let cache = try? ROMCache(root: root) else { return }
+            let model = LibraryModel(cache: cache, defaults: defaults)
+            if step != "welcome" { try? model.save(source, secret: "fixture-token") }
+            await model.restoreCache()
+            library = model
         }
         .onDisappear { try? CredentialStore.remove(source.id) }
     }

@@ -16,6 +16,8 @@ struct RecompTVRootView: View {
             #if DEBUG && targetEnvironment(simulator)
             if ProcessInfo.processInfo.arguments.contains("--artwork-fixture-preview") {
                 ArtworkFixturePreview()
+            } else if let step = SetupFixturePreview.requestedStep {
+                SetupFixturePreview(step: step)
             } else { tabs }
             #else
             tabs
