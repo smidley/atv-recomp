@@ -390,7 +390,8 @@ Build **0.1.0 (17)** fixes Mario Kart 64's item boxes vanishing and reappearing 
 TV, a frame-interpolation mismatch ([SpaghettiKart](SPAGHETTIKART.md)). Recorded in the simulator at
 60 fps, the attract race showed a whole box flashing over the kart that hit it, for one frame; with the
 fix, 48 consecutive frames covering several hits showed none. It also carries the CI fix to Shadows of
-the Empire's progress watchdog. On 2026-11-01 build 17 was archived with Xcode 27.2 (27B52). Only the
+the Empire's progress watchdog. On 2026-11-01 build 17 was archived from commit `bf26c4e` with Xcode
+27.2 (27B52) and uploaded at 19:42, when App Store Connect began processing it. Only the
 SpaghettiKart and SotE frameworks changed from build 16; compared with the ten ROMs they share as many
 32-byte runs as before. The archive contains no ROMs, extracted game archives or saves, and its
 signature verifies. Only the BattleShip framework's code
