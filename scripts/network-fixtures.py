@@ -216,6 +216,8 @@ def main():
         (root / "N64").mkdir()
         swapped = b"".join(ROM[i:i + 2][::-1] for i in range(0, len(ROM), 2))
         (root / "N64" / "Fixture.v64").write_bytes(swapped)
+        # Named like a supported game, so a scan finds it; the bytes are still synthetic.
+        (root / "N64" / "Mario Kart 64 (USA).z64").write_bytes(ROM)
         smb = smbserver.SimpleSMBServer(listenAddress="127.0.0.1", listenPort=args.smb_port)
         smb.addShare("GAMES", str(root), "Synthetic test data")
         smb.setSMB2Support(True)

@@ -133,7 +133,7 @@ struct NetworkTests {
         let folderEntry = try #require(page.entries.first { $0.folder != nil })
         let folderLocation = try #require(folderEntry.folder)
         let nested = try await provider.list(folderLocation, search: "", offset: 0)
-        #expect(nested.entries.map(\.name) == ["Fixture.v64"])
+        #expect(nested.entries.map(\.name) == ["Fixture.v64", "Mario Kart 64 (USA).z64"])
         let entry = try #require(page.entries.first { $0.isROM })
         let folder = try temporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
@@ -142,5 +142,14 @@ struct NetworkTests {
         #expect(try Data(contentsOf: file) == syntheticROM())
         let wrong = try SMBProvider(source: source, password: "wrong")
         await #expect(throws: (any Error).self) { try await wrong.list(.root, search: "", offset: 0) }
+    }
+
+    @Test func smbScanMatchesFilenamesInSubfolders() async throws {
+        let source = LibrarySource(address: "smb://127.0.0.1:1445/GAMES", username: "player")
+        let scan = try await SMBProvider(source: source, password: "fixture-password").scan(.nintendo64)
+        #expect(scan.candidates.map(\.game) == [.marioKart64])
+        #expect(scan.candidates.first?.entries.map(\.name) == ["Mario Kart 64 (USA).z64"])
+        #expect(scan.candidates.first?.sourceID == source.id)
+        #expect(scan.unsupportedCount == nil)
     }
 }
