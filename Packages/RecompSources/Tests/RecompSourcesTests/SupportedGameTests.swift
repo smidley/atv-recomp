@@ -36,3 +36,16 @@ import Testing
     #expect(Set(entries.map(\.sha1)).count == entries.count)
     #expect(try SupportedGame.marioKart64.revisions().count == 1)
 }
+
+@Test func platformTableMatchesRomMSlugsAndFilenames() {
+    #expect(SupportedPlatform(rommSlug: "N64") == .nintendo64)
+    #expect(SupportedPlatform(rommSlug: "3ds") == nil)
+    #expect(SupportedPlatform.nintendo64.title == "Nintendo 64")
+    #expect(SupportedPlatform.nintendo64.games == SupportedGame.allCases)
+    #expect(SupportedGame.allCases.allSatisfy { $0.platform == .nintendo64 })
+    let n64 = SupportedPlatform.nintendo64
+    #expect(n64.game(named: "Mario Kart 64 (USA).z64") == .marioKart64)
+    #expect(n64.game(named: "Legend of Zelda, The - Ocarina of Time (USA).z64") == .ocarinaOfTime)
+    #expect(n64.game(named: "Star Wars Episode I - Racer (USA).z64") == .episodeOneRacer)
+    #expect(n64.game(named: "Paper Mario (USA).z64") == nil)
+}

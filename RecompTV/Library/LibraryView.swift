@@ -42,13 +42,13 @@ struct LibraryView: View {
                                     NavigationLink { PlatformView(platform: platform, library: library) } label: {
                                         VStack(spacing: 16) {
                                             Image(systemName: "gamecontroller.fill").font(.system(size: 80))
-                                            Text(platform).font(.headline)
+                                            Text(platform.title).font(.headline)
                                             Text(games).font(.caption).foregroundStyle(.secondary)
                                         }
                                         .frame(width: 330, height: 260)
                                     }
                                     .buttonStyle(.card)
-                                    .accessibilityLabel("\(platform), \(games)")
+                                    .accessibilityLabel("\(platform.title), \(games)")
                                 }
                             }.padding(12)
                         }.scrollClipDisabled()
@@ -434,14 +434,14 @@ private struct ROMResultView: View {
 
 @MainActor
 private struct PlatformView: View {
-    let platform: String
+    let platform: SupportedPlatform
     let library: LibraryModel
     @State private var selected = 0
 
     var body: some View {
         let roms = library.shelf.games[platform] ?? []
         VStack(alignment: .leading, spacing: 40) {
-            Text(platform).font(.title.bold())
+            Text(platform.title).font(.title.bold())
             if !roms.isEmpty { CoverFlow(roms: roms, selected: $selected, library: library) }
             Spacer(minLength: 0)
         }

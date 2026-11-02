@@ -55,8 +55,8 @@ final class LibraryModel {
     /// Playable games by platform, sorted by title, with a search index. Browsing reads this on every
     /// swipe, so it is rebuilt only when the imported games change.
     struct Shelf {
-        var platforms = [String]()
-        var games = [String: [ImportedROM]]()
+        var platforms = [SupportedPlatform]()
+        var games = [SupportedPlatform: [ImportedROM]]()
         var search = FuzzySearch([ImportedROM](), title: \.title)
     }
 
@@ -66,8 +66,10 @@ final class LibraryModel {
         if let shelfCache, shelfCache.games == importedROMs { return shelfCache.shelf }
         let playable = importedROMs.filter { $0.game != nil }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-        let games = Dictionary(grouping: playable) { $0.game?.platform ?? "" }
-        let shelf = Shelf(platforms: games.keys.sorted(), games: games, search: FuzzySearch(playable, title: \.title))
+        var games = [SupportedPlatform: [ImportedROM]]()
+        for rom in playable { if let platform = rom.game?.platform { games[platform, default: []].append(rom) } }
+        let shelf = Shelf(platforms: SupportedPlatform.allCases.filter { games[$0] != nil }, games: games,
+                          search: FuzzySearch(playable, title: \.title))
         shelfCache = (importedROMs, shelf)
         return shelf
     }
