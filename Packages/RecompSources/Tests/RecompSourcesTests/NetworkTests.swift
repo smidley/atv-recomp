@@ -87,6 +87,27 @@ struct NetworkTests {
         #expect(payload["hits"] == 0)
     }
 
+    @Test func rommDetectsSupportedPlatformsAndFallsBackWithoutPlatformsRead() async throws {
+        #expect(try await romm().detectPlatforms() == PlatformDetection(
+            platforms: [DetectedPlatform(platform: .nintendo64, romCount: 6)], serverPlatformCount: 2))
+        // Without platforms.read the per-game search still finds Nintendo 64, without counts.
+        #expect(try await romm("/roms-only").detectPlatforms() == PlatformDetection(
+            platforms: [DetectedPlatform(platform: .nintendo64, romCount: nil)], serverPlatformCount: nil))
+    }
+
+    @Test func rommScanPrefersHashMatchesAndCountsTheRest() async throws {
+        let source = LibrarySource(kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
+        let scan = try await RomMProvider(source: source, token: "fixture-token").scan(.nintendo64)
+        #expect(scan.candidates.map(\.game) == [.marioKart64, .ocarinaOfTime])
+        // Ocarina's second record (7) loses to the record whose sha1_hash is a supported revision.
+        #expect(scan.candidates.map { $0.entries.map(\.folder) } == [[.rom(4)], [.rom(3)]])
+        #expect(scan.candidates.allSatisfy { $0.sourceID == source.id })
+        #expect(scan.candidates.last?.artwork?.romID == 3)
+        // 6 Nintendo 64 records, 3 of them titled like a supported game (3, 4 and 7).
+        #expect(scan.unsupportedCount == 3)
+        #expect(try await romm("/roms-only").scan(.nintendo64).unsupportedCount == nil)
+    }
+
     @Test func oversizedAndChunkedBodiesAreBoundedAndTransferCancels() async throws {
         func request(_ path: String) throws -> URLRequest {
             var request = URLRequest(url: try #require(URL(string: "http://127.0.0.1:18080/\(path)")))

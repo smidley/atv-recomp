@@ -96,6 +96,10 @@ public protocol LibraryProvider: Sendable {
                   progress: @escaping ProgressHandler) async throws
     func imageData(at path: String) async throws -> Data
     func artwork(for rom: ImportedROM) async throws -> RomMArtwork?
+    /// The supported platforms on the server.
+    func detectPlatforms() async throws -> PlatformDetection
+    /// The supported games of one platform on this connection.
+    func scan(_ platform: SupportedPlatform) async throws -> PlatformScan
 }
 
 public extension LibraryProvider {
@@ -103,6 +107,12 @@ public extension LibraryProvider {
         throw LibraryError.message("This source does not provide game artwork.")
     }
     func artwork(for rom: ImportedROM) async throws -> RomMArtwork? { nil }
+    func detectPlatforms() async throws -> PlatformDetection {
+        throw LibraryError.message("This connection has no platform list.")
+    }
+    func scan(_ platform: SupportedPlatform) async throws -> PlatformScan {
+        throw LibraryError.message("This connection can't be scanned for games.")
+    }
 }
 
 public enum LibraryError: Error, LocalizedError, Equatable, Sendable {
@@ -112,7 +122,7 @@ public enum LibraryError: Error, LocalizedError, Equatable, Sendable {
         switch self {
         case .message(let text): text
         case .httpStatus(401), .httpStatus(403):
-            "RomM denied access. Check the API token and its roms.read permission."
+            "RomM denied access. Check the API token and its roms.read and platforms.read permissions."
         case .httpStatus(404):
             "RomM could not find this item. Refresh the library or check the instance URL."
         case .httpStatus(let code): "RomM returned HTTP \(code). Try again after checking the server."
