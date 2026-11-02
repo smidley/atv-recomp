@@ -108,6 +108,14 @@ struct NetworkTests {
         #expect(try await romm("/roms-only").scan(.nintendo64).unsupportedCount == nil)
     }
 
+    @Test func rommScanStaysOnItsPlatformAndBoundsCopiesWithoutAHash() async throws {
+        let scan = try await romm("/crowded").scan(.nintendo64)
+        // 151 Star Fox 64 records on the 3DS stay out: the search covers only the Nintendo 64 platform.
+        #expect(scan.candidates.map(\.game) == [.marioKart64, .superMario64, .ocarinaOfTime])
+        // 151 Super Mario 64 hacks without a supported hash: the scan goes on, and Add all tries 10.
+        #expect(scan.candidates.first { $0.game == .superMario64 }?.entries.count == 10)
+    }
+
     @Test func oversizedAndChunkedBodiesAreBoundedAndTransferCancels() async throws {
         func request(_ path: String) throws -> URLRequest {
             var request = URLRequest(url: try #require(URL(string: "http://127.0.0.1:18080/\(path)")))

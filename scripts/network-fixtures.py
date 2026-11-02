@@ -68,6 +68,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(401, {})
         if path.startswith("/art-proxy/"):
             path = path.removeprefix("/art-proxy")
+        crowded = path.startswith("/crowded/")
+        if crowded:
+            # A large library: 151 Star Fox 64 records on the 3DS and 151 Super Mario 64 hacks.
+            path = path.removeprefix("/crowded")
         if path.startswith("/roms-only/"):
             # A token with roms.read but not platforms.read.
             path = path.removeprefix("/roms-only")
@@ -154,6 +158,12 @@ class Handler(BaseHTTPRequestHandler):
                 # Paper Mario's metadata aliases contain every word of "Super Mario 64".
                 {"id": 9, "name": "Paper Mario fixture", "fs_name": "Paper", **n64, "aliases": ["Super Mario 64 RPG"]},
             ]
+            if crowded:
+                rows += [{"id": 1000 + i, "name": f"Star Fox 64 fixture {i:03}", "fs_name": f"Crowded {i:03}",
+                          "platform_id": 2, "platform_slug": "3ds", "platform_display_name": "Nintendo 3DS"}
+                         for i in range(151)]
+                rows += [{"id": 2000 + i, "name": f"Super Mario 64 hack fixture {i:03}", "fs_name": f"Hack {i:03}", **n64}
+                         for i in range(151)]
             platforms = query.get("platform_ids", [])
             if platforms:
                 rows = [row for row in rows if str(row["platform_id"]) in platforms]

@@ -83,13 +83,16 @@ RomM's implemented contract is checked against **5.4.1** source:
   token without `platforms.read` gets 401/403 there; setup then finds the supported
   platforms through the per-game search instead and leaves out the server's total.
 - **Scan for games** sends the same per-game `search_term` with
-  `group_by_meta_id=false` and `missing=false`, so every record of a game is a
-  candidate. When a record's `sha1_hash` is a supported revision, only that record
-  is imported. RomM hashes the file as stored, so only big-endian `.z64` dumps can
-  match; for other dumps, **Add all** imports every title match and the verifier
-  keeps the supported one. The "not supported yet" count is the platform's
-  `rom_count` minus the records titled like a supported game. An SMB share is
-  scanned by file name across its folders, with no count.
+  `group_by_meta_id=false` and `missing=false`, limited by `platform_ids` to the
+  platform's own entries when the token can list platforms, so every record of a
+  game is a candidate and other platforms' games stay out. A game with more than 150
+  records keeps the first 150 instead of stopping the scan. When a record's
+  `sha1_hash` is a supported revision, only that record is imported. RomM hashes the
+  file as stored, so only big-endian `.z64` dumps can match; for other dumps,
+  **Add all** tries the first 10 title matches and the verifier keeps the supported
+  one. The "not supported yet" count is the platform's `rom_count` minus the records
+  titled like a supported game. An SMB share is scanned by file name across its
+  folders, with no count.
 - `GET /api/roms/{rom_id}`: enumerate individual `files`.
 - [`GET /api/roms/{file_id}/files/content/{file_name}`](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/roms/files.py):
   download one file using its **file ID**, not the catalog ROM ID.
