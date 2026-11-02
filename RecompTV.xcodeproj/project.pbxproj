@@ -115,6 +115,7 @@
 				"F4709C3647840CA54D32F967",
 				"1B6F25A022A51EE411C28D71",
 				"370340BBE638A857F7D98094",
+				"CDF4EB9686E04A9C823F145E",
 				"47FC751C1F534EFB98CF995D",
 				"AD79D22A157A476290AF216B",
 				"060B74DE203C49308A43EBD0",
@@ -279,6 +280,8 @@
 		"95EF33CAB3CF68C9D5E86046" = { "isa" = "PBXBuildFile"; "fileRef" = "B52D1A2409C2DB2F3CED0193"; };
 		"042064B99A910D4E9735395E" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/LibraryView.swift"; "sourceTree" = "SOURCE_ROOT"; };
 		"370340BBE638A857F7D98094" = { "isa" = "PBXBuildFile"; "fileRef" = "042064B99A910D4E9735395E"; };
+		"FB589EB572D14EC0A6C89A28" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/SettingsView.swift"; "sourceTree" = "SOURCE_ROOT"; };
+		"CDF4EB9686E04A9C823F145E" = { "isa" = "PBXBuildFile"; "fileRef" = "FB589EB572D14EC0A6C89A28"; };
 		"4F9DF9F345A142C4B67CAF12" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/SetupFlow.swift"; "sourceTree" = "SOURCE_ROOT"; };
 		"47FC751C1F534EFB98CF995D" = { "isa" = "PBXBuildFile"; "fileRef" = "4F9DF9F345A142C4B67CAF12"; };
 		"DDB0332D1B0C45758234A557" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/PlatformScanView.swift"; "sourceTree" = "SOURCE_ROOT"; };
@@ -417,6 +420,7 @@
 				"9B8FE359FA991A79FF3C2C48",
 				"0AC1ED71BD1B3593225BFF91",
 				"042064B99A910D4E9735395E",
+				"FB589EB572D14EC0A6C89A28",
 				"4F9DF9F345A142C4B67CAF12",
 				"DDB0332D1B0C45758234A557",
 				"6B9E25C4BB5741A3B5F000AA",
@@ -482,6 +486,7 @@
 				"F4709C3647840CA54D32F967",
 				"1B6F25A022A51EE411C28D71",
 				"370340BBE638A857F7D98094",
+				"CDF4EB9686E04A9C823F145E",
 				"47FC751C1F534EFB98CF995D",
 				"AD79D22A157A476290AF216B",
 				"060B74DE203C49308A43EBD0",

@@ -2,129 +2,38 @@ import SwiftUI
 import RecompSources
 import UIKit
 
+/// The library's root: a neutral loading screen until the ROM cache is restored, guided setup
+/// on first launch, then the home. An existing library goes straight to the home.
 @MainActor
 struct LibraryView: View {
     @State private var library = LibraryModel()
-    @State private var editing: LibrarySource?
-    @State private var showingNotices = false
-    @State private var gameLog: [String]?
-    @State private var favorite = 0
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    HStack {
-                        Text("Nativecade").font(.largeTitle.bold())
-                        Spacer()
-                        if !library.importedROMs.isEmpty {
-                            NavigationLink { GameSearchView(library: library) } label: {
-                                Label("Search", systemImage: "magnifyingglass")
-                            }
-                        }
-                    }
-                    let shelf = library.shelf
-                    let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
-                    if !favorites.isEmpty {
-                        Text("Favorites").font(.title2.bold())
-                        CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
-                    }
-                    if shelf.platforms.isEmpty {
-                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Episode I: Racer, Super Smash Bros., Cruis'n USA or Cruis'n World.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Platforms").font(.title2.bold())
-                        ScrollView(.horizontal) {
-                            LazyHStack(spacing: 32) {
-                                ForEach(shelf.platforms, id: \.self) { platform in
-                                    let count = shelf.games[platform]?.count ?? 0
-                                    let games = count == 1 ? "1 game" : "\(count) games"
-                                    NavigationLink { PlatformView(platform: platform, library: library) } label: {
-                                        VStack(spacing: 16) {
-                                            Image(systemName: "gamecontroller.fill").font(.system(size: 80))
-                                            Text(platform.title).font(.headline)
-                                            Text(games).font(.caption).foregroundStyle(.secondary)
-                                        }
-                                        .frame(width: 330, height: 260)
-                                    }
-                                    .buttonStyle(.card)
-                                    .accessibilityLabel("\(platform.title), \(games)")
-                                }
-                            }.padding(12)
-                        }.scrollClipDisabled()
-                    }
-                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    Text("Connections").font(.title2.bold())
-                    Text("Browse a server to import games.").foregroundStyle(.secondary)
-                    HStack(spacing: 24) {
-                        Button("Add SMB share") { editing = LibrarySource(kind: .smb) }
-                        Button("Add RomM") { editing = LibrarySource(kind: .romm) }
-                    }
-                    ForEach(library.sources) { source in
-                        HStack(spacing: 24) {
-                            NavigationLink {
-                                SourceBrowserView(source: source, library: library)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Label(source.name, systemImage: source.kind == .smb ? "externaldrive.connected.to.line.below" : "server.rack")
-                                    Text(source.address).font(.caption).foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            Button("Edit") { editing = source }
-                                .accessibilityLabel("Edit \(source.name)")
-                            Button("Remove") { library.remove(source) }
-                                .accessibilityLabel("Remove \(source.name)")
-                        }
-                    }
-                    HStack(spacing: 24) {
-                        if !library.importedROMs.isEmpty {
-                            Button("Clear ROM cache") { Task { await library.clearCache() } }
-                            Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
-                                Task { await library.refreshArtwork(force: true) }
-                            }
-                            .disabled(library.isRefreshingArtwork || library.isImporting)
-                        }
-                        Button("Third-party notices") { showingNotices = true }
-                        Button("Last game log") { gameLog = GameLogView.load() }
-                    }
-                }
-                .padding(48)
+        Group {
+            if !library.restored {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background { CalmBackdrop() }
+            } else if !library.setup.complete {
+                SetupFlowView(library: library)
+            } else {
+                LibraryHomeView(library: library)
             }
-            .fullScreenCover(isPresented: Binding(get: { gameLog != nil }, set: { if !$0 { gameLog = nil } })) {
-                GameLogView(lines: gameLog ?? [])
-            }
-            .sheet(item: $editing) { source in SourceEditorView(source: source, library: library) }
-            .sheet(isPresented: $showingNotices) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        Button("Done") { showingNotices = false }
-                        Text(SourceNotices.license).font(.caption)
-                        if let notices = Bundle.main.url(forResource: "ThirdPartyNotices", withExtension: "txt", subdirectory: "NativecadeGame"),
-                           let text = try? String(contentsOf: notices, encoding: .utf8) {
-                            Text(text).font(.caption)
-                        }
-                    }.padding(64)
-                }
-            }
-            .task {
-                await library.restoreCache()
-                #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
-                // Explicit local smoke tests. They use only an already verified cache;
-                // no game bytes, server addresses, or credentials enter the build.
-                if let game = SimulatorLaunchProbe.next(),
-                   let rom = library.importedROMs.first(where: { $0.game == game }) {
-                    await library.play(rom)
-                    if let error = library.error { print("Nativecade launch probe failed: \(error)") }
-                }
-                #endif
-                await library.refreshArtwork()
-            }
-            .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
-                Button("OK") { library.error = nil }
-            } message: { Text(library.error ?? "") }
         }
+        .task {
+            await library.restoreCache()
+            #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
+            // Explicit local smoke tests. They use only an already verified cache;
+            // no game bytes, server addresses, or credentials enter the build.
+            if let game = SimulatorLaunchProbe.next(),
+               let rom = library.importedROMs.first(where: { $0.game == game }) {
+                await library.play(rom)
+                if let error = library.error { print("Nativecade launch probe failed: \(error)") }
+            }
+            #endif
+            await library.refreshArtwork()
+        }
+        .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
+            Button("OK") { library.error = nil }
+        } message: { Text(library.error ?? "") }
         .disabled(library.isPreparingGame)
         .overlay {
             if library.isPreparingGame {
@@ -140,6 +49,87 @@ struct LibraryView: View {
                 }
             }
         }
+    }
+}
+
+/// Favorites in Cover Flow, then a shelf for each turned-on platform: its card, which opens the
+/// platform's page, and its games. Search and Settings sit in the header.
+@MainActor
+struct LibraryHomeView: View {
+    let library: LibraryModel
+    @State private var favorite = 0
+
+    var body: some View {
+        let shelf = library.shelf
+        let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
+        let platforms = SupportedPlatform.allCases.filter(library.setup.platforms.contains)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    HStack(spacing: 24) {
+                        Text("Nativecade").font(.largeTitle.bold())
+                        Spacer()
+                        if !library.importedROMs.isEmpty {
+                            NavigationLink { GameSearchView(library: library) } label: {
+                                Label("Search", systemImage: "magnifyingglass")
+                            }
+                        }
+                        NavigationLink { SettingsView(library: library) } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                    }
+                    if !favorites.isEmpty {
+                        Text("Favorites").font(.title2.bold())
+                        CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
+                    }
+                    if platforms.isEmpty {
+                        Text("Turn on a platform in Settings.").foregroundStyle(.secondary)
+                    }
+                    ForEach(platforms) { platform in
+                        let games = shelf.games[platform] ?? []
+                        Text(platform.title).font(.title2.bold())
+                        ScrollView(.horizontal) {
+                            LazyHStack(spacing: 32) {
+                                PlatformCard(platform: platform, count: games.count, library: library)
+                                ForEach(games) { GameTile(rom: $0, library: library) }
+                            }.padding(12)
+                        }.scrollClipDisabled()
+                    }
+                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                .padding(48)
+            }
+            .background {
+                if let rom = favorites[safe: favorite] { CoverBackdrop(rom: rom, library: library) } else { CalmBackdrop() }
+            }
+        }
+    }
+}
+
+/// The first card on a platform's shelf, the size of a game's tile. It opens the platform's page.
+@MainActor
+private struct PlatformCard: View {
+    let platform: SupportedPlatform
+    let count: Int
+    let library: LibraryModel
+
+    var body: some View {
+        let games = count == 0 ? "Scan for games" : count == 1 ? "1 game" : "\(count) games"
+        NavigationLink { PlatformView(platform: platform, library: library) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                ZStack(alignment: .bottomLeading) {
+                    LinearGradient(colors: platform.cardColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    Text(platform.title).font(.title3.bold()).shadow(color: .black.opacity(0.5), radius: 6).padding(20)
+                }
+                .frame(width: 290, height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                Text(games).font(.headline).lineLimit(1).frame(width: 290, alignment: .leading)
+            }
+            .padding(20)
+        }
+        .buttonStyle(.card)
+        .accessibilityLabel("\(platform.title), \(games)")
     }
 }
 
@@ -232,7 +222,7 @@ struct SourceEditorView: View {
 }
 
 @MainActor
-private struct SourceBrowserView: View {
+struct SourceBrowserView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var browser: SourceBrowserModel
     @State private var showingBatchResults = false
@@ -784,6 +774,9 @@ struct SetupFixturePreview: View {
                     } else { Text("The fixture server didn't answer Detect platforms.") }
                 case "games": NavigationStack { PlatformScanView(platform: .nintendo64, library: library, mode: .setup) }
                 case "results": NavigationStack { PlatformScanView(platform: .nintendo64, library: library, mode: .library) }
+                // The fixture connection makes this library one from before guided setup, so it's set up.
+                case "home": LibraryHomeView(library: library)
+                case "settings": NavigationStack { SettingsView(library: library) }
                 default: Text("Unknown setup step “\(step)”.")
                 }
             } else { ProgressView("Loading setup fixture…") }
