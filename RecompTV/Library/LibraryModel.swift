@@ -17,7 +17,11 @@ final class LibraryModel {
     private(set) var importStatus = ""
     private(set) var importFraction: Double?
     /// SHA-256 identities of favorite ROMs. They survive clearing the cache, so a reimport is a favorite again.
-    private(set) var favorites = Set(UserDefaults.standard.stringArray(forKey: LibraryModel.favoritesKey) ?? [])
+    private(set) var favorites = Set<String>()
+    /// False until the first cache restore finishes; until then the library shows a neutral loading screen.
+    private(set) var restored = false
+    /// Whether guided setup has finished, and which platforms the home shows.
+    private(set) var setup = LibrarySetup()
     var error: String?
     @ObservationIgnored private var cache: ROMCache?
     @ObservationIgnored private var transfer: Task<Void, Never>?
@@ -26,12 +30,21 @@ final class LibraryModel {
     @ObservationIgnored private var batchIndex = 0
     @ObservationIgnored private let gamePreparation = GamePreparation()
     @ObservationIgnored private let artworkCache = try? ArtworkCache()
+    @ObservationIgnored private let defaults: UserDefaults
+    /// No setup record yet: a new install, or a library from before guided setup.
+    @ObservationIgnored private var setupNeedsMigration = true
     private let settingsKey = "library.sources.v1"
     private static let favoritesKey = "library.favorites.v1"
+    private static let setupKey = "library.setup.v1"
 
-    init(cache: ROMCache? = nil) {
+    init(cache: ROMCache? = nil, defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        favorites = Set(defaults.stringArray(forKey: Self.favoritesKey) ?? [])
+        if let data = defaults.data(forKey: Self.setupKey), let saved = try? JSONDecoder().decode(LibrarySetup.self, from: data) {
+            setup = saved; setupNeedsMigration = false
+        }
         do {
-            if let data = UserDefaults.standard.data(forKey: settingsKey) {
+            if let data = defaults.data(forKey: settingsKey) {
                 sources = try JSONDecoder().decode([LibrarySource].self, from: data)
             }
             self.cache = try cache ?? ROMCache()
@@ -50,6 +63,49 @@ final class LibraryModel {
             importedROMs += SyntheticLibrary.games(count)
         }
         #endif
+        // Decided only once the cache is known, so an existing library never sees the welcome screens.
+        if setupNeedsMigration {
+            setupNeedsMigration = false
+            saveSetup(LibrarySetup.migrate(hasSources: !sources.isEmpty, games: importedROMs.compactMap(\.game)))
+        }
+        restored = true
+    }
+
+    var ownedGames: Set<SupportedGame> { Set(importedROMs.compactMap(\.game)) }
+
+    func setPlatform(_ platform: SupportedPlatform, enabled: Bool) {
+        var next = setup
+        if enabled { next.platforms.insert(platform) } else { next.platforms.remove(platform) }
+        saveSetup(next)
+    }
+
+    func completeSetup() {
+        var next = setup
+        next.complete = true
+        saveSetup(next)
+    }
+
+    private func saveSetup(_ next: LibrarySetup) {
+        do { defaults.set(try JSONEncoder().encode(next), forKey: Self.setupKey); setup = next }
+        catch { self.error = error.localizedDescription }
+    }
+
+    func detectPlatforms(_ source: LibrarySource) async throws -> PlatformDetection {
+        try await ProviderFactory.make(source: source, secret: CredentialStore.load(source.id)).detectPlatforms()
+    }
+
+    /// The platform's games on every saved connection, in saved order.
+    func scan(_ platform: SupportedPlatform) async -> ScanReport {
+        var connections = [ScanConnection](), failures = [String]()
+        for source in sources {
+            do {
+                connections.append(ScanConnection(name: source.name,
+                    provider: try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))))
+            } catch { failures.append("Couldn't scan \(source.name). \(userFacingNetworkError(error))") }
+        }
+        var report = await PlatformScanner.scan(platform, connections: connections)
+        report.failures = failures + report.failures
+        return report
     }
 
     /// Playable games by platform, sorted by title, with a search index. Browsing reads this on every
@@ -124,7 +180,7 @@ final class LibraryModel {
 
     func toggleFavorite(_ rom: ImportedROM) {
         if favorites.remove(rom.id) == nil { favorites.insert(rom.id) }
-        UserDefaults.standard.set(favorites.sorted(), forKey: Self.favoritesKey)
+        defaults.set(favorites.sorted(), forKey: Self.favoritesKey)
     }
 
     func save(_ source: LibrarySource, secret: String) throws {
@@ -133,7 +189,7 @@ final class LibraryModel {
         next.append(source)
         let data = try JSONEncoder().encode(next)
         try CredentialStore.save(secret, for: source.id)
-        UserDefaults.standard.set(data, forKey: settingsKey)
+        defaults.set(data, forKey: settingsKey)
         sources = next
     }
 
@@ -142,7 +198,7 @@ final class LibraryModel {
             let next = sources.filter { $0.id != source.id }
             let data = try JSONEncoder().encode(next)
             try CredentialStore.remove(source.id)
-            UserDefaults.standard.set(data, forKey: settingsKey)
+            defaults.set(data, forKey: settingsKey)
             sources = next
         } catch { self.error = error.localizedDescription }
     }
@@ -181,6 +237,35 @@ final class LibraryModel {
     }
 
     func acquireAll(in location: LibraryLocation, title: String, source: LibrarySource) {
+        startBatch(title: title) { cache, progress in
+            let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
+            return await ROMBatchImporter.run(location: location, sourceID: source.id, provider: provider,
+                                              cache: cache, progress: progress)
+        }
+    }
+
+    /// Imports the candidates' games that aren't in the library yet, from their own connections, in one batch.
+    func addAll(_ candidates: [ScanCandidate], title: String) {
+        let owned = ownedGames
+        let wanted = candidates.filter { !owned.contains($0.game) }
+        startBatch(title: title) { [weak self] cache, progress in
+            var providers = [UUID: any LibraryProvider]()
+            var items = [ImportItem]()
+            for candidate in wanted {
+                // A connection removed since the scan has nothing left to import.
+                guard let source = self?.sources.first(where: { $0.id == candidate.sourceID }) else { continue }
+                let provider = try providers[source.id]
+                    ?? ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
+                providers[source.id] = provider
+                items += candidate.entries.map { ImportItem(entry: $0, sourceID: source.id, provider: provider) }
+            }
+            return await ROMBatchImporter.run(items: items, cache: cache, progress: progress)
+        }
+    }
+
+    /// One batch import with shared status, progress, results and cancellation.
+    private func startBatch(title: String, _ work: @escaping @MainActor (ROMCache,
+        @escaping @Sendable (BatchImportProgress) -> Void) async throws -> BatchImportReport) {
         guard !isImporting, !isPreparingGame, let cache else { return }
         isImporting = true; importStatus = "Finding ROMs…"; importFraction = nil
         batchReport = BatchImportReport(); batchTitle = title; batchIndex = 0; verifying = false
@@ -189,9 +274,7 @@ final class LibraryModel {
             guard let self else { return }
             defer { isImporting = false; transfer = nil }
             do {
-                let provider = try ProviderFactory.make(source: source, secret: CredentialStore.load(source.id))
-                let report = await ROMBatchImporter.run(location: location, sourceID: source.id,
-                                                       provider: provider, cache: cache) { [weak self] event in
+                let report = try await work(cache) { [weak self] event in
                     Task { @MainActor [weak self] in
                         guard let self, self.isImporting, self.importID == generation else { return }
                         self.updateBatch(event)
