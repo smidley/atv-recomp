@@ -66,6 +66,18 @@ The Apple TV performance policy targets 60 FPS with automatic internal
 resolution up to 2160p, VSync and no MSAA. Actual resolution depends on GPU load
 and the display; this is not a measured performance guarantee on physical A15 hardware.
 
+## Item boxes and frame interpolation
+
+Nativecade's Apple TV presets interpolate the 30 fps game to 60 fps. Frame interpolation pairs each
+tagged object's matrices with the previous frame's in drawing order. SpaghettiKart 1.0.0 tags each
+item box by its address (`src/actors/item_box/render.inc.c`), but a box draws one matrix whole,
+three up close (its shadow and "?" too) and several as shards after a hit, then jumps below the
+ground to rise again. Each change paired unrelated parts in the in-between frame, so boxes seemed to
+vanish and reappear elsewhere: on the Apple TV, and in a simulator recording at 60 fps a shard took
+the whole box's transform and flashed over the kart that hit it, for one frame.
+`scripts/prepare-spaghettikart.py` adds what the box draws to its tag, so a change starts that box
+afresh for one frame instead of blending unrelated parts.
+
 ## Development checks
 
 The Debug simulator launcher accepts `--nativecade-play-mario-kart` to play an

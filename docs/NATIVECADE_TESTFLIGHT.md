@@ -384,7 +384,16 @@ also adds the Bluetooth purpose string. In the simulator, the first start turned
 `coreaudio` into `sdl` and the game submitted its sound to SDL, with no audio errors. Its first
 framework build ran out of disk space; regenerable caches were removed and it was rebuilt. On
 2026-11-01 build 16 was archived from commit `924b596` with Xcode 27.2 (27B52) and uploaded at 15:02,
-when App Store Connect began processing it. Only the BattleShip framework's code
+when App Store Connect began processing it.
+
+Build **0.1.0 (17)** fixes Mario Kart 64's item boxes vanishing and reappearing elsewhere on the Apple
+TV, a frame-interpolation mismatch ([SpaghettiKart](SPAGHETTIKART.md)). Recorded in the simulator at
+60 fps, the attract race showed a whole box flashing over the kart that hit it, for one frame; with the
+fix, 48 consecutive frames covering several hits showed none. It also carries the CI fix to Shadows of
+the Empire's progress watchdog. On 2026-11-01 build 17 was archived with Xcode 27.2 (27B52). Only the
+SpaghettiKart and SotE frameworks changed from build 16; compared with the ten ROMs they share as many
+32-byte runs as before. The archive contains no ROMs, extracted game archives or saves, and its
+signature verifies. Only the BattleShip framework's code
 changed from build 15, and compared with the ten ROMs it shares as many 32-byte runs as before; the
 app differs only in its Info.plist. The archive contains no ROMs, extracted game archives or saves,
 and its signature verifies. Only those three frameworks changed from build 14, each by about
