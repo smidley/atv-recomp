@@ -87,13 +87,14 @@ struct LibraryHomeView: View {
                     }
                     ForEach(platforms) { platform in
                         let games = shelf.games[platform] ?? []
-                        Text(platform.title).font(.title2.bold())
-                        ScrollView(.horizontal) {
-                            LazyHStack(spacing: 32) {
-                                PlatformCard(platform: platform, count: games.count, library: library)
-                                ForEach(games) { GameTile(rom: $0, library: library) }
-                            }.padding(12)
-                        }.scrollClipDisabled()
+                        PlatformHeader(platform: platform, count: games.count, library: library)
+                        if games.isEmpty {
+                            Text("No games yet. Open \(platform.title) to scan for them.").foregroundStyle(.secondary)
+                        } else {
+                            ScrollView(.horizontal) {
+                                LazyHStack(spacing: 32) { ForEach(games) { GameTile(rom: $0, library: library) } }.padding(12)
+                            }.scrollClipDisabled()
+                        }
                     }
                     Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
                         .font(.callout).foregroundStyle(.secondary)
@@ -107,29 +108,44 @@ struct LibraryHomeView: View {
     }
 }
 
-/// The first card on a platform's shelf, the size of a game's tile. It opens the platform's page.
+/// A platform's name above its games, "Nintendo 64 ›". It opens the platform's page, with its
+/// Cover Flow and Scan for games, so the platform never sits among its own games.
 @MainActor
-private struct PlatformCard: View {
+private struct PlatformHeader: View {
     let platform: SupportedPlatform
     let count: Int
     let library: LibraryModel
 
     var body: some View {
-        let games = count == 0 ? "Scan for games" : count == 1 ? "1 game" : "\(count) games"
         NavigationLink { PlatformView(platform: platform, library: library) } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                ZStack(alignment: .bottomLeading) {
-                    LinearGradient(colors: platform.cardColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                    Text(platform.title).font(.title3.bold()).shadow(color: .black.opacity(0.5), radius: 6).padding(20)
-                }
-                .frame(width: 290, height: 220)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                Text(games).font(.headline).lineLimit(1).frame(width: 290, alignment: .leading)
+            HStack(spacing: 12) {
+                Text(platform.title)
+                Image(systemName: "chevron.right").imageScale(.small)
             }
-            .padding(20)
+            .font(.title2.bold())
         }
-        .buttonStyle(.card)
-        .accessibilityLabel("\(platform.title), \(games)")
+        .buttonStyle(HeaderButtonStyle())
+        .padding(.leading, -20) // the pill's padding; unfocused, the name lines up with other headings
+        .accessibilityLabel("\(platform.title), \(count == 1 ? "1 game" : "\(count) games")")
+    }
+}
+
+/// A heading that reads as text, and turns into a white pill when focused.
+private struct HeaderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { FocusLabel(configuration: configuration) }
+
+    private struct FocusLabel: View {
+        let configuration: Configuration
+        @Environment(\.isFocused) private var focused
+
+        var body: some View {
+            configuration.label
+                .foregroundStyle(focused ? .black : .white)
+                .padding(.horizontal, 20).padding(.vertical, 8)
+                .background(focused ? AnyShapeStyle(.white) : AnyShapeStyle(.clear), in: Capsule())
+                .scaleEffect(configuration.isPressed ? 0.97 : focused ? 1.05 : 1)
+                .animation(.easeOut(duration: 0.15), value: focused)
+        }
     }
 }
 
