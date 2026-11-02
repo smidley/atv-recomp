@@ -129,6 +129,50 @@ def rt64(prefix):
              "        });\n"
              "        mtl->commit();\n"),
         ],
+        # RT64 can't draw in the simulator, and on the Apple TV its games show a black or garbled picture
+        # with no GPU error. Every 120 frames, the game log says what a frame draws (each image's address,
+        # width and draw count) and what the screen gets: whether RT64 found its own image at the VI's
+        # address, and the target it shows. With found=0 and a target, it shows the game memory there.
+        "src/hle/rt64_workload_queue.cpp#diagnostics": [
+            ('#include "rt64_workload_queue.h"\n', '#include "rt64_workload_queue.h"\n\n#include <cstdio>\n'),
+            ("                Workload &workload = workloads[processCursor];\n"
+             "                ext.presentQueue->waitForPresentId(workload.presentId);\n",
+             "                Workload &workload = workloads[processCursor];\n"
+             "                ext.presentQueue->waitForPresentId(workload.presentId);\n"
+             "                {\n"
+             "                    static uint32_t frameLog = 0;\n"
+             "                    if ((frameLog++ % 120) == 0) {\n"
+             '                        char images[160] = "";\n'
+             "                        size_t used = 0;\n"
+             "                        for (uint32_t f = 0; (f < workload.fbPairCount) && (f < 4) && (used < sizeof(images)); f++) {\n"
+             '                            used += snprintf(images + used, sizeof(images) - used, " 0x%X/%u:%u", workload.fbPairs[f].colorImage.address,\n'
+             "                                unsigned(workload.fbPairs[f].colorImage.width), workload.fbPairs[f].gameCallCount);\n"
+             "                        }\n"
+             '                        fprintf(stderr, "[rt64-frame] #%u images=%u draws=%u%s\\n", frameLog, workload.fbPairCount,\n'
+             "                            workload.gameCallCount, images);\n"
+             "                    }\n"
+             "                }\n"),
+        ],
+        "src/hle/rt64_present_queue.cpp#diagnostics": [
+            ('#include "rt64_present_queue.h"\n', '#include "rt64_present_queue.h"\n\n#include <cstdio>\n'),
+            ("        // Create the framebuffers if necessary.\n",
+             "        {\n"
+             "            static uint32_t presentLog = 0;\n"
+             "            if ((presentLog++ % 120) == 0) {\n"
+             "                const bool visible = present.screenVI.visible();\n"
+             "                const uint32_t viAddress = visible ? present.screenVI.fbAddress() : 0;\n"
+             "                const hlslpp::uint2 viSize = visible ? present.screenVI.fbSize() : hlslpp::uint2(0, 0);\n"
+             "                const bool found = visible && !viewRDRAM && (fbManager.find(viAddress) != nullptr);\n"
+             '                fprintf(stderr, "[rt64-present] #%u vi=%d fb=0x%X %ux%u found=%d target=%s %ux%u frames=%d\\n", presentLog,\n'
+             "                    int(visible), viAddress, uint32_t(viSize.x), uint32_t(viSize.y), int(found),\n"
+             '                    colorTarget == nullptr ? "none" : colorTarget->isEmpty() ? "empty" : "ok",\n'
+             "                    colorTarget != nullptr ? colorTarget->width : 0, colorTarget != nullptr ? colorTarget->height : 0,\n"
+             "                    int(framesToPresent));\n"
+             "            }\n"
+             "        }\n"
+             "\n"
+             "        // Create the framebuffers if necessary.\n"),
+        ],
         # RT64 uses hlslpp's scalar code on Apple silicon, which calls labs without declaring it.
         "src/contrib/hlslpp/include/hlsl++/platforms/scalar.h": [
             ("#include <math.h>\n#include <stdint.h>\n", "#include <math.h>\n#include <stdint.h>\n#include <stdlib.h>\n"),
