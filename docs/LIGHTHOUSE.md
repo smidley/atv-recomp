@@ -43,6 +43,11 @@ libultraship interface the shared runtime uses, so the script changes little:
   game starts, so `GameEngine::Create` loads the archives directly;
 - removes the relaunch after a settings change, since an Apple TV app can't
   replace its own process;
+- finds the randomizer and save folders when they're used. Upstream fixes them
+  in globals when the framework loads, before Nativecade names the game's folder,
+  so libultraship gave `Documents`, which an Apple TV app can't write: creating the
+  randomizer folder ended the game at start in builds 7 to 12, and saves would have
+  failed;
 - builds `guMtxIdent` from the fixed-point conversion, like the other `gu`
   functions, and declares controller button masks with the shared
   libultraship's 32-bit type;

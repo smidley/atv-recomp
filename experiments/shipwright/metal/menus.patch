@@ -1,0 +1,14 @@
+--- a/src/ship/window/gui/Gui.cpp
++++ b/src/ship/window/gui/Gui.cpp
+@@ -94,6 +94,11 @@
+         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+     }
+ 
++#ifdef __IOS__
++    // Apple TV has no keyboard or mouse: the controller's View button opens the menu, and the
++    // controller moves through it, in every game (Nativecade, menus.patch).
++    Ship::Context::GetRawInstance()->GetConsoleVariables()->SetInteger(CVAR_IMGUI_CONTROLLER_NAV, 1);
++#endif
+     if (Ship::Context::GetRawInstance()->GetConsoleVariables()->GetInteger(CVAR_IMGUI_CONTROLLER_NAV, 0) &&
+         GetMenuOrMenubarVisible()) {
+         mImGuiIo->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;

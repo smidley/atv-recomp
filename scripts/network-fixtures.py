@@ -68,6 +68,22 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(401, {})
         if path.startswith("/art-proxy/"):
             path = path.removeprefix("/art-proxy")
+        crowded = path.startswith("/crowded/")
+        if crowded:
+            # A large library: 151 Star Fox 64 records on the 3DS and 151 Super Mario 64 hacks.
+            path = path.removeprefix("/crowded")
+        if path.startswith("/roms-only/"):
+            # A token with roms.read but not platforms.read.
+            path = path.removeprefix("/roms-only")
+            if path == "/api/platforms":
+                return self.send(403, {})
+        if path == "/api/platforms":
+            # RomM 5.4.1 answers a bare list; rom_count counts every record on the platform.
+            return self.send(200, [
+                {"id": 1, "slug": "n64", "name": "Nintendo 64", "rom_count": 6},
+                {"id": 2, "slug": "3ds", "name": "Nintendo 3DS", "rom_count": 1},
+                {"id": 10, "slug": "gba", "name": "Game Boy Advance", "rom_count": 0},
+            ])
         if path.startswith("/assets/romm/resources/"):
             if path.endswith("/redirect.png"):
                 self.send_response(302)
@@ -126,19 +142,28 @@ class Handler(BaseHTTPRequestHandler):
             offset = int(query.get("offset", ["0"])[0])
             # RomM 5.4.1 sends "files": [] unless with_files=true; ROM 4 omits it like older servers.
             n64 = {"platform_id": 1, "platform_slug": "n64", "platform_display_name": "Nintendo 64"}
+            # sha1_hash is RomM's SHA-1 of the stored file; ROM 3's is the supported Ocarina revision's
+            # published value, and RomM sends "" for a file it didn't hash (ROM 7).
             rows = [
                 {"id": 3, "name": "Synthetic Ocarina of Time fixture", "fs_name": "Fixture", **n64, "igdb_id": 1,
-                 "files": [], **MEDIA},
+                 "sha1_hash": "ad69c91157f6705e8ab06c79fe08aad47bb57ba7", "files": [], **MEDIA},
                 {"id": 4, "name": "Mario Kart 64 fixture", "fs_name": "Second", **n64},
                 {"id": 5, "name": "Ocarina of Time 3D fixture", "fs_name": "Other", "platform_id": 2,
                  "platform_slug": "3ds", "platform_display_name": "Nintendo 3DS"},
                 {"id": 6, "name": "Unsupported N64 fixture", "fs_name": "Third", **n64},
                 # A second record for game 3, and a record whose file was deleted from the server.
-                {"id": 7, "name": "Synthetic Ocarina of Time fixture", "fs_name": "Fixture (copy)", **n64, "igdb_id": 1},
+                {"id": 7, "name": "Synthetic Ocarina of Time fixture", "fs_name": "Fixture (copy)", **n64, "igdb_id": 1,
+                 "sha1_hash": ""},
                 {"id": 8, "name": "Mario Kart 64 fixture", "fs_name": "Removed", **n64, "missing_from_fs": True},
                 # Paper Mario's metadata aliases contain every word of "Super Mario 64".
                 {"id": 9, "name": "Paper Mario fixture", "fs_name": "Paper", **n64, "aliases": ["Super Mario 64 RPG"]},
             ]
+            if crowded:
+                rows += [{"id": 1000 + i, "name": f"Star Fox 64 fixture {i:03}", "fs_name": f"Crowded {i:03}",
+                          "platform_id": 2, "platform_slug": "3ds", "platform_display_name": "Nintendo 3DS"}
+                         for i in range(151)]
+                rows += [{"id": 2000 + i, "name": f"Super Mario 64 hack fixture {i:03}", "fs_name": f"Hack {i:03}", **n64}
+                         for i in range(151)]
             platforms = query.get("platform_ids", [])
             if platforms:
                 rows = [row for row in rows if str(row["platform_id"]) in platforms]
@@ -201,6 +226,8 @@ def main():
         (root / "N64").mkdir()
         swapped = b"".join(ROM[i:i + 2][::-1] for i in range(0, len(ROM), 2))
         (root / "N64" / "Fixture.v64").write_bytes(swapped)
+        # Named like a supported game, so a scan finds it; the bytes are still synthetic.
+        (root / "N64" / "Mario Kart 64 (USA).z64").write_bytes(ROM)
         smb = smbserver.SimpleSMBServer(listenAddress="127.0.0.1", listenPort=args.smb_port)
         smb.addShare("GAMES", str(root), "Synthetic test data")
         smb.setSMB2Support(True)

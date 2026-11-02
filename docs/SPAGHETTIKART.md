@@ -66,13 +66,27 @@ The Apple TV performance policy targets 60 FPS with automatic internal
 resolution up to 2160p, VSync and no MSAA. Actual resolution depends on GPU load
 and the display; this is not a measured performance guarantee on physical A15 hardware.
 
+## Item boxes and frame interpolation
+
+Nativecade's Apple TV presets interpolate the 30 fps game to 60 fps. Frame interpolation pairs each
+tagged object's matrices with the previous frame's in drawing order. SpaghettiKart 1.0.0 tags each
+item box by its address (`src/actors/item_box/render.inc.c`), but a box draws one matrix whole,
+three up close (its shadow and "?" too) and several as shards after a hit, then jumps below the
+ground to rise again. Each change paired unrelated parts in the in-between frame, so boxes seemed to
+vanish and reappear elsewhere: on the Apple TV, and in a simulator recording at 60 fps a shard took
+the whole box's transform and flashed over the kart that hit it, for one frame.
+`scripts/prepare-spaghettikart.py` adds what the box draws to its tag, so a change starts that box
+afresh for one frame instead of blending unrelated parts.
+
 ## Development checks
 
 The Debug simulator launcher accepts `--nativecade-play-mario-kart` to play an
-already verified cache entry. `--import-mario-kart-from-romm` is an explicit
-simulator-only integration helper that uses a configured RomM account and normal
-provider/verification paths. It writes a sanitized success report and never
-exports Keychain credentials. Neither Swift helper is included in device or
+already verified cache entry. `--import-mario-kart-from-romm` (or
+`--import-from-romm <game>` for any supported game, such as `cruisnUSA`, or `--import-from-share <game>`
+from an SMB share's top folder) is an explicit
+simulator-only integration helper in the RecompTV test app that uses a configured RomM account
+and normal provider/verification paths. It writes a sanitized success report
+(`Documents/romm-import-<game>.json`) and never exports Keychain credentials. Neither Swift helper is included in device or
 Release builds.
 
 For an automated simulator input check, launch the cached Mario Kart ROM with

@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
+#import <GameController/GameController.h>
+#import <Metal/Metal.h>
 #include <SDL.h>
 #include <SDL_main.h>
 #include <zip.h>
@@ -11,11 +13,18 @@
 #include <cstring>
 #include <filesystem>
 #include <map>
+#include <chrono>
+#include <thread>
 #include <vector>
 #include <unistd.h>
+#include <execinfo.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <mach/mach.h>
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
+#include <os/proc.h>
+#include <sys/sysctl.h>
 #if __has_feature(address_sanitizer)
 #include <sanitizer/asan_interface.h>
 #endif
@@ -48,6 +57,69 @@ static bool FolderFailure(char *error, size_t capacity, NSError *problem) {
 static NSString *GameFolder(NSString *name) {
     return [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
         stringByAppendingPathComponent:[@"Nativecade/Games" stringByAppendingPathComponent:name]];
+}
+
+// The last game's console output, in Library/Caches/Nativecade/Logs/last-game.log, which the
+// Diagnostics tab shows. TestFlight builds run on the Apple TV without a debugger, so this is how a
+// failure there can be read afterwards. The log stays stdout and stderr until the next game starts,
+// so a crash on the way back to the library is caught too; a crash adds its signal and backtrace.
+static struct sigaction GameLogPrevious[NSIG];
+static constexpr int GameLogSignals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGABRT, SIGTRAP};
+
+static void GameLogCrash(int signal) {
+    static const char header[] = "\n[Nativecade] crashed with signal ";
+    write(STDERR_FILENO, header, sizeof header - 1);
+    const char number[] = {char('0' + signal / 10), char('0' + signal % 10), '\n'};
+    write(STDERR_FILENO, number, sizeof number);
+    void *frames[64];
+    backtrace_symbols_fd(frames, backtrace(frames, 64), STDERR_FILENO);
+    sigaction(signal, &GameLogPrevious[signal], nullptr);
+    raise(signal);
+}
+
+static void StartGameLog(NSString *game) {
+    NSString *folder = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject
+        stringByAppendingPathComponent:@"Nativecade/Logs"];
+    [NSFileManager.defaultManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:nil];
+    int log = open([folder stringByAppendingPathComponent:@"last-game.log"].fileSystemRepresentation,
+                   O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (log < 0) return;
+    fflush(stdout);
+    fflush(stderr);
+    dup2(log, STDOUT_FILENO);
+    dup2(log, STDERR_FILENO);
+    close(log);
+    setvbuf(stdout, nullptr, _IOLBF, 0);
+    NSString *build = NSBundle.mainBundle.infoDictionary[@"CFBundleVersion"] ?: @"?";
+    fprintf(stderr, "[Nativecade] %s, build %s, %s\n", game.UTF8String, build.UTF8String, NSDate.date.description.UTF8String);
+    // Which Apple TV this is: RT64's games need tier-2 argument buffers (docs/SOTE.md).
+    char machine[32] = "?";
+    size_t length = sizeof machine;
+    sysctlbyname("hw.machine", machine, &length, nullptr, 0);
+    id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();
+    fprintf(stderr, "[Nativecade] %s, tvOS %s, %s GPU, argument buffers tier %d, %zu MB available\n", machine,
+            UIDevice.currentDevice.systemVersion.UTF8String, gpu ? gpu.name.UTF8String : "no",
+            gpu ? int(gpu.argumentBuffersSupport) + 1 : 0, os_proc_available_memory() >> 20);
+    static bool handlersInstalled;
+    if (handlersInstalled) return;
+    handlersInstalled = true;
+    struct sigaction action = {};
+    action.sa_handler = GameLogCrash;
+    sigemptyset(&action.sa_mask);
+    for (int signal : GameLogSignals) sigaction(signal, &action, &GameLogPrevious[signal]);
+    // tvOS ends an app over its memory limit without a signal, so the log just stops. These lines
+    // show whether memory ran out first.
+    static dispatch_source_t memory = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
+        dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
+    dispatch_source_set_timer(memory, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC), 10 * NSEC_PER_SEC, NSEC_PER_SEC);
+    dispatch_source_set_event_handler(memory, ^{
+        task_vm_info_data_t info;
+        mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+        if (LaunchRequested.load() && task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&info, &count) == KERN_SUCCESS)
+            fprintf(stderr, "[Nativecade] memory: %llu MB used, %zu MB available\n", info.phys_footprint >> 20,
+                    os_proc_available_memory() >> 20);
+    });
+    dispatch_resume(memory);
 }
 
 static NSString *ROMHash(NSData *data) {
@@ -233,6 +305,74 @@ static void ResetGameGlobals() {
     }
 }
 
+// Holding a controller's View button, or the Siri Remote's Play/Pause, for 1.5 seconds ends any
+// game and returns to the library, as each game's own Quit does, whatever its menus offer. A press
+// of View alone still opens the menus of the games that have one.
+static id ControllerObserver;
+static std::atomic<unsigned> QuitPresses{0};
+
+static GCControllerButtonInput *QuitButton(GCController *controller) {
+    return controller.extendedGamepad ? controller.extendedGamepad.buttonOptions : controller.microGamepad.buttonX;
+}
+
+static void ArmQuitButton(GCController *controller) {
+    QuitButton(controller).pressedChangedHandler = ^(GCControllerButtonInput *button, float, BOOL pressed) {
+        const unsigned press = ++QuitPresses;
+        if (!pressed) return;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (press != QuitPresses.load() || !button.isPressed) return;
+            SDL_Event quit = {};
+            quit.type = SDL_QUIT;
+            SDL_PushEvent(&quit);
+        });
+    };
+}
+
+static void ArmQuitButtons(bool armed) {
+    if (armed) {
+        for (GCController *controller in GCController.controllers) ArmQuitButton(controller);
+        ControllerObserver = [NSNotificationCenter.defaultCenter addObserverForName:GCControllerDidConnectNotification
+            object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) { ArmQuitButton(note.object); }];
+    } else {
+        if (ControllerObserver) [NSNotificationCenter.defaultCenter removeObserver:ControllerObserver];
+        ControllerObserver = nil;
+        for (GCController *controller in GCController.controllers) QuitButton(controller).pressedChangedHandler = nil;
+    }
+}
+
+#if TARGET_OS_SIMULATOR
+// Simulator-only menu check: with NATIVECADE_MENU_PROBE set, a virtual controller presses View 12
+// seconds into the game, then moves through its menu with the D-pad (docs/GAME_SWITCHING.md).
+static void StartMenuProbe() {
+    if (!getenv("NATIVECADE_MENU_PROBE") || SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) return;
+    SDL_VirtualJoystickDesc desc{};
+    desc.version = SDL_VIRTUAL_JOYSTICK_DESC_VERSION;
+    desc.type = SDL_JOYSTICK_TYPE_GAMECONTROLLER;
+    desc.naxes = SDL_CONTROLLER_AXIS_MAX;
+    desc.nbuttons = SDL_CONTROLLER_BUTTON_MAX;
+    desc.axis_mask = (1u << SDL_CONTROLLER_AXIS_MAX) - 1;
+    desc.button_mask = (1u << SDL_CONTROLLER_BUTTON_MAX) - 1;
+    desc.name = "Nativecade menu probe";
+    const int index = SDL_JoystickAttachVirtualEx(&desc);
+    SDL_Joystick *pad = index >= 0 ? SDL_JoystickOpen(index) : nullptr;
+    if (!pad) return;
+    std::thread([pad] {
+        const auto start = std::chrono::steady_clock::now();
+        auto press = [&](SDL_GameControllerButton button, int at) {
+            std::this_thread::sleep_until(start + std::chrono::milliseconds(at));
+            SDL_JoystickSetVirtualButton(pad, button, 1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            SDL_JoystickSetVirtualButton(pad, button, 0);
+            NSLog(@"[MenuProbe] pressed %s", SDL_GameControllerGetStringForButton(button));
+        };
+        press(SDL_CONTROLLER_BUTTON_BACK, 12000);
+        for (int i = 0; i < 3; ++i) press(SDL_CONTROLLER_BUTTON_DPAD_DOWN, 15000 + i * 1000);
+        press(SDL_CONTROLLER_BUTTON_DPAD_RIGHT, 18000);
+        press(SDL_CONTROLLER_BUTTON_DPAD_DOWN, 19000);
+    }).detach();
+}
+#endif
+
 static int RunApplication(int argc, char **argv) {
     @autoreleasepool {
         if (!ShowLibrary || !HideLibrary) return 2;
@@ -240,6 +380,7 @@ static int RunApplication(int argc, char **argv) {
         NSString *root = GameDirectory ?: GameFolder(@"OcarinaOfTime");
         int status = 2;
         if (chdir(root.fileSystemRepresentation) == 0) {
+            StartGameLog(root.lastPathComponent);
             ResetGameGlobals();
 #if TARGET_OS_SIMULATOR
             // Simulator-only restart check: end the game after 30 seconds, as its Quit button does.
@@ -253,6 +394,10 @@ static int RunApplication(int argc, char **argv) {
 #endif
             // libultraship otherwise uses Documents; Apple TV apps keep files in Caches (GameFolder).
             setenv("NATIVECADE_GAME_DIRECTORY", root.fileSystemRepresentation, 1);
+            ArmQuitButtons(true);
+#if TARGET_OS_SIMULATOR
+            StartMenuProbe();
+#endif
             if (GameRunner) {
                 status = GameRunner(argc, argv);
             } else {
@@ -260,6 +405,7 @@ static int RunApplication(int argc, char **argv) {
                 status = RecompTVShipwrightMain(argc, argv);
             }
         }
+        ArmQuitButtons(false);
         // A game's main loop ends when its menu's Quit button closes the window. The ports
         // expect the process to exit next, so release libultraship's process-wide context
         // before another game creates one. SDL keeps UIKit running for the library.

@@ -17,24 +17,32 @@ class UpstreamTests(unittest.TestCase):
         self.games = upstream.load_games(ROOT)
 
     def test_each_tracked_game_names_its_own_repository(self):
-        self.assertEqual(set(self.games), {"ghostship", "lighthouse", "shipwright", "sote", "spaghettikart", "starship"})
+        self.assertEqual(set(self.games), {"battleship", "cruisn", "ghostship", "lighthouse", "racer", "shipwright", "sote", "spaghettikart", "starship"})
         self.assertEqual(upstream.game_source(self.games["lighthouse"])[1]["repository"], "HarbourMasters/Lighthouse")
         self.assertEqual(upstream.game_source(self.games["shipwright"])[1]["repository"], "HarbourMasters/Shipwright")
         self.assertEqual(upstream.game_source(self.games["spaghettikart"])[1]["repository"], "HarbourMasters/SpaghettiKart")
         self.assertEqual(upstream.game_source(self.games["sote"])[1]["repository"], "GTTeancum/SotE-Recomp")
+        self.assertEqual(upstream.game_source(self.games["racer"])[1]["repository"], "sp00nznet/racer")
+        self.assertEqual(upstream.game_source(self.games["battleship"])[1]["repository"], "JRickey/BattleShip")
+        self.assertEqual(upstream.game_source(self.games["cruisn"])[1]["repository"], "navjack/cruisn-recomp")
 
     def test_checkouts_list_each_tvos_source_once(self):
         pins = upstream.checkouts(self.games)
-        self.assertEqual(sorted(pin.path.name for pin in pins), ["Ghostship", "Lighthouse", "Shipwright", "SotE-Recomp", "SpaghettiKart", "Starship", "Torch", "libultraship"])
+        self.assertEqual(sorted(str(pin.path.relative_to(ROOT / "build/upstream")) for pin in pins),
+                         ["BattleShip", "BattleShip/decomp", "BattleShip/libultraship", "BattleShip/torch",
+                          "Ghostship", "Lighthouse", "Shipwright", "SotE-Recomp", "SpaghettiKart", "Starship", "Torch",
+                          "cruisn-recomp", "cruisn-usa-recomp", "cruisn-world-recomp", "libultraship", "racer", "racer-toolkits/N64ModernRuntime", "racer-toolkits/N64Recomp",
+                          "racer-toolkits/rt64"])
         for pin in pins:
             self.assertRegex(pin.revision, r"^[0-9a-f]{40}$")
-            self.assertEqual(pin.path.parent, ROOT / "build/upstream")
 
     def test_shared_libraries_follow_one_game(self):
         # Build files and prepare scripts read these pins from lighthouse-baseline.json.
         owners = {name: key for key, game in self.games.items()
                   for name, source in game["sources"].items() if "gitlink" in source}
-        self.assertEqual(owners, {"libultraship": "lighthouse", "torch": "lighthouse"})
+        # BattleShip's own forks of them are its alone (docs/BATTLESHIP.md).
+        self.assertEqual(owners, {"libultraship": "lighthouse", "torch": "lighthouse", "battleship-decomp": "battleship",
+                                  "battleship-libultraship": "battleship", "battleship-torch": "battleship"})
 
     def test_update_takes_libraries_from_the_new_release(self):
         game = copy.deepcopy(self.games["lighthouse"])
@@ -43,6 +51,12 @@ class UpstreamTests(unittest.TestCase):
         self.assertEqual((updated["release"], updated["recorded_on"]), ("1.3.0", "2026-11-02"))
         self.assertEqual([sources[k]["revision"] for k in ("lighthouse", "libultraship", "torch")], ["a" * 40, "b" * 40, "c" * 40])
         self.assertEqual(game["release"], self.games["lighthouse"]["release"], "the input must stay unchanged")
+
+    def test_update_leaves_branch_toolkits_alone(self):
+        updated = upstream.update_pins(self.games["racer"], "v0.4.0", "a" * 40, {}, "2026-11-02")
+        self.assertEqual(updated["sources"]["racer"]["revision"], "a" * 40)
+        for name in ("N64ModernRuntime", "rt64", "N64Recomp"):
+            self.assertEqual(updated["sources"][name], self.games["racer"]["sources"][name])
 
     def test_update_rejects_a_release_without_a_shared_library(self):
         with self.assertRaisesRegex(SystemExit, "Torch"):

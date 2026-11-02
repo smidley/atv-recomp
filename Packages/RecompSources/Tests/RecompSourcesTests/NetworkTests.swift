@@ -87,6 +87,35 @@ struct NetworkTests {
         #expect(payload["hits"] == 0)
     }
 
+    @Test func rommDetectsSupportedPlatformsAndFallsBackWithoutPlatformsRead() async throws {
+        #expect(try await romm().detectPlatforms() == PlatformDetection(
+            platforms: [DetectedPlatform(platform: .nintendo64, romCount: 6)], serverPlatformCount: 2))
+        // Without platforms.read the per-game search still finds Nintendo 64, without counts.
+        #expect(try await romm("/roms-only").detectPlatforms() == PlatformDetection(
+            platforms: [DetectedPlatform(platform: .nintendo64, romCount: nil)], serverPlatformCount: nil))
+    }
+
+    @Test func rommScanPrefersHashMatchesAndCountsTheRest() async throws {
+        let source = LibrarySource(kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
+        let scan = try await RomMProvider(source: source, token: "fixture-token").scan(.nintendo64)
+        #expect(scan.candidates.map(\.game) == [.marioKart64, .ocarinaOfTime])
+        // Ocarina's second record (7) loses to the record whose sha1_hash is a supported revision.
+        #expect(scan.candidates.map { $0.entries.map(\.folder) } == [[.rom(4)], [.rom(3)]])
+        #expect(scan.candidates.allSatisfy { $0.sourceID == source.id })
+        #expect(scan.candidates.last?.artwork?.romID == 3)
+        // 6 Nintendo 64 records, 3 of them titled like a supported game (3, 4 and 7).
+        #expect(scan.unsupportedCount == 3)
+        #expect(try await romm("/roms-only").scan(.nintendo64).unsupportedCount == nil)
+    }
+
+    @Test func rommScanStaysOnItsPlatformAndBoundsCopiesWithoutAHash() async throws {
+        let scan = try await romm("/crowded").scan(.nintendo64)
+        // 151 Star Fox 64 records on the 3DS stay out: the search covers only the Nintendo 64 platform.
+        #expect(scan.candidates.map(\.game) == [.marioKart64, .superMario64, .ocarinaOfTime])
+        // 151 Super Mario 64 hacks without a supported hash: the scan goes on, and Add all tries 10.
+        #expect(scan.candidates.first { $0.game == .superMario64 }?.entries.count == 10)
+    }
+
     @Test func oversizedAndChunkedBodiesAreBoundedAndTransferCancels() async throws {
         func request(_ path: String) throws -> URLRequest {
             var request = URLRequest(url: try #require(URL(string: "http://127.0.0.1:18080/\(path)")))
@@ -112,7 +141,7 @@ struct NetworkTests {
         let folderEntry = try #require(page.entries.first { $0.folder != nil })
         let folderLocation = try #require(folderEntry.folder)
         let nested = try await provider.list(folderLocation, search: "", offset: 0)
-        #expect(nested.entries.map(\.name) == ["Fixture.v64"])
+        #expect(nested.entries.map(\.name) == ["Fixture.v64", "Mario Kart 64 (USA).z64"])
         let entry = try #require(page.entries.first { $0.isROM })
         let folder = try temporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
@@ -121,5 +150,14 @@ struct NetworkTests {
         #expect(try Data(contentsOf: file) == syntheticROM())
         let wrong = try SMBProvider(source: source, password: "wrong")
         await #expect(throws: (any Error).self) { try await wrong.list(.root, search: "", offset: 0) }
+    }
+
+    @Test func smbScanMatchesFilenamesInSubfolders() async throws {
+        let source = LibrarySource(address: "smb://127.0.0.1:1445/GAMES", username: "player")
+        let scan = try await SMBProvider(source: source, password: "fixture-password").scan(.nintendo64)
+        #expect(scan.candidates.map(\.game) == [.marioKart64])
+        #expect(scan.candidates.first?.entries.map(\.name) == ["Mario Kart 64 (USA).z64"])
+        #expect(scan.candidates.first?.sourceID == source.id)
+        #expect(scan.unsupportedCount == nil)
     }
 }

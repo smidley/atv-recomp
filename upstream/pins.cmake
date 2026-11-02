@@ -1,7 +1,7 @@
 # Upstream releases and commits for the tvOS build, read from the game version
 # files so that an update only changes upstream/*-baseline.json.
 foreach(recomptv_pin_file shipwright-baseline.json spaghettikart-baseline.json starship-baseline.json
-        ghostship-baseline.json lighthouse-baseline.json sote-baseline.json)
+        ghostship-baseline.json lighthouse-baseline.json sote-baseline.json racer-baseline.json)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/${recomptv_pin_file}")
 endforeach()
 file(READ "${CMAKE_CURRENT_LIST_DIR}/shipwright-baseline.json" recomptv_pins)
@@ -15,6 +15,8 @@ file(READ "${CMAKE_CURRENT_LIST_DIR}/ghostship-baseline.json" recomptv_pins)
 string(JSON RECOMPTV_GHOSTSHIP_RELEASE GET "${recomptv_pins}" release)
 file(READ "${CMAKE_CURRENT_LIST_DIR}/sote-baseline.json" recomptv_pins)
 string(JSON RECOMPTV_SOTE_RELEASE GET "${recomptv_pins}" release)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/racer-baseline.json" recomptv_pins)
+string(JSON RECOMPTV_RACER_RELEASE GET "${recomptv_pins}" release)
 # Every game shares the libultraship and Torch that Lighthouse's release pins.
 file(READ "${CMAKE_CURRENT_LIST_DIR}/lighthouse-baseline.json" recomptv_pins)
 string(JSON RECOMPTV_LIGHTHOUSE_RELEASE GET "${recomptv_pins}" release)

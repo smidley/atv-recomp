@@ -15,10 +15,15 @@ def run(*args, **kwargs):
     return subprocess.check_output(args, text=True, **kwargs).strip()
 
 
+# Guided setup screens the app's fixture preview draws (--setup-fixture-step).
+SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings"]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--app", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
+    parser.add_argument("--screens", help="comma-separated setup steps to screenshot, skipping the source probe")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     runtimes = json.loads(run("xcrun", "simctl", "list", "runtimes", "--json"))["runtimes"]
@@ -43,7 +48,7 @@ def main():
         run("xcrun", "simctl", "install", udid, str(args.app))
         container = pathlib.Path(run("xcrun", "simctl", "get_app_container", udid, bundle, "data"))
         report_file = container / "Documents" / "source-probe.json"
-        for launch in range(2):
+        for launch in range(0 if args.screens else 2):
             run_id = str(uuid.uuid4())
             env = dict(os.environ, SIMCTL_CHILD_RECOMPTV_PROBE_ID=run_id)
             output = run("xcrun", "simctl", "launch", "--terminate-running-process", udid, bundle, "--source-fixture-probe", env=env)
@@ -66,7 +71,19 @@ def main():
                 raise RuntimeError("Timed out waiting for source probe output")
             run("xcrun", "simctl", "io", udid, "screenshot", str(args.output / f"library-{launch + 1}.png"))
             run("xcrun", "simctl", "terminate", udid, bundle)
-        print("PASS: two tvOS app launches verified Keychain and HTTP/SMB transfers with synthetic ROM hashing.")
+        if not args.screens:
+            print("PASS: two tvOS app launches verified Keychain and HTTP/SMB transfers with synthetic ROM hashing.")
+        steps = args.screens.split(",") if args.screens else SETUP_STEPS
+        for step in steps:
+            # A launch right after the previous one ends can start behind the home screen.
+            subprocess.run(["xcrun", "simctl", "terminate", udid, bundle], check=False, capture_output=True)
+            time.sleep(2)
+            # Three synthetic Ocarina records, so a scan shows a game that's already in the library.
+            env = dict(os.environ, SIMCTL_CHILD_NATIVECADE_SYNTHETIC_LIBRARY="3")
+            run("xcrun", "simctl", "launch", udid, bundle, "--setup-fixture-step", step, env=env)
+            time.sleep(8)
+            run("xcrun", "simctl", "io", udid, "screenshot", str(args.output / f"setup-{step}.png"))
+        print(f"Saved {len(steps)} guided setup screenshots in {args.output}.")
     finally:
         subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False, capture_output=True)
         subprocess.run(["xcrun", "simctl", "delete", udid], check=False, capture_output=True)

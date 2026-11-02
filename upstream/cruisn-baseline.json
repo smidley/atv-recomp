@@ -1,0 +1,61 @@
+{
+  "release": "2026-09-26",
+  "releases": false,
+  "recorded_on": "2026-10-30",
+  "sources": {
+    "cruisn": {
+      "repository": "navjack/cruisn-recomp",
+      "revision": "d2dad6755c21ba40667e28cea787129b90c60bdf"
+    },
+    "cruisn-usa": {
+      "repository": "navjack/cruisn-usa-recomp",
+      "revision": "d8409e9c3260a9114459a9ce6408af21ebf3c72e",
+      "branch": "main"
+    },
+    "cruisn-world": {
+      "repository": "navjack/cruisn-world-recomp",
+      "revision": "61fd5e748bb1f38491cd18e2b736d44fa99cfd5f",
+      "branch": "main"
+    },
+    "racer": {
+      "repository": "sp00nznet/racer",
+      "revision": "1197119fb6d4d1e60e9dfcc3d50d610475433af2",
+      "branch": "main"
+    },
+    "N64ModernRuntime": {
+      "repository": "sp00nznet/N64ModernRuntime",
+      "revision": "c14ee57a0fe8d09d8cfffeb080c64c535a0edf89",
+      "branch": "main",
+      "checkout": "racer-toolkits/N64ModernRuntime"
+    },
+    "rt64": {
+      "repository": "sp00nznet/rt64",
+      "revision": "4d943912e8022a5e6c9c77089f1ad5c90b05980b",
+      "branch": "main",
+      "checkout": "racer-toolkits/rt64"
+    },
+    "N64Recomp": {
+      "repository": "sp00nznet/N64Recomp",
+      "revision": "ffb39cdad1da5de07eaaa48bd1db4a89a7986771",
+      "branch": "main",
+      "checkout": "racer-toolkits/N64Recomp"
+    }
+  },
+  "catalog": "https://github.com/navjack/cruisn-recomp",
+  "roms": [
+    {
+      "name": "Cruis'n USA (USA) (Rev 2)",
+      "sha1": "54a875ee0b482036fa401a6bc2b242699f0259f7"
+    },
+    {
+      "name": "Cruis'n World (USA)",
+      "sha1": "6da1a6a2bda687d50e798d80c342948ad1738202"
+    }
+  ],
+  "integration": "navjack's workspace (cruisn) supplies the Controller Pak code and the runtime and renderer patches, and the two game repositories their N64Recomp configurations; none publishes releases, so the pins are commits of main recorded by hand. The runtime, renderer and frontend are Racer's (the same pins), with navjack's patches applied to copies. The games' code runs through experiments/n64interp from the player's ROM.",
+  "prepare": [
+    [
+      "scripts/prepare-cruisn.py"
+    ]
+  ]
+}

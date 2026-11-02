@@ -4,6 +4,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+import tvos_menus
+
 root = Path(__file__).resolve().parent.parent
 pin = json.loads((root / "upstream/spaghettikart-baseline.json").read_text())
 source = root / "build/upstream/SpaghettiKart"
@@ -74,6 +76,20 @@ def adapt(relative, text):
         text = text.replace('wnd->DrawAndRunGraphicsCommands(pool, mtxStack);',
             'RecompTVPrepareFrame(wnd->GetTargetFps());\n'
             '        if (wnd->DrawAndRunGraphicsCommands(pool, mtxStack)) RecompTVRecordFrame(wnd->GetTargetFps());')
+    if relative == 'actors/item_box/render.inc.c':
+        # Frame interpolation pairs a box's matrices with the previous frame's in drawing order, but
+        # a box draws one matrix whole, three up close (shadow and "?" too) and several as shards
+        # after a hit, then jumps below the ground to rise again. Each change paired unrelated parts
+        # in the in-between frame: a shard with the whole box's transform flashed over the kart that
+        # hit it. The tag now names what the box draws, so a change starts it afresh.
+        tag = '    FrameInterpolation_RecordOpenChild("ItemBox", TAG_ITEM_ADDR(item_box));\n'
+        cull = '    if (!(temp_f0 < 0.0f) && !(600000.0f < temp_f0)) {\n'
+        if tag not in text or cull not in text:
+            raise SystemExit("prepare-spaghettikart.py: render_actor_item_box changed in the pinned source")
+        text = text.replace(tag, '')
+        text = text.replace(cull, '    FrameInterpolation_RecordOpenChild("ItemBox", TAG_ITEM_ADDR(item_box) +\n'
+                            '        (item_box->state == 3 ? 3 : item_box->state == 5 ? 5 :\n'
+                            '         item_box->state == 2 && temp_f0 < 100000.0f ? 2 : 0));\n' + cull)
     if relative == 'engine/tracks/Track.cpp':
         # KartRestart.cpp clears this set when Nativecade restarts the game in one process.
         text = text.replace('static std::unordered_set<std::string> gModifiedGfxSet;',
@@ -127,4 +143,5 @@ decoder = decoder.replace('size_t decodedSize = decoded->size - offset;',
 target = destination.parent / "torch-compat/Decompressor.cpp"
 if not target.exists() or target.read_text() != decoder:
     target.write_text(decoder)
+tvos_menus.flatten_file(destination / "src/port/ui/Menu.cpp", "prepare-spaghettikart.py")
 print(f"Prepared SpaghettiKart {pin['release']} in {destination}")

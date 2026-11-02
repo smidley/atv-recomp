@@ -20,6 +20,13 @@ import Testing
     }
     // Shadows of the Empire (USA) (Rev 2), the No-Intro dump SotE-Recomp accepts (CRC32 E8727549).
     #expect(SupportedGame.identify(sha1: "9ab85626c27372ee614b7c5301c2c4eb187fd9f6") == .shadowsOfTheEmpire)
+    // Star Wars Episode I - Racer (USA), the release whose header CRC Racer checks (72F70398).
+    #expect(SupportedGame.identify(sha1: "3542d5597c8a56ea8f5c63bceae97a24c4c08d58") == .episodeOneRacer)
+    // Super Smash Bros. (USA), NALE 1.0, the only release BattleShip's US build accepts.
+    #expect(SupportedGame.identify(sha1: "e2929e10fccc0aa84e5776227e798abc07cedabf") == .superSmashBros)
+    // Cruis'n USA (USA) (Rev 2) and Cruis'n World (USA), the releases navjack's configurations describe.
+    #expect(SupportedGame.identify(sha1: "54a875ee0b482036fa401a6bc2b242699f0259f7") == .cruisnUSA)
+    #expect(SupportedGame.identify(sha1: "6da1a6a2bda687d50e798d80c342948ad1738202") == .cruisnWorld)
     #expect(SupportedGame.identify(sha1: String(repeating: "0", count: 40)) == nil)
     let record = ImportedROM(name: "Mario Kart 64.z64", revision: "NTSC 1.0 US", sha1: zelda,
         sha256: String(repeating: "a", count: 64), size: 33554432, sourceID: UUID())
@@ -28,4 +35,17 @@ import Testing
     let entries = try SupportedGame.allCases.flatMap { try $0.revisions() }
     #expect(Set(entries.map(\.sha1)).count == entries.count)
     #expect(try SupportedGame.marioKart64.revisions().count == 1)
+}
+
+@Test func platformTableMatchesRomMSlugsAndFilenames() {
+    #expect(SupportedPlatform(rommSlug: "N64") == .nintendo64)
+    #expect(SupportedPlatform(rommSlug: "3ds") == nil)
+    #expect(SupportedPlatform.nintendo64.title == "Nintendo 64")
+    #expect(SupportedPlatform.nintendo64.games == SupportedGame.allCases)
+    #expect(SupportedGame.allCases.allSatisfy { $0.platform == .nintendo64 })
+    let n64 = SupportedPlatform.nintendo64
+    #expect(n64.game(named: "Mario Kart 64 (USA).z64") == .marioKart64)
+    #expect(n64.game(named: "Legend of Zelda, The - Ocarina of Time (USA).z64") == .ocarinaOfTime)
+    #expect(n64.game(named: "Star Wars Episode I - Racer (USA).z64") == .episodeOneRacer)
+    #expect(n64.game(named: "Paper Mario (USA).z64") == nil)
 }

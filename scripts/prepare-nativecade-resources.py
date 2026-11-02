@@ -49,10 +49,24 @@ notices = [f"Nativecade uses Shipwright {release}, SpaghettiKart {kart_release},
            "https://github.com/HarbourMasters/Torch\n"
            "https://github.com/HarbourMasters/libultraship\n"
            "https://github.com/JeodC/libultraship\n\n"
-           "No game ROMs or extracted game content are included. Import a supported ROM to play.\n"]
+           "No game ROMs or extracted game content are included. Import a supported ROM to play.\n"
+           "\nNativecade also uses Shadows of the Empire: Recompiled and Star Wars Episode I: Racer, with\n"
+           "N64ModernRuntime (GPL-3.0), N64Recomp and RT64.\n"
+           "https://github.com/GTTeancum/SotE-Recomp\n"
+           "https://github.com/sp00nznet/racer\n"
+           "\nSuper Smash Bros. runs through BattleShip, with its own libultraship and Torch.\n"
+           "https://github.com/JRickey/BattleShip\n"
+           "\nCruis'n USA and Cruis'n World run through navjack's Cruis'n recompilation setups (GPL-3.0),\n"
+           "on Racer's runtime and renderer.\n"
+           "https://github.com/navjack/cruisn-recomp\n"
+           "https://github.com/N64Recomp/N64ModernRuntime\n"
+           "https://github.com/N64Recomp/N64Recomp\n"
+           "https://github.com/rt64/rt64\n"]
 seen = set()
 for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "build/upstream/Starship",
-               root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse",
+               root / "build/upstream/Ghostship", root / "build/upstream/Lighthouse", root / "build/upstream/SotE-Recomp",
+               root / "build/upstream/racer", root / "build/upstream/racer-toolkits", root / "build/upstream/BattleShip",
+               root / "build/upstream/cruisn-recomp",
                host / "_deps", root / "build/nativecade-runtime/appletvsimulator/_deps",
                root / "build/nativecade-runtime/appletvos/_deps"):
     if not source.exists():
@@ -60,7 +74,8 @@ for source in (ship, torch, lus, root / "build/upstream/SpaghettiKart", root / "
     for path in sorted(source.rglob("*")):
         if not path.is_file() or ".git" in path.parts:
             continue
-        if not path.name.lower().startswith(("license", "licence", "copying", "notice")):
+        # Bundled fonts carry their SIL Open Font License as NAME-OFL.txt (BattleShip's).
+        if not path.name.lower().startswith(("license", "licence", "copying", "notice")) and not path.name.endswith("-OFL.txt"):
             continue
         if path.stat().st_size > 300_000:
             continue

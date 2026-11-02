@@ -1,0 +1,41 @@
+{
+  "release": "v0.3.0",
+  "recorded_on": "2026-10-30",
+  "sources": {
+    "racer": {
+      "repository": "sp00nznet/racer",
+      "revision": "1197119fb6d4d1e60e9dfcc3d50d610475433af2"
+    },
+    "N64ModernRuntime": {
+      "repository": "sp00nznet/N64ModernRuntime",
+      "revision": "c14ee57a0fe8d09d8cfffeb080c64c535a0edf89",
+      "branch": "main",
+      "checkout": "racer-toolkits/N64ModernRuntime"
+    },
+    "rt64": {
+      "repository": "sp00nznet/rt64",
+      "revision": "4d943912e8022a5e6c9c77089f1ad5c90b05980b",
+      "branch": "main",
+      "checkout": "racer-toolkits/rt64"
+    },
+    "N64Recomp": {
+      "repository": "sp00nznet/N64Recomp",
+      "revision": "ffb39cdad1da5de07eaaa48bd1db4a89a7986771",
+      "branch": "main",
+      "checkout": "racer-toolkits/N64Recomp"
+    }
+  },
+  "catalog": "https://github.com/sp00nznet/racer",
+  "roms": [
+    {
+      "name": "Star Wars Episode I - Racer (USA)",
+      "sha1": "3542d5597c8a56ea8f5c63bceae97a24c4c08d58"
+    }
+  ],
+  "integration": "Racer's setup clones its runtime, renderer and recompiler forks at the tip of their main branches; the toolkit pins record the commits Nativecade builds and change only by hand. The game's code runs through experiments/n64interp from the player's ROM.",
+  "prepare": [
+    [
+      "scripts/prepare-racer.py"
+    ]
+  ]
+}

@@ -1,0 +1,109 @@
+# Star Wars Episode I: Racer
+
+Nativecade includes [Racer](https://github.com/sp00nznet/racer), a static recompilation of the
+Nintendo 64 game, at the release pinned in `upstream/racer-baseline.json`. Like
+[Shadows of the Empire](SOTE.md), its code would normally be generated from the ROM, so Nativecade
+runs it from the player's ROM with the [N64 interpreter](N64_INTERPRETER.md) instead. The build
+contains Racer's own host program (`src/`, `frontend/`), N64ModernRuntime, RT64, and tables written
+from Racer's configuration, symbol file and section table; none of it comes from the ROM.
+
+## Supported game data
+
+Racer accepts the USA release, whose header CRC it checks (`72F70398`):
+
+| Release | SHA-1 |
+|---|---|
+| Star Wars Episode I - Racer (USA) | `3542d5597c8a56ea8f5c63bceae97a24c4c08d58` |
+
+## Versions
+
+Racer's setup clones its runtime, renderer and recompiler forks
+([sp00nznet/N64ModernRuntime](https://github.com/sp00nznet/N64ModernRuntime),
+[sp00nznet/rt64](https://github.com/sp00nznet/rt64),
+[sp00nznet/N64Recomp](https://github.com/sp00nznet/N64Recomp)) at the tip of their `main` branches.
+The version file pins the commits Nativecade builds as sources with a `branch`; updating Racer leaves
+them alone, so check them by hand ([Updating game runtimes](UPDATING_UPSTREAM.md)).
+
+## How it is adapted
+
+`scripts/prepare-racer.py` copies Racer and the three forks to `build/racer/source` without changing
+the checkouts, then:
+
+- applies the tvOS changes Racer shares with SotE's runtime and renderer (`scripts/rt64_tvos.py`):
+  RT64's Metal shaders for tvOS, plume's tvOS window and device code, no live recompiler, and the
+  smaller memory reservation if tvOS lacks address space;
+- draws into a full-screen SDL Metal view, returns to the library when the game ends instead of
+  ending the process, forgets the controllers SDL closed when the game ended, and keeps RT64's data
+  in the game folder (`rt64`). Before build 13 that last change didn't take: RT64 detects its own
+  data folder unless told not to, and made a hidden one in the app's home folder, which the
+  simulator allows and an Apple TV doesn't, so Racer and both Cruis'n games ended at start on the
+  Apple TV. From build 14, RT64 renders at 4x (1280x960) where the settings ask to fill the
+  screen in whole multiples: on a 4K screen that was 9x with MSAA, and Cruis'n USA reached 2 GB,
+  about all tvOS lets an app use. These frontend changes (`rt64_tvos.FRONTEND`) and the simulator's headless
+  renderer (`experiments/racer/HeadlessRenderer.cpp`) also serve [Cruis'n](CRUISN.md), which uses
+  Racer's frontend;
+- lets Racer start again in the same app session ([Switching games](GAME_SWITCHING.md)), which
+  N64ModernRuntime doesn't expect. Each start clears the runtime's quit flag. At Quit, each game
+  thread ends at its next wait, including Racer's wait for a new frame, and the timer thread ends
+  too. The runtime's running queue and message queue, which the whole process shares, are emptied;
+- writes the interpreter's tables (`scripts/generate-n64interp.py`). Besides the symbol file, they
+  take from Racer's own sources the functions N64Recomp split off at calls into other functions
+  (`src/section_table.cpp`) and the two functions `tools/post_recomp_patches.py` sends to host code.
+
+Racer's build chains a function that ends without returning into the function after it
+(`tools/fix_fallthroughs.py`); the interpreter does that by running on, and runs the runtime's
+replacement when it reaches one that way.
+
+`experiments/racer/CMakeLists.txt` builds `NativecadeRacer.framework` as a project of its own,
+because its runtime and renderer are other versions of SotE's with the same target names. It takes
+SDL from the shared runtime's framework. Its shader tools are built from Racer's RT64
+(`experiments/sote/host-tools`). `RacerRuntime.mm` checks the ROM and links it into
+`Library/Caches/Nativecade/Games/EpisodeOneRacer` as `swe1racer.z64`, the name Racer's runtime keeps
+it under, where Racer also keeps its settings and saves. `RacerGame.cpp` starts Racer without its
+launcher window.
+
+## Checking it in the simulator
+
+RT64 can't draw in the simulator (see [Shadows of the Empire](SOTE.md#checking-it-in-the-simulator)).
+With `SWE1R_HEADLESS_SMOKE=1`, simulator builds give Racer a renderer that only counts display
+lists:
+
+```sh
+SIMCTL_CHILD_NATIVECADE_RESTART_PROBE=racer SIMCTL_CHILD_SWE1R_HEADLESS_SMOKE=1 \
+    xcrun simctl launch --console <simulator> com.smidley.nativecade
+```
+
+Racer's output goes to `Library/Caches/Nativecade/Logs/last-game.log` in the app's data container,
+which each game start replaces.
+
+## Verification on 2026-10-30
+
+- `NativecadeRacer.framework` built for the tvOS simulator (12.6 MB), depending only on the shared
+  runtime and system frameworks.
+- In the tvOS 27.0 Apple TV 4K simulator, the restart check (`NATIVECADE_RESTART_PROBE=racer`) with
+  the headless renderer started Racer from the library: it found the ROM in the game folder,
+  started the game, and ran its game code and audio microcode for 30 seconds (about 110 display
+  lists and 20 audio tasks a second) with no interpreter errors. Its Quit then returned to the
+  library (`PASS: 1 games started in one session`).
+- Racer's audio dump (`SWE1R_AUDIODUMP`) from such a run held 30 seconds of sound, with a peak of
+  9,943 and a loudness that changes as music does.
+- Six audio tasks saved from such a run (`N64INTERP_RSP_CAPTURE`), five of them writing 3.7 to 4.6 KB
+  of sound, gave byte-identical DMEM and RDRAM through the RSP interpreter and through the microcode
+  RSPRecomp generated from the ROM on the Mac (`experiments/n64interp/RspSpike.cpp`).
+- Starting Racer a second time in one session (`NATIVECADE_RESTART_PROBE=racer,racer`) used to end
+  the app soon after the second start: once with SIGSEGV, and once, under the debugger, with an abort
+  ("No threads left to run!"). The first Quit had left the runtime's quit flag set, so the second
+  start shut down at once. The first start's threads, still waiting, woke into the second start
+  and took its threads off the shared running queue. With the restart changes above, `racer,racer`
+  passes (`PASS: 2 games started in one session`). The second start ran at the first one's pace,
+  about 110 display lists and 20 audio tasks a second. It also gave the simulator's controller to
+  player 1 again, as controller 0. `racer` alone still passes. Six starts in one
+  session passed, and no game, timer or event thread was left after the last Quit. The app's
+  memory footprint grew about 7 MB a start (95 MB after two starts, 123 MB after six), probably from
+  game memory the runtime never releases.
+- Not yet checked: anything on a physical Apple TV (picture, speed, controls, saves).
+
+## Licensing
+
+Racer is MIT. N64ModernRuntime is GPL-3.0, RT64 and N64Recomp are MIT; the app's third-party notices
+include them.

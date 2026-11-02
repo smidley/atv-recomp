@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import sys
 
+import tvos_menus
+
 
 def main():
     if len(sys.argv) != 2:
@@ -31,6 +33,7 @@ def main():
         patch = root / "experiments/shipwright/simulator-game" / name
         subprocess.run([*command, "--check", str(patch)], check=True)
         subprocess.run([*command, str(patch)], check=True)
+    tvos_menus.flatten_file(destination / "soh/soh/SohGui/Menu.cpp", "prepare-shipwright-game.py")
     print(f"Prepared simulator game sources in {destination}")
 
 

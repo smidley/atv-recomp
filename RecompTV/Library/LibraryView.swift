@@ -2,124 +2,38 @@ import SwiftUI
 import RecompSources
 import UIKit
 
+/// The library's root: a neutral loading screen until the ROM cache is restored, guided setup
+/// on first launch, then the home. An existing library goes straight to the home.
 @MainActor
 struct LibraryView: View {
     @State private var library = LibraryModel()
-    @State private var editing: LibrarySource?
-    @State private var showingNotices = false
-    @State private var favorite = 0
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    HStack {
-                        Text("Nativecade").font(.largeTitle.bold())
-                        Spacer()
-                        if !library.importedROMs.isEmpty {
-                            NavigationLink { GameSearchView(library: library) } label: {
-                                Label("Search", systemImage: "magnifyingglass")
-                            }
-                        }
-                    }
-                    let shelf = library.shelf
-                    let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
-                    if !favorites.isEmpty {
-                        Text("Favorites").font(.title2.bold())
-                        CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
-                    }
-                    if shelf.platforms.isEmpty {
-                        Text("Connect a server and import Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie or Shadows of the Empire.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Platforms").font(.title2.bold())
-                        ScrollView(.horizontal) {
-                            LazyHStack(spacing: 32) {
-                                ForEach(shelf.platforms, id: \.self) { platform in
-                                    let count = shelf.games[platform]?.count ?? 0
-                                    let games = count == 1 ? "1 game" : "\(count) games"
-                                    NavigationLink { PlatformView(platform: platform, library: library) } label: {
-                                        VStack(spacing: 16) {
-                                            Image(systemName: "gamecontroller.fill").font(.system(size: 80))
-                                            Text(platform).font(.headline)
-                                            Text(games).font(.caption).foregroundStyle(.secondary)
-                                        }
-                                        .frame(width: 330, height: 260)
-                                    }
-                                    .buttonStyle(.card)
-                                    .accessibilityLabel("\(platform), \(games)")
-                                }
-                            }.padding(12)
-                        }.scrollClipDisabled()
-                    }
-                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    Text("Connections").font(.title2.bold())
-                    Text("Browse a server to import games.").foregroundStyle(.secondary)
-                    HStack(spacing: 24) {
-                        Button("Add SMB share") { editing = LibrarySource(kind: .smb) }
-                        Button("Add RomM") { editing = LibrarySource(kind: .romm) }
-                    }
-                    ForEach(library.sources) { source in
-                        HStack(spacing: 24) {
-                            NavigationLink {
-                                SourceBrowserView(source: source, library: library)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Label(source.name, systemImage: source.kind == .smb ? "externaldrive.connected.to.line.below" : "server.rack")
-                                    Text(source.address).font(.caption).foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            Button("Edit") { editing = source }
-                                .accessibilityLabel("Edit \(source.name)")
-                            Button("Remove") { library.remove(source) }
-                                .accessibilityLabel("Remove \(source.name)")
-                        }
-                    }
-                    HStack(spacing: 24) {
-                        if !library.importedROMs.isEmpty {
-                            Button("Clear ROM cache") { Task { await library.clearCache() } }
-                            Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
-                                Task { await library.refreshArtwork(force: true) }
-                            }
-                            .disabled(library.isRefreshingArtwork || library.isImporting)
-                        }
-                        Button("Third-party notices") { showingNotices = true }
-                    }
-                }
-                .padding(48)
+        Group {
+            if !library.restored {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background { CalmBackdrop() }
+            } else if library.inSetup {
+                SetupFlowView(library: library)
+            } else {
+                LibraryHomeView(library: library)
             }
-            .sheet(item: $editing) { source in SourceEditorView(source: source, library: library) }
-            .sheet(isPresented: $showingNotices) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        Button("Done") { showingNotices = false }
-                        Text(SourceNotices.license).font(.caption)
-                        if let notices = Bundle.main.url(forResource: "ThirdPartyNotices", withExtension: "txt", subdirectory: "NativecadeGame"),
-                           let text = try? String(contentsOf: notices, encoding: .utf8) {
-                            Text(text).font(.caption)
-                        }
-                    }.padding(64)
-                }
-            }
-            .task {
-                await library.restoreCache()
-                #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
-                // Explicit local smoke tests. They use only an already verified cache;
-                // no game bytes, server addresses, or credentials enter the build.
-                if let game = SimulatorLaunchProbe.next(),
-                   let rom = library.importedROMs.first(where: { $0.game == game }) {
-                    await library.play(rom)
-                    if let error = library.error { print("Nativecade launch probe failed: \(error)") }
-                }
-                #endif
-                await library.refreshArtwork()
-            }
-            .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
-                Button("OK") { library.error = nil }
-            } message: { Text(library.error ?? "") }
         }
+        .task {
+            await library.restoreCache()
+            #if DEBUG && targetEnvironment(simulator) && NATIVECADE_RUNTIME
+            // Explicit local smoke tests. They use only an already verified cache;
+            // no game bytes, server addresses, or credentials enter the build.
+            if let game = SimulatorLaunchProbe.next(),
+               let rom = library.importedROMs.first(where: { $0.game == game }) {
+                await library.play(rom)
+                if let error = library.error { print("Nativecade launch probe failed: \(error)") }
+            }
+            #endif
+            await library.refreshArtwork()
+        }
+        .alert("Library", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) {
+            Button("OK") { library.error = nil }
+        } message: { Text(library.error ?? "") }
         .disabled(library.isPreparingGame)
         .overlay {
             if library.isPreparingGame {
@@ -138,8 +52,89 @@ struct LibraryView: View {
     }
 }
 
+/// Favorites in Cover Flow, then a shelf for each turned-on platform: its card, which opens the
+/// platform's page, and its games. Search and Settings sit in the header.
 @MainActor
-private struct SourceEditorView: View {
+struct LibraryHomeView: View {
+    let library: LibraryModel
+    @State private var favorite = 0
+
+    var body: some View {
+        let shelf = library.shelf
+        let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
+        let platforms = SupportedPlatform.allCases.filter(library.setup.platforms.contains)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    HStack(spacing: 24) {
+                        Text("Nativecade").font(.largeTitle.bold())
+                        Spacer()
+                        if !library.importedROMs.isEmpty {
+                            NavigationLink { GameSearchView(library: library) } label: {
+                                Label("Search", systemImage: "magnifyingglass")
+                            }
+                        }
+                        NavigationLink { SettingsView(library: library) } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                    }
+                    if !favorites.isEmpty {
+                        Text("Favorites").font(.title2.bold())
+                        CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
+                    }
+                    if platforms.isEmpty {
+                        Text("Turn on a platform in Settings.").foregroundStyle(.secondary)
+                    }
+                    ForEach(platforms) { platform in
+                        let games = shelf.games[platform] ?? []
+                        Text(platform.title).font(.title2.bold())
+                        ScrollView(.horizontal) {
+                            LazyHStack(spacing: 32) {
+                                PlatformCard(platform: platform, count: games.count, library: library)
+                                ForEach(games) { GameTile(rom: $0, library: library) }
+                            }.padding(12)
+                        }.scrollClipDisabled()
+                    }
+                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                .padding(48)
+            }
+            .background {
+                if let rom = favorites[safe: favorite] { CoverBackdrop(rom: rom, library: library) } else { CalmBackdrop() }
+            }
+        }
+    }
+}
+
+/// The first card on a platform's shelf, the size of a game's tile. It opens the platform's page.
+@MainActor
+private struct PlatformCard: View {
+    let platform: SupportedPlatform
+    let count: Int
+    let library: LibraryModel
+
+    var body: some View {
+        let games = count == 0 ? "Scan for games" : count == 1 ? "1 game" : "\(count) games"
+        NavigationLink { PlatformView(platform: platform, library: library) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                ZStack(alignment: .bottomLeading) {
+                    LinearGradient(colors: platform.cardColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    Text(platform.title).font(.title3.bold()).shadow(color: .black.opacity(0.5), radius: 6).padding(20)
+                }
+                .frame(width: 290, height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                Text(games).font(.headline).lineLimit(1).frame(width: 290, alignment: .leading)
+            }
+            .padding(20)
+        }
+        .buttonStyle(.card)
+        .accessibilityLabel("\(platform.title), \(games)")
+    }
+}
+
+@MainActor
+struct SourceEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var source: LibrarySource
     @State private var secret = ""
@@ -148,18 +143,26 @@ private struct SourceEditorView: View {
     @State private var connection: Task<Void, Never>?
     @State private var loadedCredential = false
     let library: LibraryModel
+    /// Guided setup's Connect step: no name field or Cancel, just what setup needs.
+    let setup: Bool
+    let onSaved: ((LibrarySource) -> Void)?
 
     // A sheet owns a single editing draft; changes are committed only after successful access.
-    init(source: LibrarySource, library: LibraryModel) {
-        _source = State(initialValue: source); self.library = library
+    init(source: LibrarySource, library: LibraryModel, setup: Bool = false, onSaved: ((LibrarySource) -> Void)? = nil) {
+        _source = State(initialValue: source); self.library = library; self.setup = setup; self.onSaved = onSaved
     }
 
     var body: some View {
+        // Plain HTTP stays an explicit choice for each connection; setup offers it once the address asks for it.
+        let http = source.address.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("http://")
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text("Connect \(source.kind.title)").font(.title.bold())
-                TextField("Connection name", text: $source.name)
-                TextField(source.kind == .smb ? "smb://server/share/folder" : "https://romm.example.com", text: $source.address)
+                if !setup {
+                    Text("Connect \(source.kind.title)").font(.title.bold())
+                    TextField("Connection name", text: $source.name)
+                }
+                TextField(source.kind == .smb ? "smb://server/share/folder"
+                          : setup ? "Server, such as https://romm.example.com" : "https://romm.example.com", text: $source.address)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if source.kind == .smb {
                     TextField("Username (empty for guest)", text: $source.username)
@@ -171,21 +174,24 @@ private struct SourceEditorView: View {
                     Text("Use an account with read access. Include the share name in the address; folders are optional.")
                         .font(.caption).foregroundStyle(.secondary)
                 } else {
-                    SecureField("Client API token", text: $secret)
-                    Toggle("Allow HTTP for this server", isOn: $source.allowHTTP)
-                    Text("In RomM, create a Client API token with roms.read permission. HTTP sends the token without encryption; use it only on a trusted network.")
+                    SecureField(setup ? "RomM API token" : "Client API token", text: $secret)
+                    if !setup || http { Toggle("Allow HTTP for this server", isOn: $source.allowHTTP) }
+                    Text((setup ? "Give the token the roms.read and platforms.read permissions."
+                          : "In RomM, create a Client API token with roms.read and platforms.read permissions.")
+                         + (!setup || http ? " HTTP sends the token without encryption; use it only on a trusted network." : ""))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if let error { Text(error).foregroundStyle(.orange).font(.callout) }
                 HStack(spacing: 24) {
-                    Button(connecting ? "Connecting…" : "Connect and save") { connect() }
+                    Button(connecting ? "Connecting…" : setup ? "Connect" : "Connect and save") { connect() }
                         .disabled(connecting || !loadedCredential)
-                    Button("Cancel") { connection?.cancel(); dismiss() }
+                    if !setup { Button("Cancel") { connection?.cancel(); dismiss() } }
                 }
                 if connecting { ProgressView() }
             }
-            .padding(64)
-            .frame(maxWidth: 1400)
+            .padding(setup ? 0 : 64)
+            .frame(maxWidth: 1400, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: setup ? .leading : .center)
         }
         .task {
             do { secret = try CredentialStore.load(source.id); loadedCredential = true }
@@ -205,16 +211,18 @@ private struct SourceEditorView: View {
                 try Task.checkCancellation()
                 var saved = draft
                 saved.address = saved.address.trimmingCharacters(in: .whitespacesAndNewlines)
-                if saved.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { saved.name = saved.kind.title }
+                if saved.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    saved.name = setup ? saved.serverName : saved.kind.title
+                }
                 try library.save(saved, secret: credential)
-                dismiss()
+                if let onSaved { onSaved(saved) } else { dismiss() }
             } catch { if !Task.isCancelled { self.error = userFacingNetworkError(error) } }
         }
     }
 }
 
 @MainActor
-private struct SourceBrowserView: View {
+struct SourceBrowserView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var browser: SourceBrowserModel
     @State private var showingBatchResults = false
@@ -284,7 +292,7 @@ private struct SourceBrowserView: View {
                         Text("Includes every page and subfolder, even when search is active.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie and Shadows of the Empire (USA Rev 2) ROMs are saved. Other games and compressed files appear in the results.")
+                    Text("Supported Ocarina of Time, Mario Kart 64 (USA), Star Fox 64 (USA), Super Mario 64 (USA), Banjo-Kazooie, Shadows of the Empire (USA Rev 2), Episode I: Racer (USA), Super Smash Bros. (USA), Cruis'n USA (USA Rev 2) and Cruis'n World (USA) ROMs are saved. Other games and compressed files appear in the results.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if library.isImporting {
@@ -338,7 +346,7 @@ private struct SourceBrowserView: View {
                     }
                 } }
                 if browser.entries.isEmpty && !browser.loading {
-                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie or Shadows of the Empire ROMs found here."
+                    Text(browser.source.kind == .romm ? "No Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64, Banjo-Kazooie, Shadows of the Empire, Episode I: Racer, Super Smash Bros., Cruis'n USA or Cruis'n World ROMs found here."
                          : "No matching ROMs in this folder.")
                         .foregroundStyle(.secondary)
                 }
@@ -368,7 +376,7 @@ private struct SourceBrowserView: View {
 }
 
 @MainActor
-private struct BatchResultsView: View {
+struct BatchResultsView: View {
     @Environment(\.dismiss) private var dismiss
     let library: LibraryModel
 
@@ -429,32 +437,49 @@ private struct ROMResultView: View {
 
 @MainActor
 private struct PlatformView: View {
-    let platform: String
+    let platform: SupportedPlatform
     let library: LibraryModel
     @State private var selected = 0
 
     var body: some View {
         let roms = library.shelf.games[platform] ?? []
         VStack(alignment: .leading, spacing: 40) {
-            Text(platform).font(.title.bold())
-            if !roms.isEmpty { CoverFlow(roms: roms, selected: $selected, library: library) }
+            Text(platform.title).font(.title.bold())
+            if roms.isEmpty { Text("No games yet.").foregroundStyle(.secondary) }
+            else { CoverFlow(roms: roms, selected: $selected, library: library) }
             Spacer(minLength: 0)
+            // Below the Cover Flow, so the covers keep the screen's first focus.
+            NavigationLink("Scan for games") { PlatformScanView(platform: platform, library: library, mode: .library) }
+                .disabled(library.isImporting)
+            SupportRibbon()
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background { if let rom = roms[safe: selected] { CoverBackdrop(rom: rom, library: library) } }
+        .background {
+            if let rom = roms[safe: selected] { CoverBackdrop(rom: rom, library: library) } else { CalmBackdrop() }
+        }
     }
 }
 
-/// The game's cover, blurred, tinting the whole screen.
+/// A game's cover, blurred, tinting the whole screen.
 @MainActor
-private struct CoverBackdrop: View {
-    let rom: ImportedROM
+struct CoverBackdrop: View {
+    let artwork: RomMArtwork?
+    let sourceID: UUID
+    let title: String
     let library: LibraryModel
 
+    init(artwork: RomMArtwork?, sourceID: UUID, title: String, library: LibraryModel) {
+        self.artwork = artwork; self.sourceID = sourceID; self.title = title; self.library = library
+    }
+
+    init(rom: ImportedROM, library: LibraryModel) {
+        self.init(artwork: rom.artwork, sourceID: rom.sourceID, title: rom.title, library: library)
+    }
+
     var body: some View {
-        GameArtworkView(path: rom.artwork?.coverLarge ?? rom.artwork?.cover, artwork: rom.artwork,
-            sourceID: rom.sourceID, library: library, width: 1920, height: 1080, title: rom.title, fill: true)
+        GameArtworkView(path: artwork?.coverLarge ?? artwork?.cover, artwork: artwork,
+            sourceID: sourceID, library: library, width: 1920, height: 1080, title: title, fill: true)
             .blur(radius: 60).opacity(0.4).ignoresSafeArea()
     }
 }
@@ -565,7 +590,7 @@ private struct TitleArt: View {
 }
 
 @MainActor
-private struct GameView: View {
+struct GameView: View {
     let rom: ImportedROM
     let library: LibraryModel
 
@@ -641,7 +666,7 @@ private struct GameTile: View {
 }
 
 @MainActor
-private struct GameArtworkView: View {
+struct GameArtworkView: View {
     let path: String?
     let artwork: RomMArtwork?
     let sourceID: UUID
@@ -719,6 +744,58 @@ struct ArtworkFixturePreview: View {
     }
 }
 
+/// Guided setup screens on fixture data for simulator screenshots: `--setup-fixture-step results`.
+/// Its own settings suite and an empty temporary ROM cache keep the real library untouched;
+/// `NATIVECADE_SYNTHETIC_LIBRARY` adds games that count as already imported.
+struct SetupFixturePreview: View {
+    let step: String
+    @State private var library: LibraryModel?
+    @State private var detection: PlatformDetection?
+    private let source = LibrarySource(id: UUID(uuidString: "5E7C1F8A-3B2D-4C6E-9A1F-2D3E4F5A6B7C") ?? UUID(),
+        name: "Fixture RomM", kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
+
+    static var requestedStep: String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "--setup-fixture-step"), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
+
+    var body: some View {
+        Group {
+            if let library {
+                switch step {
+                case "welcome": SetupFlowView(library: library)
+                case "connect": SetupFlowView(library: library, path: [.connect(.romm)])
+                case "detect": SetupFlowView(library: library, path: [.connect(.romm), .findPlatforms(source)])
+                case "platforms":
+                    if let detection {
+                        SetupFlowView(library: library, path: [.connect(.romm), .findPlatforms(source),
+                                                               .choosePlatforms(source, detection)])
+                    } else { Text("The fixture server didn't answer Detect platforms.") }
+                case "games": NavigationStack { PlatformScanView(platform: .nintendo64, library: library, mode: .setup) }
+                case "results": NavigationStack { PlatformScanView(platform: .nintendo64, library: library, mode: .library) }
+                // The fixture connection makes this library one from before guided setup, so it's set up.
+                case "home": LibraryHomeView(library: library)
+                case "settings": NavigationStack { SettingsView(library: library) }
+                default: Text("Unknown setup step “\(step)”.")
+                }
+            } else { ProgressView("Loading setup fixture…") }
+        }
+        .task {
+            let suite = "nativecade.setup-fixture"
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("setup-fixture-\(UUID().uuidString)")
+            guard let defaults = UserDefaults(suiteName: suite), let cache = try? ROMCache(root: root) else { return }
+            let model = LibraryModel(cache: cache, defaults: defaults)
+            if step != "welcome" { try? model.save(source, secret: "fixture-token") }
+            await model.restoreCache()
+            if step == "platforms" { detection = try? await model.detectPlatforms(source) }
+            library = model
+        }
+        .onDisappear { try? CredentialStore.remove(source.id) }
+    }
+}
+
 /// Games the simulator smoke tests start, one each time the library appears. A game that
 /// quits brings the library back, so NATIVECADE_RESTART_PROBE (such as "oot,fox,kart,oot")
 /// checks that games restart in one session; the runtime ends each one after 30 seconds.
@@ -737,6 +814,10 @@ struct ArtworkFixturePreview: View {
                 case "mario": .superMario64
                 case "banjo": .banjoKazooie
                 case "sote": .shadowsOfTheEmpire
+                case "racer": .episodeOneRacer
+                case "smash": .superSmashBros
+                case "cruisnusa": .cruisnUSA
+                case "cruisnworld": .cruisnWorld
                 default: .ocarinaOfTime
                 }
             } }

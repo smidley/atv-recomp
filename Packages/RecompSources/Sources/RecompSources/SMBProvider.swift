@@ -58,6 +58,28 @@ struct SMBProvider: LibraryProvider {
         return LibraryPage(entries: entries, nextOffset: nil)
     }
 
+    /// Every ROM file in the share named like a supported game of the platform, in any folder.
+    /// All copies are kept; the import's verification picks the supported dump.
+    func scan(_ platform: SupportedPlatform) async throws -> PlatformScan {
+        var found = [SupportedGame: [LibraryEntry]]()
+        var pending = [LibraryLocation.root]
+        var listed = 0
+        while let folder = pending.popLast() {
+            for entry in try await list(folder, search: "", offset: 0).entries {
+                listed += 1
+                // The same limit as a batch import.
+                guard listed <= 100_000 else {
+                    throw LibraryError.message("This share has too many files to scan. Point the connection at its \(platform.title) folder.")
+                }
+                if let child = entry.folder { pending.append(child) }
+                else if entry.isROM, let game = platform.game(named: entry.name) { found[game, default: []].append(entry) }
+            }
+        }
+        let candidates = found.map { ScanCandidate(game: $0.key, sourceID: source.id, entries: $0.value) }
+            .sorted { $0.game.title.localizedStandardCompare($1.game.title) == .orderedAscending }
+        return PlatformScan(candidates: candidates, unsupportedCount: nil)
+    }
+
     func download(_ entry: LibraryEntry, to destination: URL, progress: @escaping ProgressHandler) async throws {
         guard case .smbFile(let path) = entry.target, entry.isROM else {
             throw LibraryError.message("Select an uncompressed N64 ROM file.")

@@ -24,9 +24,13 @@ Each game has one version file, `upstream/<game>-baseline.json`:
 | Super Mario 64 | [Ghostship](https://github.com/HarbourMasters/Ghostship) (`ghostship`) | |
 | Banjo-Kazooie | [Lighthouse](https://github.com/HarbourMasters/Lighthouse) (`lighthouse`) | libultraship and Torch, shared with the other games |
 | Star Wars: Shadows of the Empire | [SotE-Recomp](https://github.com/GTTeancum/SotE-Recomp) (`sote`) | Its own N64ModernRuntime, RT64 and N64Recomp, from the pinned commit's submodules |
+| Star Wars Episode I: Racer | [Racer](https://github.com/sp00nznet/racer) (`racer`) | Its own N64ModernRuntime, RT64 and N64Recomp forks, pinned separately |
+| Super Smash Bros. | [BattleShip](https://github.com/JRickey/BattleShip) (`battleship`) | Its own libultraship and Torch forks and the ssb-decomp-re decompilation, from the release's submodules |
+| Cruis'n USA and Cruis'n World | [cruisn-recomp](https://github.com/navjack/cruisn-recomp) (`cruisn`) | navjack's two game setups, followed by commit, and Racer's runtime, renderer, recompiler and frontend pins |
 
-All games build against one libultraship and one Torch, so exactly one game's
-release supplies them (`scripts/UpstreamTests.py` checks this). That is
+The libultraship games build against one libultraship and one Torch, so exactly one game's
+release supplies them (`scripts/UpstreamTests.py` checks this). BattleShip is the exception: it
+needs its own forks of both, which only it uses ([Super Smash Bros.](BATTLESHIP.md)). That is
 Lighthouse, because it needs the newest of both: Torch's Banjo-Kazooie
 extraction and the libultraship branch that draws N64 mipmaps
 ([JeodC/libultraship](https://github.com/JeodC/libultraship), which Lighthouse
@@ -38,6 +42,10 @@ sources to that game's version file and change the readers that name
 SotE-Recomp is pinned to a commit on upstream's `main` after its 0.9.7 tag (see
 `integration` in its version file), and `update sote` pins a tag, so check that a
 new release still has the SDL host code before updating ([Shadows of the Empire](SOTE.md)).
+
+Racer's setup clones its runtime, renderer and recompiler forks at the tip of their `main` branches
+instead of submodules. Its version file pins them as sources with a `branch`, which `update racer`
+leaves alone: move them by hand to the commits a new release was tested with ([Racer](RACER.md)).
 
 Everything else reads these files: the build scripts, CMake through
 `upstream/pins.cmake`, the app's prepared-asset folders and extraction version,
@@ -60,6 +68,8 @@ latest GitHub release differs from its pin. The issue links the release notes
 and the full comparison, counts the changed commits and files, and says whether
 the shared libraries changed. Pre-releases and development branches are
 ignored. `python3 scripts/upstream.py releases` runs the same check locally.
+A game whose repository publishes no releases (Cruis'n) is marked `"releases": false`: the
+check prints its pinned commit instead, and its pins are updated by hand.
 
 ## Updating
 

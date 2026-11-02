@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guided setup mockups</title>
+<style>
+  body { background:#1b1c1f; color:#e8e8ea; font-family:-apple-system, Helvetica, sans-serif; margin:0; padding:32px 16px; }
+  main { max-width:980px; margin:0 auto; }
+  h2 { font-size:28px; margin:0 0 8px; }
+  .subtitle { color:#a9adb3; font-size:16px; line-height:1.45; margin:0 0 24px; }
+</style></head>
+<body><main>
+<style>
+  .frame { container-type:inline-size; aspect-ratio:16/9; border-radius:14px; overflow:hidden; position:relative; width:100%; color:#fff;
+           font-family:-apple-system, "SF Pro Display", Helvetica, sans-serif; margin-bottom:6px; }
+  .frame * { box-sizing:border-box; }
+  .bg { position:absolute; inset:0; background:
+        radial-gradient(60cqw 40cqw at 12% 18%, rgba(229,37,33,.5), transparent 70%),
+        radial-gradient(55cqw 45cqw at 88% 28%, rgba(46,125,246,.45), transparent 70%),
+        radial-gradient(70cqw 40cqw at 50% 115%, rgba(248,181,0,.32), transparent 70%), #0b0d12; }
+  .bg.calm { background:
+        radial-gradient(60cqw 45cqw at 20% 30%, rgba(124,77,255,.4), transparent 70%),
+        radial-gradient(60cqw 45cqw at 85% 80%, rgba(0,190,255,.3), transparent 70%), #0b0d12; }
+  .safe { position:absolute; inset:5cqw 4.7cqw; }
+  .steps { position:absolute; right:4.7cqw; top:5.2cqw; display:flex; gap:.6cqw; font-size:1cqw; }
+  .steps div { padding:.45cqw 1cqw; border-radius:3cqw; background:rgba(255,255,255,.12); opacity:.7; }
+  .steps .on { background:#fff; color:#111; opacity:1; font-weight:700; }
+  .steps .done { opacity:.9; }
+  .steps .done:before { content:"✓ "; color:#34c759; }
+  .kicker { font-size:1.1cqw; letter-spacing:.25cqw; text-transform:uppercase; opacity:.7; }
+  h1 { font-size:4.4cqw; margin:.4cqw 0 0; font-weight:800; letter-spacing:-.05cqw; }
+  .big { font-size:6cqw; }
+  .sub { font-size:1.65cqw; opacity:.8; margin-top:.6cqw; line-height:1.3; max-width:52cqw; }
+  .btn { display:inline-block; background:#fff; color:#111; font-weight:700; font-size:1.5cqw; padding:1cqw 2.4cqw; border-radius:3cqw; }
+  .btn.focus { transform:scale(1.08); box-shadow:0 .8cqw 2cqw rgba(0,0,0,.5), 0 0 0 .3cqw rgba(255,255,255,.35); }
+  .btn.glass { background:rgba(255,255,255,.16); color:#fff; }
+  .ctas { display:flex; gap:1.4cqw; margin-top:2.2cqw; align-items:center; }
+  .ribbon { position:absolute; left:4.7cqw; right:4.7cqw; bottom:2.6cqw; display:flex; gap:1cqw; align-items:center; font-size:1.05cqw; opacity:.8; }
+  .ribbon b { background:#34c759; color:#04260f; padding:.2cqw .7cqw; border-radius:2cqw; font-size:.95cqw; }
+  .ribbon i { font-style:normal; background:rgba(255,255,255,.14); padding:.2cqw .7cqw; border-radius:2cqw; font-size:.95cqw; }
+  .cover { border-radius:1cqw; aspect-ratio:4/3; position:relative; overflow:hidden; flex:0 0 auto; }
+  .cover span { position:absolute; left:.8cqw; bottom:.6cqw; right:.8cqw; font-weight:800; font-size:1.2cqw; line-height:1.05; text-shadow:0 .1cqw .4cqw rgba(0,0,0,.6); }
+  .cover.focus { transform:scale(1.12); box-shadow:0 1.4cqw 3cqw rgba(0,0,0,.6), 0 0 0 .25cqw rgba(255,255,255,.9); z-index:2; }
+  .g1 { background:linear-gradient(135deg,#e52521,#f8b500 60%,#2e7df6); }
+  .g2 { background:linear-gradient(135deg,#1e9e43,#f6d33c 55%,#d6262c); }
+  .g3 { background:linear-gradient(135deg,#2b5f2e,#c9a14a 60%,#1b3b6f); }
+  .g4 { background:linear-gradient(135deg,#0c2a6b,#3c8dde 55%,#c4c9d4); }
+  .g5 { background:linear-gradient(135deg,#d97b29,#f2d16b 50%,#5aa0d8); }
+  .g6 { background:linear-gradient(135deg,#b31d1d,#f0f0f0 50%,#1f4fbf); }
+  .g7 { background:linear-gradient(135deg,#3a1d0e,#c96b2c 55%,#f2c46b); }
+  .field { background:rgba(255,255,255,.1); border-radius:1cqw; padding:1cqw 1.4cqw; font-size:1.5cqw; margin-top:1cqw; width:46cqw; display:flex; justify-content:space-between; }
+  .field small { opacity:.6; }
+  .field.focus { background:#fff; color:#111; transform:scale(1.04); transform-origin:left; box-shadow:0 .8cqw 2cqw rgba(0,0,0,.45); }
+  .ok { color:#34c759; font-weight:700; }
+  .plat { position:absolute; left:4.7cqw; right:4.7cqw; top:20cqw; display:flex; gap:2.4cqw; }
+  .pcard { width:26cqw; aspect-ratio:16/10; border-radius:1.4cqw; position:relative; overflow:hidden; padding:1.6cqw; }
+  .pcard.n64 { background:linear-gradient(135deg,#e52521 0%,#1e9e43 35%,#2e7df6 70%,#f8b500 100%); }
+  .pcard.n64.focus { transform:scale(1.08); transform-origin:left center; box-shadow:0 1.6cqw 3.4cqw rgba(0,0,0,.6), 0 0 0 .3cqw rgba(255,255,255,.95); }
+  .pcard .pname { font-size:2.4cqw; font-weight:800; text-shadow:0 .1cqw .5cqw rgba(0,0,0,.5); }
+  .pcard .pmeta { font-size:1.2cqw; margin-top:.3cqw; text-shadow:0 .1cqw .4cqw rgba(0,0,0,.5); }
+  .pcard .on { position:absolute; right:1.4cqw; bottom:1.4cqw; background:#fff; color:#111; font-weight:800; font-size:1.1cqw; padding:.4cqw 1cqw; border-radius:2cqw; }
+  .pcard.more { border:.2cqw dashed rgba(255,255,255,.3); background:rgba(255,255,255,.04); display:flex; flex-direction:column; justify-content:center; }
+  .pcard.more .pname { font-size:1.8cqw; opacity:.8; }
+  .pcard.more .pmeta { opacity:.6; }
+  .heroart { position:absolute; right:4.7cqw; top:6cqw; width:32cqw; transform:rotate(-3deg); box-shadow:0 2cqw 4cqw rgba(0,0,0,.6); }
+  .rowlabel { position:absolute; left:4.7cqw; top:62%; font-size:1.4cqw; font-weight:700; }
+  .shelf { position:absolute; left:4.7cqw; right:-6cqw; top:67%; display:flex; gap:1.4cqw; }
+  .shelf .cover { width:13cqw; }
+  .cap { color:#a9adb3; font-size:14px; margin:4px 2px 18px; }
+</style>
+
+<h2>The guided setup, TV-style (A + C), with Detect platforms</h2>
+<p class="subtitle">C's layout with A's cinematic backdrop and focus. One focused item per screen; the remote moves between a few big targets. Each screen keeps the "Supported now / Coming over time" ribbon so the gradual rollout is always visible.</p>
+
+<div class="frame"><div class="bg calm"></div>
+  <div class="steps"><div class="on">Connect</div><div>Platforms</div><div>Games</div></div>
+  <div class="safe">
+    <div class="kicker">Welcome</div>
+    <h1 class="big">Nativecade</h1>
+    <div class="sub">Play the games on your RomM server, natively on Apple TV. Setup takes three steps.</div>
+    <div class="ctas"><div class="btn focus">Connect RomM</div><div class="btn glass">Use an SMB share</div></div>
+  </div>
+  <div class="ribbon"><b>Supported now</b> Nintendo 64 <i>Coming over time</i> more consoles and games, added with each update</div>
+</div>
+<p class="cap">1 · First launch. One obvious next step; SMB stays available but secondary.</p>
+
+<div class="frame"><div class="bg calm"></div>
+  <div class="steps"><div class="on">Connect</div><div>Platforms</div><div>Games</div></div>
+  <div class="safe">
+    <div class="kicker">Step 1 of 3</div>
+    <h1>Connect RomM</h1>
+    <div class="field"><span>Server</span><small>http://romm.local:8080</small></div>
+    <div class="field focus"><span>API token</span><small>rmm_••••••••••••</small></div>
+    <div class="sub" style="font-size:1.2cqw">Create one in RomM under your profile, with roms.read and platforms.read.</div>
+    <div class="ctas"><div class="btn">Connect</div></div>
+  </div>
+  <div class="ribbon"><b>Supported now</b> Nintendo 64 <i>Coming over time</i> more consoles and games, added with each update</div>
+</div>
+<p class="cap">2 · Server and RomM API token; paste the token from an iPhone with the keyboard prompt.</p>
+
+<div class="frame"><div class="bg calm"></div>
+  <div class="steps"><div class="done">Connect</div><div class="on">Platforms</div><div>Games</div></div>
+  <div class="safe">
+    <div class="kicker"><span class="ok">● Connected</span> · romm.local</div>
+    <h1>Find your platforms</h1>
+    <div class="sub">Nativecade checks which consoles your server has games for, and shows the ones it can play.</div>
+    <div class="ctas"><div class="btn focus">Detect platforms</div></div>
+  </div>
+  <div class="ribbon"><b>Supported now</b> Nintendo 64 <i>Coming over time</i> more consoles and games, added with each update</div>
+</div>
+<p class="cap">2b · Connected. One big button: Detect platforms.</p>
+
+<div class="frame"><div class="bg"></div>
+  <div class="steps"><div class="done">Connect</div><div class="on">Platforms</div><div>Games</div></div>
+  <div class="safe">
+    <div class="kicker"><span class="ok">● Connected</span> · romm.local</div>
+    <h1>Choose platforms</h1>
+    <div class="sub">Your server has 9 platforms. Nativecade plays 1 of them so far.</div>
+  </div>
+  <div class="plat">
+    <div class="pcard n64 focus"><div class="pname">Nintendo 64</div><div class="pmeta">34 games on your server</div><div class="on">On</div></div>
+    <div class="pcard more"><div class="pname">More platforms are on the way</div><div class="pmeta">They'll appear here when an update adds them.</div></div>
+  </div>
+  <div class="ribbon"><b>Supported now</b> Nintendo 64 <i>Coming over time</i> more consoles and games, added with each update</div>
+</div>
+<p class="cap">3 · After "Detect platforms": only supported platforms get a card; one dashed card says more are coming.</p>
+
+<div class="frame"><div class="bg"></div>
+  <div class="cover g2 heroart"><span style="font-size:2.4cqw">Mario Kart 64</span></div>
+  <div class="steps" style="right:auto;left:4.7cqw;top:2.2cqw"><div class="done">Connect</div><div class="done">Platforms</div><div class="on">Games</div></div>
+  <div class="safe" style="bottom:auto">
+    <div class="kicker">Step 3 of 3</div>
+    <h1>Nintendo 64</h1>
+    <div class="sub">10 games are ready to play.<br>24 more aren't supported yet.</div>
+    <div class="ctas"><div class="btn focus">Add all 10</div><div class="btn glass">Scan again</div></div>
+  </div>
+  <div class="rowlabel">Ready to play</div>
+  <div class="shelf">
+    <div class="cover g1"><span>Super Mario 64</span></div>
+    <div class="cover g3"><span>Ocarina of Time</span></div>
+    <div class="cover g4"><span>Star Fox 64</span></div>
+    <div class="cover g5"><span>Banjo-Kazooie</span></div>
+    <div class="cover g6"><span>Smash Bros.</span></div>
+    <div class="cover g7"><span>Shadows of the Empire</span></div>
+  </div>
+  <div class="ribbon"><b>Supported now</b> Nintendo 64 <i>Coming over time</i> more consoles and games, added with each update</div>
+</div>
+<p class="cap">4 · After "Scan for games": a featured game, plain counts, the shelf of playable games, and one button to add them.</p>
+
+</main></body></html>

@@ -1,7 +1,9 @@
 # Connect a ROM server
 
-The Library tab connects to an existing SMB share or RomM instance, browses by
-platform, and verifies/imports individual ROMs or a whole platform. The Nativecade
+On first launch, a guided setup connects an existing RomM instance or SMB share,
+finds the supported platforms on it, and scans each one for the games Nativecade
+plays; every import verifies the exact ROM. Settings keeps the connections and a
+browser for importing one particular file or folder. The Nativecade
 scheme integrates native gameplay and on-device Torch/O2R preparation. See
 [Nativecade build and TestFlight](NATIVECADE_TESTFLIGHT.md) for its prerequisites;
 the RecompTV scheme remains the independent library/diagnostics harness.
@@ -11,25 +13,31 @@ the RecompTV scheme remains the independent library/diagnostics harness.
 1. Open `RecompTV.xcodeproj` and let Swift Package Manager resolve its dependencies.
    Select the **Nativecade** scheme after preparing its runtime/resources, or
    **RecompTV** for the library-only harness, and an Apple TV simulator, then Run.
-2. Open **Library** and choose **Add SMB share** or **Add RomM**.
-3. Enter the connection details below and select **Connect and save**. This tests
-   access before saving the connection. Passwords/tokens are stored in Keychain,
+2. A new install opens on the guided setup; a library from before it goes straight
+   to its home. Choose **Connect RomM**, or **Use an SMB share**.
+3. Enter the connection details below and select **Connect**. This tests access
+   before saving the connection. Passwords/tokens are stored in Keychain,
    separately from the source address and display name.
-4. Select the saved connection. RomM lists only the platforms that hold a game
-   Nativecade plays, each with RomM's platform icon; choose one to see those games
-   (Ocarina of Time, Mario Kart 64, Star Fox 64, Super Mario 64 and Banjo-Kazooie today). Each folder or game opens its own
-   screen, and Back returns to the previous one. For SMB, use the server's platform
-   folders (or configure the source directly to a platform folder). RomM game
-   entries open an individual file list.
-5. Choose **Import and verify** for one file, or **Verify and import all ROMs** on
-   a platform/folder page. The batch scans every page and subfolder, including
-   items hidden by the current search. It never requests a multi-file ZIP.
-6. A matching Ocarina of Time ROM displays its revision and SHA-1. A different game
-   or unsupported revision displays an explicit rejection and is not cached. In
-   the Nativecade app, imported games appear under their platform on the home
-   screen, where **Play** prepares the assets on the device; a RomM game page
-   also offers **Play** once imported. The RecompTV harness only
-   verifies/imports; it does not link the game runtime.
+4. For RomM, select **Detect platforms**. **Choose platforms** shows a card for each
+   supported platform on the server with its game count, counts the server's other
+   platforms rather than listing them, and says more platforms are on the way. Turn
+   platforms on or off, then select **Continue**. An SMB share skips this step.
+5. On the platform's page, select **Scan for games**. The page counts the games
+   that are ready to play, those already in the library and those not supported yet,
+   and shows a shelf of their covers. **Add all** imports the new ones in one batch
+   and reports what was added ("9 added · 1 is a different version"); a cover not
+   yet added offers **Add this game**. **Start playing** finishes setup.
+6. Each import checks the exact revision by SHA-1; a different game or unsupported
+   revision is reported and not cached. In the Nativecade app, imported games appear
+   on their platform's shelf on the home screen, where **Play** prepares the assets
+   on the device. The RecompTV harness only verifies/imports; it does not link the
+   game runtime.
+7. Later, **Settings** (the gear next to Search) adds, edits and removes connections,
+   turns platforms on and off, and opens a connection's browser: **Import and verify**
+   for one file, or **Verify and import all ROMs** on a platform or folder page. The
+   batch scans every page and subfolder, including items hidden by the current
+   search, and never requests a multi-file ZIP. A platform's page on the home offers
+   **Scan for games** again, for instance after an update adds a game.
 
 Use a server address reachable from the Apple TV, or from the Mac for simulator testing. There is no
 RecompTV server to install. No ROM or credential needs to be uploaded to GitHub or
@@ -41,7 +49,7 @@ path for coordination; enter secrets directly in the app.
 | Source | Address | Authentication |
 | --- | --- | --- |
 | SMB | `smb://nas.local/Games/N64` (share `Games`, optional root folder `N64`) | Username/password; optional domain. Empty username uses `guest`. |
-| RomM | `https://romm.example.com`, including any reverse-proxy prefix | Client API token with `roms.read` permission |
+| RomM | `https://romm.example.com`, including any reverse-proxy prefix | Client API token with `roms.read` and `platforms.read` permissions |
 
 SMB uses **AMSMB2 4.0.3**, pinned at
 [`1726aaaf7adf63d7d1d2a0c5d1b0e635028215c0`](https://github.com/amosavian/AMSMB2/tree/1726aaaf7adf63d7d1d2a0c5d1b0e635028215c0).
@@ -66,8 +74,25 @@ RomM's implemented contract is checked against **5.4.1** source:
   so several records for one game show as one, as in RomM's gallery, and records
   whose file is gone from the server are skipped. Matches outside `platform_slug`
   `n64` are dropped, and the platform list is grouped from the remaining items,
-  so only `roms.read` is needed. Titles only narrow the list; an import still
+  so browsing needs only `roms.read`. Titles only narrow the list; an import still
   verifies the exact revision by SHA-1.
+- [`GET /api/platforms`](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/platform.py)
+  (scope `platforms.read`) answers a bare list of platforms with `slug` and
+  `rom_count`. **Detect platforms** offers each supported platform whose slug it
+  lists (`n64` for Nintendo 64) and counts the server's platforms that hold ROMs. A
+  token without `platforms.read` gets 401/403 there; setup then finds the supported
+  platforms through the per-game search instead and leaves out the server's total.
+- **Scan for games** sends the same per-game `search_term` with
+  `group_by_meta_id=false` and `missing=false`, limited by `platform_ids` to the
+  platform's own entries when the token can list platforms, so every record of a
+  game is a candidate and other platforms' games stay out. A game with more than 150
+  records keeps the first 150 instead of stopping the scan. When a record's
+  `sha1_hash` is a supported revision, only that record is imported. RomM hashes the
+  file as stored, so only big-endian `.z64` dumps can match; for other dumps,
+  **Add all** tries the first 10 title matches and the verifier keeps the supported
+  one. The "not supported yet" count is the platform's `rom_count` minus the records
+  titled like a supported game. An SMB share is scanned by file name across its
+  folders, with no count.
 - `GET /api/roms/{rom_id}`: enumerate individual `files`.
 - [`GET /api/roms/{file_id}/files/content/{file_name}`](https://github.com/rommapp/romm/blob/5.4.1/backend/endpoints/roms/files.py):
   download one file using its **file ID**, not the catalog ROM ID.
@@ -89,7 +114,8 @@ app does not use browser cookies or persist tokens in URLs or catalog records.
 
 ## Validation, storage, and cancellation
 
-- **Verify and import all ROMs** scans first, then processes one file at a time.
+- **Add all** on a scan page, and **Verify and import all ROMs** in a connection's
+  browser, scan first, then process one file at a time, even across connections.
   Repeated catalog/file IDs are deduplicated. Each file is reported as imported,
   unsupported, skipped (unsupported format), or failed. Listing or transfer failures
   for individual games do not hide the other results. A stopped/incomplete scan is
@@ -112,7 +138,7 @@ app does not use browser cookies or persist tokens in URLs or catalog records.
   ROM is promoted to the cache, in canonical byte order. Unknown bytes and failed
   or cancelled transfers are removed. A previous accepted copy survives a failed
   import. Orphan staging files are removed at app initialization.
-- **Cancel import**, leaving the browser, or backgrounding the app cancels the
+- **Cancel import**, leaving the browser or scan page, or backgrounding the app cancels the
   transfer. HTTP uses URLSession cancellation; SMB stops on its next read callback,
   with a 20-second operation timeout if the server is unresponsive. No partial file
   is considered usable during that interval. Completed batch imports are kept;
@@ -123,7 +149,7 @@ app does not use browser cookies or persist tokens in URLs or catalog records.
   Failed or unsupported imports do not evict accepted copies. Download/write
   failures remain recoverable. This is purgeable tvOS storage, not a save backup.
   Each cached identity is rechecked when restoring the library after app launch.
-- **Edit** tests the new connection before updating it. **Remove** deletes the
+- In **Settings**, **Edit** tests the new connection before updating it. **Remove** deletes the
   source and its Keychain entry; **Clear ROM cache** separately removes local ROM
   data. Neither action changes files on the server.
 

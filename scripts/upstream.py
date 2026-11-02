@@ -5,6 +5,11 @@ Each game has a version file, upstream/<game>-baseline.json, with the upstream
 "gitlink" is the game's own repository; a source with a "gitlink" is a library
 taken from that release's submodule, so its version always follows the game's.
 "prepare" lists the scripts that apply our tvOS patches to generated copies.
+A source with a "branch" follows that branch of its own repository instead of the
+game's release (Racer's setup clones its toolkits that way), so updating the game
+leaves it alone; "checkout" names its folder under build/upstream. A game whose
+repository publishes no releases (Cruis'n) says "releases": false; its "release"
+is the date of the pinned commit.
 Only what the tvOS build compiles is pinned and fetched; other platforms'
 submodules and tooling are never downloaded.
 
@@ -46,7 +51,8 @@ def load_games(root=ROOT):
 
 def game_source(game):
     """The game's own repository: its one source that is not a submodule."""
-    own = [(name, source) for name, source in game["sources"].items() if "gitlink" not in source]
+    own = [(name, source) for name, source in game["sources"].items()
+           if "gitlink" not in source and "branch" not in source]
     if len(own) != 1:
         raise SystemExit("A game version file needs exactly one source without a gitlink")
     return own[0]
@@ -57,7 +63,7 @@ def checkouts(games, root=ROOT):
     pins = {}
     for game in games.values():
         for name, source in game["sources"].items():
-            path = root / "build/upstream" / source["repository"].split("/")[1]
+            path = root / "build/upstream" / source.get("checkout", source["repository"].split("/")[1])
             pin = pins.setdefault(path, Pin(name, source["repository"], source["revision"], path))
             if pin.revision != source["revision"]:
                 raise SystemExit(f"{path.name} is pinned to two different revisions")
@@ -69,6 +75,8 @@ def update_pins(game, release, revision, gitlinks, today):
     updated = copy.deepcopy(game)
     updated["release"], updated["recorded_on"] = release, today
     for source in updated["sources"].values():
+        if "branch" in source:
+            continue
         if "gitlink" not in source:
             source["revision"] = revision
         elif source["gitlink"] in gitlinks:
@@ -117,7 +125,9 @@ def fetch(pin):
     if not (path / ".git").exists():
         path.mkdir(parents=True, exist_ok=True)
         run("git", "init", "-q", cwd=path)
-    if run("git", "status", "--porcelain", cwd=path):
+    # A game's submodules can be pinned as checkouts of their own inside it (BattleShip's); they
+    # don't count as the game checkout's changes.
+    if run("git", "status", "--porcelain", "--ignore-submodules=all", cwd=path):
         raise SystemExit(f"{path} has local changes; upstream checkouts must stay clean")
     if run("git", "rev-parse", "-q", "--verify", "HEAD", cwd=path, check=False) != pin.revision:
         missing = subprocess.run(["git", "cat-file", "-e", f"{pin.revision}^{{commit}}"], cwd=path,
@@ -195,6 +205,10 @@ def gh(*args):
 def releases(open_issues):
     for key, game in load_games().items():
         source = game_source(game)[1]
+        # "releases": false marks a game whose repository publishes none; its pins change by hand.
+        if game.get("releases") is False:
+            print(f"{key}: {source['repository']} publishes no releases; Nativecade builds {source['revision'][:12]}")
+            continue
         latest = gh("api", f"repos/{source['repository']}/releases/latest", "--jq", ".tag_name")
         if latest == game["release"]:
             print(f"{key}: {game['release']} is the latest release")

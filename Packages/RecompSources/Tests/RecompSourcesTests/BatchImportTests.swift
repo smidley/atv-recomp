@@ -172,3 +172,40 @@ private func acceptedCache(in root: URL, bytes: [Data]) throws -> ROMCache {
     try FileManager.default.removeItem(at: url)
     await #expect(throws: (any Error).self) { try await cache.verifiedFileURL(for: rom) }
 }
+
+@Test func itemsFromSeveralConnectionsImportInOneReport() async throws {
+    let root = try temporaryFolder()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let first = syntheticROM()
+    var second = first; second[20] ^= 1
+    let cache = try acceptedCache(in: root, bytes: [first, second])
+    let den = BatchFixtureProvider(pages: [PageKey(.rom(1)): LibraryPage(entries: [file("first")], nextOffset: nil)],
+                                   bytes: ["first": first])
+    let share = BatchFixtureProvider(pages: [:], bytes: ["second": second])
+    let denID = UUID(), shareID = UUID()
+    let report = await ROMBatchImporter.run(items: [
+        ImportItem(entry: folder(1), sourceID: denID, provider: den),
+        ImportItem(entry: file("second"), sourceID: shareID, provider: share),
+        ImportItem(entry: folder(2), sourceID: denID, provider: den), // can't be listed; the rest still import
+    ], cache: cache, progress: { _ in })
+    #expect(report.discoveryComplete)
+    #expect(report.failure == nil)
+    #expect(report.count(.imported) == 2)
+    #expect(report.count(.failed) == 1)
+    #expect(report.results.compactMap(\.rom).map(\.sourceID) == [denID, shareID])
+}
+
+@Test func addedLineSaysWhatWasAddedAndWhyTheRestWasNot() {
+    func report(_ outcomes: [BatchImportResult.Outcome], cancelled: Bool = false) -> BatchImportReport {
+        var report = BatchImportReport()
+        report.results = outcomes.enumerated().map {
+            BatchImportResult(id: String($0.offset), name: "", outcome: $0.element, message: "", rom: nil)
+        }
+        report.cancelled = cancelled
+        return report
+    }
+    #expect(report(Array(repeating: .imported, count: 9) + [.unsupported]).addedLine == "9 added · 1 is a different version")
+    #expect(report([.imported, .skipped, .skipped, .failed]).addedLine == "1 added · 2 are compressed · 1 couldn't be downloaded")
+    #expect(report([]).addedLine == "Nothing was added")
+    #expect(report([.imported], cancelled: true).addedLine == "Cancelled · 1 added")
+}

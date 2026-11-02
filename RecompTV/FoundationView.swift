@@ -5,6 +5,7 @@ struct FoundationView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var session = ProbeSession()
     @FocusState private var focusedControl: Control?
+    @State private var gameLog: [String]?
 
     private enum Control: Hashable {
         case rerun
@@ -48,17 +49,20 @@ struct FoundationView: View {
             }
 
             HStack(spacing: 24) {
-                Button("Rerun check") { session.rerun() }
-                    .focused($focusedControl, equals: .rerun)
-                Button("Next test color") { session.nextColor() }
-                    .focused($focusedControl, equals: .nextColor)
-                Button("Confirm \(session.colorName.lowercased()) frame") {
-                    session.confirmVisibleFrame()
+                HStack(spacing: 24) {
+                    Button("Rerun check") { session.rerun() }
+                        .focused($focusedControl, equals: .rerun)
+                    Button("Next test color") { session.nextColor() }
+                        .focused($focusedControl, equals: .nextColor)
+                    Button("Confirm \(session.colorName.lowercased()) frame") {
+                        session.confirmVisibleFrame()
+                    }
+                    .focused($focusedControl, equals: .confirmVisible)
+                    .disabled(!session.evidence.canConfirmVisibility)
                 }
-                .focused($focusedControl, equals: .confirmVisible)
-                .disabled(!session.evidence.canConfirmVisibility)
+                .disabled(!session.isActive)
+                Button("Last game log") { gameLog = GameLogView.load() }
             }
-            .disabled(!session.isActive)
 
             Text("Foundation probe only. Use Library to connect a server and verify a ROM. Native gameplay is not integrated.")
                 .font(.caption).foregroundStyle(.secondary)
@@ -68,6 +72,9 @@ struct FoundationView: View {
         .background(Color(white: 0.07))
         .preferredColorScheme(.dark)
         .defaultFocus($focusedControl, .rerun)
+        .fullScreenCover(isPresented: Binding(get: { gameLog != nil }, set: { if !$0 { gameLog = nil } })) {
+            GameLogView(lines: gameLog ?? [])
+        }
         .onAppear { session.setActive(scenePhase == .active) }
         .onChange(of: scenePhase) { session.setActive(scenePhase == .active) }
         .onDisappear { session.setActive(false) }
@@ -99,5 +106,42 @@ private struct MetalEvidenceView: View {
             }
         }
         .font(.callout)
+    }
+}
+
+/// The last game's console output, which NativecadeRuntime.mm keeps while a game runs, with a
+/// backtrace when it crashes. TestFlight builds run without a debugger; this shows a failure on the
+/// Apple TV itself. Menu closes it; each line takes focus, so the remote scrolls through them.
+/// The library's home screen opens it too, since Release builds have no Diagnostics tab.
+struct GameLogView: View {
+    let lines: [String]
+    @FocusState private var focused: Int?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(lines.indices, id: \.self) { index in
+                    Text(lines[index].isEmpty ? " " : lines[index])
+                        .font(.system(size: 22, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .focusable()
+                        .focused($focused, equals: index)
+                }
+            }
+            .padding(48)
+        }
+        // A failure is at the end, so the log opens there; swipe up for the start.
+        .defaultFocus($focused, lines.count - 1)
+        .background(Color(white: 0.07))
+        .preferredColorScheme(.dark)
+    }
+
+    static func load() -> [String] {
+        let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Nativecade/Logs/last-game.log")
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return ["No game has run since the app was installed."] }
+        let lines = String(decoding: data, as: UTF8.self).split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        // The first lines name the game, build and Apple TV; the rest of a long log is cut to its end.
+        return lines.count <= 600 ? lines : Array(lines.prefix(3)) + ["…"] + lines.suffix(596)
     }
 }
