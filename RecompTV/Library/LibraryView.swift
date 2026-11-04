@@ -11,7 +11,7 @@ struct LibraryView: View {
     var body: some View {
         Group {
             if !library.restored {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background { CalmBackdrop() }
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background { PageBackground() }
             } else if library.inSetup {
                 SetupFlowView(library: library)
             } else {
@@ -65,9 +65,9 @@ struct LibraryHomeView: View {
         let platforms = SupportedPlatform.allCases.filter(library.setup.platforms.contains)
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 48) {
                     HStack(spacing: 24) {
-                        Text("Nativecade").font(.largeTitle.bold())
+                        Text("Nativecade").font(.title2).fontWeight(.semibold).fontDesign(.rounded).foregroundStyle(Palette.coral)
                         Spacer()
                         if !library.importedROMs.isEmpty {
                             NavigationLink { GameSearchView(library: library) } label: {
@@ -79,31 +79,33 @@ struct LibraryHomeView: View {
                         }
                     }
                     if !favorites.isEmpty {
-                        Text("Favorites").font(.title2.bold())
-                        CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 290))
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Favorites").font(.title3).fontWeight(.medium)
+                            CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 292))
+                        }
                     }
                     if platforms.isEmpty {
-                        Text("Turn on a platform in Settings.").foregroundStyle(.secondary)
+                        Text("Turn on a platform in Settings").foregroundStyle(.secondary)
                     }
                     ForEach(platforms) { platform in
                         let games = shelf.games[platform] ?? []
-                        PlatformHeader(platform: platform, count: games.count, library: library)
-                        if games.isEmpty {
-                            Text("No games yet. Open \(platform.title) to scan for them.").foregroundStyle(.secondary)
-                        } else {
-                            ScrollView(.horizontal) {
-                                LazyHStack(spacing: 32) { ForEach(games) { GameTile(rom: $0, library: library) } }.padding(12)
-                            }.scrollClipDisabled()
+                        VStack(alignment: .leading, spacing: 8) {
+                            PlatformHeader(platform: platform, count: games.count, library: library)
+                            if games.isEmpty {
+                                Text("Open \(platform.title) to scan for games").foregroundStyle(.secondary)
+                            } else {
+                                ScrollView(.horizontal) {
+                                    LazyHStack(spacing: 32) { ForEach(games) { GameTile(rom: $0, library: library) } }.padding(12)
+                                }.scrollClipDisabled()
+                            }
                         }
                     }
-                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app.")
+                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 .padding(48)
             }
-            .background {
-                if let rom = favorites[safe: favorite] { CoverBackdrop(rom: rom, library: library) } else { CalmBackdrop() }
-            }
+            .background { PageBackground() }
         }
     }
 }
@@ -120,9 +122,9 @@ private struct PlatformHeader: View {
         NavigationLink { PlatformView(platform: platform, library: library) } label: {
             HStack(spacing: 12) {
                 Text(platform.title)
-                Image(systemName: "chevron.right").imageScale(.small)
+                Image(systemName: "chevron.right").imageScale(.small).foregroundStyle(.secondary)
             }
-            .font(.title2.bold())
+            .font(.title3).fontWeight(.medium)
         }
         .buttonStyle(HeaderButtonStyle())
         .padding(.leading, -20) // the pill's padding; unfocused, the name lines up with other headings
@@ -144,7 +146,7 @@ private struct HeaderButtonStyle: ButtonStyle {
                 .padding(.horizontal, 20).padding(.vertical, 8)
                 .background(focused ? AnyShapeStyle(.white) : AnyShapeStyle(.clear), in: Capsule())
                 .scaleEffect(configuration.isPressed ? 0.97 : focused ? 1.05 : 1)
-                .animation(.easeOut(duration: 0.15), value: focused)
+                .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.15), value: focused)
         }
     }
 }
@@ -174,7 +176,7 @@ struct SourceEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if !setup {
-                    Text("Connect \(source.kind.title)").font(.title.bold())
+                    Text("Connect \(source.kind.title)").font(.title).fontWeight(.medium)
                     TextField("Connection name", text: $source.name)
                 }
                 TextField(source.kind == .smb ? "smb://server/share/folder"
@@ -192,12 +194,13 @@ struct SourceEditorView: View {
                 } else {
                     SecureField(setup ? "RomM API token" : "Client API token", text: $secret)
                     if !setup || http { Toggle("Allow HTTP for this server", isOn: $source.allowHTTP) }
-                    Text((setup ? "Give the token the roms.read and platforms.read permissions."
-                          : "In RomM, create a Client API token with roms.read and platforms.read permissions.")
-                         + (!setup || http ? " HTTP sends the token without encryption; use it only on a trusted network." : ""))
+                    // One sentence goes without a period; with the HTTP warning it's a short paragraph.
+                    Text((setup ? "Give the token the roms.read and platforms.read permissions"
+                          : "In RomM, create a Client API token with roms.read and platforms.read permissions")
+                         + (!setup || http ? ". HTTP sends the token without encryption; use it only on a trusted network." : ""))
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                if let error { Text(error).foregroundStyle(.orange).font(.callout) }
+                if let error { Text(error).foregroundStyle(Palette.negative).font(.callout) }
                 HStack(spacing: 24) {
                     Button(connecting ? "Connecting…" : setup ? "Connect" : "Connect and save") { connect() }
                         .disabled(connecting || !loadedCredential)
@@ -272,7 +275,7 @@ struct SourceBrowserView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
-                Text(browser.title).font(.title.bold())
+                Text(browser.title).font(.title).fontWeight(.medium)
                 if let artwork = browser.artwork {
                     if GameRuntime.available {
                         // A RomM game that is already imported can start from its own page.
@@ -326,7 +329,7 @@ struct SourceBrowserView: View {
                         Text("\(report.results.count) of \(report.total) items processed").font(.callout)
                         Button("View import results") { showingBatchResults = true }
                     }
-                    if let failure = report.failure { Text(failure).foregroundStyle(.orange) }
+                    if let failure = report.failure { Text(failure).foregroundStyle(Palette.negative) }
                 } else if !browser.isPlatformList, !library.importStatus.isEmpty, let imported = library.imported {
                     ROMResultView(rom: imported, library: library)
                 }
@@ -372,6 +375,7 @@ struct SourceBrowserView: View {
             }
             .padding(48)
         }
+        .background { PageBackground() }
         .sheet(isPresented: $showingBatchResults) {
             BatchResultsView(library: library)
         }
@@ -400,16 +404,21 @@ struct BatchResultsView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
                 Button("Done") { dismiss() }
-                Text(library.batchTitle).font(.title.bold())
+                Text(library.batchTitle).font(.title).fontWeight(.medium)
                 if let report = library.batchReport {
                     Text(library.isImporting ? library.importStatus : report.summary).font(.headline)
                     if report.cancelled { Text("Completed imports were kept. Run the batch again to check the remaining files.") }
-                    if let failure = report.failure { Text(failure).foregroundStyle(.orange) }
+                    if let failure = report.failure { Text(failure).foregroundStyle(Palette.negative) }
                     if report.results.isEmpty { Text(library.isImporting ? "Scanning for ROM files…" : "No files were processed.") }
                     ForEach(report.results) { result in
                         VStack(alignment: .leading, spacing: 8) {
-                            Label(result.name, systemImage: result.outcome == .imported ? "checkmark.seal" : "info.circle")
-                                .font(.headline)
+                            Label {
+                                Text(result.name)
+                            } icon: {
+                                if result.outcome == .imported { PlaysNowMark() }
+                                else { Image(systemName: "info.circle").foregroundStyle(.secondary) }
+                            }
+                            .font(.headline)
                             Text("\(result.outcome.rawValue.capitalized) · \(result.message)").font(.callout)
                         }
                         .padding(24)
@@ -434,9 +443,13 @@ private struct ROMResultView: View {
             GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork,
                 sourceID: rom.sourceID, library: library, width: 220, height: 180)
         VStack(alignment: .leading, spacing: 10) {
-            Label(rom.recognized ? "\(rom.game?.title ?? "Game") ROM verified" : "ROM revision not supported",
-                  systemImage: rom.recognized ? "checkmark.seal" : "exclamationmark.triangle")
-                .font(.headline)
+            Label {
+                Text(rom.recognized ? "\(rom.game?.title ?? "Game") ROM verified" : "ROM revision not supported")
+            } icon: {
+                if rom.recognized { PlaysNowMark() }
+                else { Image(systemName: "exclamationmark.triangle").foregroundStyle(.secondary) }
+            }
+            .font(.headline)
             Text(rom.artwork?.title ?? rom.name).font(.callout)
             if rom.artwork != nil { Text(rom.name).font(.caption).foregroundStyle(.secondary) }
             if let revision = rom.revision {
@@ -460,8 +473,8 @@ private struct PlatformView: View {
     var body: some View {
         let roms = library.shelf.games[platform] ?? []
         VStack(alignment: .leading, spacing: 40) {
-            Text(platform.title).font(.title.bold())
-            if roms.isEmpty { Text("No games yet.").foregroundStyle(.secondary) }
+            Text(platform.title).font(.title).fontWeight(.medium)
+            if roms.isEmpty { Text("No games yet").foregroundStyle(.secondary) }
             else { CoverFlow(roms: roms, selected: $selected, library: library) }
             Spacer(minLength: 0)
             // Below the Cover Flow, so the covers keep the screen's first focus.
@@ -471,32 +484,7 @@ private struct PlatformView: View {
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background {
-            if let rom = roms[safe: selected] { CoverBackdrop(rom: rom, library: library) } else { CalmBackdrop() }
-        }
-    }
-}
-
-/// A game's cover, blurred, tinting the whole screen.
-@MainActor
-struct CoverBackdrop: View {
-    let artwork: RomMArtwork?
-    let sourceID: UUID
-    let title: String
-    let library: LibraryModel
-
-    init(artwork: RomMArtwork?, sourceID: UUID, title: String, library: LibraryModel) {
-        self.artwork = artwork; self.sourceID = sourceID; self.title = title; self.library = library
-    }
-
-    init(rom: ImportedROM, library: LibraryModel) {
-        self.init(artwork: rom.artwork, sourceID: rom.sourceID, title: rom.title, library: library)
-    }
-
-    var body: some View {
-        GameArtworkView(path: artwork?.coverLarge ?? artwork?.cover, artwork: artwork,
-            sourceID: sourceID, library: library, width: 1920, height: 1080, title: title, fill: true)
-            .blur(radius: 60).opacity(0.4).ignoresSafeArea()
+        .background { PageBackground() }
     }
 }
 
@@ -549,12 +537,12 @@ private struct CoverFlow: View {
                 if direction == .decrement { move(-1) } else if direction == .increment { move(1) }
             }
             VStack(spacing: 8) {
-                Text(rom.title).font(.title2.bold()).lineLimit(1)
+                Text(rom.title).font(.title3).fontWeight(.medium).lineLimit(1)
                 Text(rom.revision ?? " ").font(.callout).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: index)
+        .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.35), value: index)
     }
 }
 
@@ -576,31 +564,28 @@ private struct CoverFlowCover: View {
     var body: some View {
         let art = GameArtworkView(path: rom.artwork?.coverLarge ?? rom.artwork?.cover, artwork: rom.artwork,
             sourceID: rom.sourceID, library: library, width: size.width, height: size.height, title: rom.title)
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             art
-                .shadow(color: highlighted ? .white.opacity(0.45) : .black.opacity(0.5), radius: highlighted ? 28 : 14)
+                .shadow(color: .black.opacity(highlighted ? 0.6 : 0.4), radius: highlighted ? 32 : 16, y: highlighted ? 16 : 8)
                 .scaleEffect(highlighted ? 1.06 : 1)
             art.scaleEffect(y: -1)
                 .frame(height: size.height * 0.3, alignment: .top)
                 .clipped()
-                .mask { LinearGradient(colors: [.white.opacity(0.5), .clear], startPoint: .top, endPoint: .bottom) }
+                .mask { LinearGradient(colors: [.white.opacity(0.24), .clear], startPoint: .top, endPoint: .bottom) }
         }
     }
 }
 
-/// Cover art for a game without artwork: its title on a color chosen from the title.
+/// Cover art for a game without artwork: its title on a quiet raised surface, so real box art
+/// stays the color on screen.
 private struct TitleArt: View {
     let title: String
 
     var body: some View {
-        // String's hashValue changes per launch; this keeps each game's color stable.
-        let hue = Double(title.unicodeScalars.reduce(0) { ($0 * 31 + Int($1.value)) % 360 }) / 360
         ZStack {
-            LinearGradient(colors: [Color(hue: hue, saturation: 0.55, brightness: 0.6),
-                                    Color(hue: hue, saturation: 0.8, brightness: 0.25)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            Text(title).font(.title2.bold()).multilineTextAlignment(.center)
-                .minimumScaleFactor(0.5).padding(28)
+            Palette.raised
+            Text(title).font(.title3).fontWeight(.medium).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center).minimumScaleFactor(0.5).padding(24)
         }
     }
 }
@@ -613,7 +598,7 @@ struct GameView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                Text(rom.title).font(.title.bold())
+                Text(rom.title).font(.title).fontWeight(.medium)
                 HStack(spacing: 24) {
                     if GameRuntime.available {
                         Button { Task { await library.play(rom) } } label: { Label("Play", systemImage: "play.fill") }
@@ -636,7 +621,7 @@ struct GameView: View {
             .padding(48)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background { CoverBackdrop(rom: rom, library: library) }
+        .background { PageBackground() }
     }
 }
 
@@ -650,7 +635,7 @@ private struct GameSearchView: View {
         let results = library.shelf.search.rank(query)
         ScrollView {
             if results.isEmpty {
-                Text("No games match “\(query)”.").foregroundStyle(.secondary).padding(48)
+                Text("No games match “\(query)”").foregroundStyle(.secondary).padding(48)
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
                       alignment: .leading, spacing: 36) {
@@ -658,6 +643,7 @@ private struct GameSearchView: View {
             }
             .padding(48)
         }
+        .background { PageBackground() }
         .searchable(text: $query, prompt: "Game title")
     }
 }
