@@ -436,6 +436,16 @@ frameworks changed from build 18, each with both log lines; compared with the te
 many 32-byte runs as before, and the app none. The archive contains no ROMs, extracted game archives or
 saves, and its signature verifies. Their simulator slices are build 18's: RT64 can't draw there.
 
+Build **0.1.0 (20)** gives the app Nativecade's own look. Every screen sits on a plain dark page instead
+of blurred cover art. Coral from the logo marks the wordmark, the current setup step and the number of
+games ready to play, and the logo's mint play triangle marks what plays now: the supported platforms and
+the games already in the library. Choose platforms shows each platform as a Nintendo 64 cartridge drawn
+in code, and a scan shows the first game's cover art large. It keeps build 19's RT64 log lines. On
+2026-11-04 build 20 was archived from commit `2d5c9b3` with Xcode 27.2 (27B52) and uploaded at 13:51,
+when App Store Connect began processing it. Every framework's code is unchanged from build 19; only the
+app changed, and compared with the ten ROMs it shares no 32-byte runs. The archive contains no ROMs,
+extracted game archives or saves, and its signature verifies.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.
