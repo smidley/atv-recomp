@@ -780,6 +780,13 @@ struct SetupFixturePreview: View {
                 case "home": LibraryHomeView(library: library)
                 case "settings": NavigationStack { SettingsView(library: library) }
                 case "box-faces": BoxFacesFixture()
+                case "shelf-facing", "shelf-spines":
+                    ScrollView {
+                        BoxShelfView(games: library.shelf.games[.nintendo64] ?? [], style: step == "shelf-facing" ? .facing : .spines,
+                                     library: library) { _ in }
+                            .padding(48)
+                    }
+                    .background { PageBackground() }
                 default: Text("Unknown setup step “\(step)”.")
                 }
             } else { ProgressView("Loading setup fixture…") }

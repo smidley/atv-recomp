@@ -115,6 +115,7 @@
 				"F4709C3647840CA54D32F967",
 				"1B6F25A022A51EE411C28D71",
 				"370340BBE638A857F7D98094",
+				"5FDB9A75E12945268EB1FDD7",
 				"F4C2B78A3772484B8BBCD3BC",
 				"7BC22CB19BC7448A86BC1A9B",
 				"CDF4EB9686E04A9C823F145E",
@@ -282,6 +283,8 @@
 		"95EF33CAB3CF68C9D5E86046" = { "isa" = "PBXBuildFile"; "fileRef" = "B52D1A2409C2DB2F3CED0193"; };
 		"042064B99A910D4E9735395E" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/LibraryView.swift"; "sourceTree" = "SOURCE_ROOT"; };
 		"370340BBE638A857F7D98094" = { "isa" = "PBXBuildFile"; "fileRef" = "042064B99A910D4E9735395E"; };
+		"95A7F70702F6458080D015D6" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/BoxShelfView.swift"; "sourceTree" = "SOURCE_ROOT"; };
+		"5FDB9A75E12945268EB1FDD7" = { "isa" = "PBXBuildFile"; "fileRef" = "95A7F70702F6458080D015D6"; };
 		"9028B018EBE64545B1DE0F80" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/BoxEntities.swift"; "sourceTree" = "SOURCE_ROOT"; };
 		"F4C2B78A3772484B8BBCD3BC" = { "isa" = "PBXBuildFile"; "fileRef" = "9028B018EBE64545B1DE0F80"; };
 		"8FBEAA2CF6E04F8989F31E9A" = { "isa" = "PBXFileReference"; "lastKnownFileType" = "sourcecode.swift"; "path" = "RecompTV/Library/BoxArt.swift"; "sourceTree" = "SOURCE_ROOT"; };
@@ -426,6 +429,7 @@
 				"9B8FE359FA991A79FF3C2C48",
 				"0AC1ED71BD1B3593225BFF91",
 				"042064B99A910D4E9735395E",
+				"95A7F70702F6458080D015D6",
 				"9028B018EBE64545B1DE0F80",
 				"8FBEAA2CF6E04F8989F31E9A",
 				"FB589EB572D14EC0A6C89A28",
@@ -494,6 +498,7 @@
 				"F4709C3647840CA54D32F967",
 				"1B6F25A022A51EE411C28D71",
 				"370340BBE638A857F7D98094",
+				"5FDB9A75E12945268EB1FDD7",
 				"F4C2B78A3772484B8BBCD3BC",
 				"7BC22CB19BC7448A86BC1A9B",
 				"CDF4EB9686E04A9C823F145E",

@@ -16,7 +16,7 @@ def run(*args, **kwargs):
 
 
 # Guided setup screens the app's fixture preview draws (--setup-fixture-step).
-SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings", "box-faces"]
+SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings", "box-faces", "shelf-facing", "shelf-spines"]
 
 
 def main():
@@ -78,8 +78,10 @@ def main():
             # A launch right after the previous one ends can start behind the home screen.
             subprocess.run(["xcrun", "simctl", "terminate", udid, bundle], check=False, capture_output=True)
             time.sleep(2)
-            # Three synthetic Ocarina records, so a scan shows a game that's already in the library.
-            env = dict(os.environ, SIMCTL_CHILD_NATIVECADE_SYNTHETIC_LIBRARY="3")
+            # Synthetic Ocarina records, three by default, so a scan shows a game that's already in the
+            # library; NATIVECADE_PROBE_SYNTHETIC=50 fills a shelf.
+            synthetic = os.environ.get("NATIVECADE_PROBE_SYNTHETIC", "3")
+            env = dict(os.environ, SIMCTL_CHILD_NATIVECADE_SYNTHETIC_LIBRARY=synthetic)
             run("xcrun", "simctl", "launch", udid, bundle, "--setup-fixture-step", step, env=env)
             time.sleep(8)
             run("xcrun", "simctl", "io", udid, "screenshot", str(args.output / f"setup-{step}.png"))
