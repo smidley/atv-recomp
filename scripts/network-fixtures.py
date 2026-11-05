@@ -35,7 +35,11 @@ ICON = struct.pack("<HHHBBBBHHII", 0, 1, 1, 0, 0, 0, 0, 1, 32, len(ICON_PNG), 22
 MEDIA = {"path_cover_small": "/assets/romm/resources/roms/1/3/cover/small.png?ts=2026-10-28",
          "path_cover_large": "/assets/romm/resources/roms/1/3/cover/big.png?ts=2026-10-28",
          "merged_screenshots": ["/assets/romm/resources/roms/1/3/screenshots/0.jpg",
-                                "https://outside.invalid/private.jpg"]}
+                                "https://outside.invalid/private.jpg"],
+         "summary": "A fixture game for screenshots",
+         "ss_metadata": {"box2d_back_path": "roms/1/3/box2d_back/box2d_back.png",
+                         "box2d_side_path": "roms/1/3/box2d_side/box2d_side.png",
+                         "physical_path": "roms/1/3/physical/physical.png"}}
 
 
 class Handler(BaseHTTPRequestHandler):

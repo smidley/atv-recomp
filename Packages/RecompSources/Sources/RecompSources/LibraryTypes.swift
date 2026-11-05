@@ -76,6 +76,13 @@ public struct RomMArtwork: Codable, Hashable, Sendable {
     public let coverSmall: String?
     public let coverLarge: String?
     public let screenshots: [String]
+    /// A box's front, back and spine, and its cartridge or disc, from RomM's ScreenScraper or LaunchBox art.
+    public var boxFront: String? = nil
+    public var boxBack: String? = nil
+    public var boxSpine: String? = nil
+    public var media: String? = nil
+    /// RomM's description of the game.
+    public var summary: String? = nil
     public var cover: String? { coverSmall ?? coverLarge }
     public func belongs(to source: LibrarySource) -> Bool {
         source.kind == .romm && (try? RomMAddress(source.address, allowHTTP: source.allowHTTP).base.absoluteString) == server
