@@ -25,6 +25,8 @@ final class LibraryModel {
     /// Guided setup's screens stay up until the user leaves them for the library, though setup
     /// is saved as complete as soon as a platform's games step is reached.
     private(set) var inSetup = false
+    /// How every shelf stands its boxes, chosen in Settings.
+    private(set) var shelfStyle = ShelfStyle.facing
     var error: String?
     @ObservationIgnored private var cache: ROMCache?
     @ObservationIgnored private var transfer: Task<Void, Never>?
@@ -41,10 +43,12 @@ final class LibraryModel {
     private let settingsKey = "library.sources.v1"
     private static let favoritesKey = "library.favorites.v1"
     private static let setupKey = "library.setup.v1"
+    private static let shelfStyleKey = "library.shelf-style.v1"
 
     init(cache: ROMCache? = nil, defaults: UserDefaults = .standard) {
         self.defaults = defaults
         favorites = Set(defaults.stringArray(forKey: Self.favoritesKey) ?? [])
+        shelfStyle = defaults.string(forKey: Self.shelfStyleKey).flatMap(ShelfStyle.init(rawValue:)) ?? .facing
         if let data = defaults.data(forKey: Self.setupKey), let saved = try? JSONDecoder().decode(LibrarySetup.self, from: data) {
             setup = saved; setupNeedsMigration = false
         }
@@ -188,6 +192,11 @@ final class LibraryModel {
                 }
             } catch { /* Artwork is optional; offline play and ROM imports remain available. */ }
         }
+    }
+
+    func setShelfStyle(_ style: ShelfStyle) {
+        shelfStyle = style
+        defaults.set(style.rawValue, forKey: Self.shelfStyleKey)
     }
 
     func toggleFavorite(_ rom: ImportedROM) {

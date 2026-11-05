@@ -52,16 +52,17 @@ struct LibraryView: View {
     }
 }
 
-/// Favorites in Cover Flow, then a shelf for each turned-on platform: its card, which opens the
-/// platform's page, and its games. Search and Settings sit in the header.
+/// A Favorites shelf, then a shelf of boxes for each turned-on platform under its name, which opens
+/// the platform's page. Picking a game opens its box. Search and Settings sit in the header.
 @MainActor
 struct LibraryHomeView: View {
     let library: LibraryModel
-    @State private var favorite = 0
+    @State private var picked: ImportedROM?
 
     var body: some View {
         let shelf = library.shelf
         let favorites = library.importedROMs.filter { library.favorites.contains($0.id) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
         let platforms = SupportedPlatform.allCases.filter(library.setup.platforms.contains)
         NavigationStack {
             ScrollView {
@@ -81,7 +82,7 @@ struct LibraryHomeView: View {
                     if !favorites.isEmpty {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Favorites").font(.title3).fontWeight(.medium)
-                            CoverFlow(roms: favorites, selected: $favorite, library: library, cover: CGSize(width: 400, height: 292))
+                            BoxShelfView(games: favorites, style: library.shelfStyle, library: library) { picked = $0 }
                         }
                     }
                     if platforms.isEmpty {
@@ -94,18 +95,19 @@ struct LibraryHomeView: View {
                             if games.isEmpty {
                                 Text("Open \(platform.title) to scan for games").foregroundStyle(.secondary)
                             } else {
-                                ScrollView(.horizontal) {
-                                    LazyHStack(spacing: 32) { ForEach(games) { GameTile(rom: $0, library: library) } }.padding(12)
-                                }.scrollClipDisabled()
+                                BoxShelfView(games: games, style: library.shelfStyle, library: library) { picked = $0 }
                             }
                         }
                     }
-                    Text(GameRuntime.available ? "Connect a game controller, open a platform, choose a game, and press Play. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app")
+                    Text(GameRuntime.available ? "Connect a game controller, pick a game, open its box and press Select. Your first launch prepares the game on this Apple TV." : "Use the Nativecade scheme to build the playable app")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 .padding(48)
             }
             .background { PageBackground() }
+            .fullScreenCover(item: $picked) { rom in
+                BoxInspectView(rom: rom, library: library).presentationBackground(.black.opacity(0.62))
+            }
         }
     }
 }
@@ -468,110 +470,28 @@ private struct ROMResultView: View {
 private struct PlatformView: View {
     let platform: SupportedPlatform
     let library: LibraryModel
-    @State private var selected = 0
+    @State private var picked: ImportedROM?
 
     var body: some View {
         let roms = library.shelf.games[platform] ?? []
-        VStack(alignment: .leading, spacing: 40) {
-            Text(platform.title).font(.title).fontWeight(.medium)
-            if roms.isEmpty { Text("No games yet").foregroundStyle(.secondary) }
-            else { CoverFlow(roms: roms, selected: $selected, library: library) }
-            Spacer(minLength: 0)
-            // Below the Cover Flow, so the covers keep the screen's first focus.
-            NavigationLink("Scan for games") { PlatformScanView(platform: platform, library: library, mode: .library) }
-                .disabled(library.isImporting)
-            SupportRibbon()
-        }
-        .padding(48)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background { PageBackground() }
-    }
-}
-
-private extension Array {
-    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
-}
-
-/// Cover Flow: the selected game faces the viewer, and its neighbors fan out to each side, turned
-/// toward it. Left and right on the remote move the selection; select opens the game's page.
-@MainActor
-private struct CoverFlow: View {
-    let roms: [ImportedROM]
-    @Binding var selected: Int
-    let library: LibraryModel
-    var cover = CGSize(width: 520, height: 380)
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        let index = min(max(selected, 0), roms.count - 1)
-        let rom = roms[index]
-        // Fast swipes send several moves before the next redraw, so each move starts from the binding.
-        let move = { (step: Int) in
-            let current = min(max(selected, 0), roms.count - 1)
-            selected = min(max(current + step, 0), roms.count - 1)
-        }
-        VStack(spacing: 24) {
-            NavigationLink { GameView(rom: rom, library: library) } label: {
-                ZStack {
-                    // Only the covers near the selection exist, however large the library.
-                    ForEach(max(index - 5, 0)...min(index + 5, roms.count - 1), id: \.self) { position in
-                        let distance = position - index, side = Double(distance.signum())
-                        CoverFlowCover(rom: roms[position], library: library, size: cover, highlighted: distance == 0 && focused)
-                            .rotation3DEffect(.degrees(side * -55), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-                            .scaleEffect(distance == 0 ? 1 : 0.8)
-                            .offset(x: side * (cover.width * 0.6 + Double(abs(distance) - 1) * cover.width * 0.2))
-                            .brightness(distance == 0 ? 0 : -0.3)
-                            .zIndex(-Double(abs(distance)))
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 40) {
+                Text(platform.title).font(.title).fontWeight(.medium)
+                NavigationLink("Scan for games") { PlatformScanView(platform: platform, library: library, mode: .library) }
+                    .disabled(library.isImporting)
+                if roms.isEmpty { Text("No games yet").foregroundStyle(.secondary) }
+                // A wall of shelves: every one of the platform's games, a shelf at a time.
+                ForEach(Array(ShelfLayout.rows(roms, style: library.shelfStyle).enumerated()), id: \.offset) { _, row in
+                    BoxShelfView(games: row, style: library.shelfStyle, library: library) { picked = $0 }
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: cover.height * 1.35, alignment: .top)
+                SupportRibbon()
             }
-            .buttonStyle(CoverFlowButtonStyle())
-            .focused($focused)
-            .onMoveCommand { direction in
-                if direction == .left { move(-1) } else if direction == .right { move(1) }
-            }
-            .accessibilityLabel(rom.title)
-            .accessibilityAdjustableAction { direction in
-                if direction == .decrement { move(-1) } else if direction == .increment { move(1) }
-            }
-            VStack(spacing: 8) {
-                Text(rom.title).font(.title3).fontWeight(.medium).lineLimit(1)
-                Text(rom.revision ?? " ").font(.callout).foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
+            .padding(48)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.35), value: index)
-    }
-}
-
-/// No system focus effect: the cover flow highlights its selected cover instead.
-private struct CoverFlowButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.scaleEffect(configuration.isPressed ? 0.98 : 1)
-    }
-}
-
-/// One cover above a fading reflection.
-@MainActor
-private struct CoverFlowCover: View {
-    let rom: ImportedROM
-    let library: LibraryModel
-    let size: CGSize
-    let highlighted: Bool
-
-    var body: some View {
-        let art = GameArtworkView(path: rom.artwork?.coverLarge ?? rom.artwork?.cover, artwork: rom.artwork,
-            sourceID: rom.sourceID, library: library, width: size.width, height: size.height, title: rom.title)
-        VStack(spacing: 8) {
-            art
-                .shadow(color: .black.opacity(highlighted ? 0.6 : 0.4), radius: highlighted ? 32 : 16, y: highlighted ? 16 : 8)
-                .scaleEffect(highlighted ? 1.06 : 1)
-            art.scaleEffect(y: -1)
-                .frame(height: size.height * 0.3, alignment: .top)
-                .clipped()
-                .mask { LinearGradient(colors: [.white.opacity(0.24), .clear], startPoint: .top, endPoint: .bottom) }
+        .background { PageBackground() }
+        .fullScreenCover(item: $picked) { rom in
+            BoxInspectView(rom: rom, library: library).presentationBackground(.black.opacity(0.62))
         }
     }
 }
@@ -590,80 +510,29 @@ struct TitleArt: View {
     }
 }
 
-@MainActor
-struct GameView: View {
-    let rom: ImportedROM
-    let library: LibraryModel
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                Text(rom.title).font(.title).fontWeight(.medium)
-                HStack(spacing: 24) {
-                    if GameRuntime.available {
-                        Button { Task { await library.play(rom) } } label: { Label("Play", systemImage: "play.fill") }
-                            .disabled(library.isImporting)
-                    }
-                    let favorite = library.favorites.contains(rom.id)
-                    Button { library.toggleFavorite(rom) } label: {
-                        Label(favorite ? "Remove from Favorites" : "Add to Favorites", systemImage: favorite ? "star.fill" : "star")
-                    }
-                }
-                if let artwork = rom.artwork {
-                    GameScreenshotGallery(artwork: artwork, sourceID: rom.sourceID, library: library)
-                } else {
-                    GameArtworkView(path: nil, artwork: nil, sourceID: rom.sourceID, library: library, width: 260, height: 240,
-                        title: rom.title)
-                }
-                if let revision = rom.revision { Text(revision).font(.headline) }
-                Text(rom.name).font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(48)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .background { PageBackground() }
-    }
-}
-
 /// Searches every imported game as you type, best match first (FuzzyMatch).
 @MainActor
 private struct GameSearchView: View {
     let library: LibraryModel
     @State private var query = ""
+    @State private var picked: ImportedROM?
 
     var body: some View {
         let results = library.shelf.search.rank(query)
         ScrollView {
             if results.isEmpty {
                 Text("No games match “\(query)”").foregroundStyle(.secondary).padding(48)
+            } else {
+                BoxShelfView(games: results, style: library.shelfStyle, library: library) { picked = $0 }
+                    .id(query)
+                    .padding(48)
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 430), spacing: 32)],
-                      alignment: .leading, spacing: 36) {
-                ForEach(results) { rom in GameTile(rom: rom, library: library) }
-            }
-            .padding(48)
         }
         .background { PageBackground() }
         .searchable(text: $query, prompt: "Game title")
-    }
-}
-
-@MainActor
-private struct GameTile: View {
-    let rom: ImportedROM
-    let library: LibraryModel
-
-    var body: some View {
-        NavigationLink { GameView(rom: rom, library: library) } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                GameArtworkView(path: rom.artwork?.cover, artwork: rom.artwork, sourceID: rom.sourceID,
-                    library: library, width: 290, height: 220, title: rom.title)
-                Text(rom.title).font(.headline).lineLimit(2).frame(width: 290, alignment: .leading)
-            }
-            .padding(20)
+        .fullScreenCover(item: $picked) { rom in
+            BoxInspectView(rom: rom, library: library).presentationBackground(.black.opacity(0.62))
         }
-        .buttonStyle(.card)
-        .accessibilityLabel(rom.title)
     }
 }
 
@@ -796,6 +665,7 @@ struct SetupFixturePreview: View {
                 case "home": LibraryHomeView(library: library)
                 case "settings": NavigationStack { SettingsView(library: library) }
                 case "box-faces": BoxFacesFixture()
+                case "platform": NavigationStack { PlatformView(platform: .nintendo64, library: library) }
                 // Turned to its back: a synthetic game with no art, so the drawn back shows. Opened: a game
                 // whose faces and cartridge photo come from the fixture server.
                 case "inspect", "inspect-open":

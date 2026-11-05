@@ -16,7 +16,7 @@ def run(*args, **kwargs):
 
 
 # Guided setup screens the app's fixture preview draws (--setup-fixture-step).
-SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings", "box-faces", "shelf-facing", "shelf-spines", "inspect", "inspect-open"]
+SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings", "box-faces", "shelf-facing", "shelf-spines", "inspect", "inspect-open", "platform"]
 
 
 def main():

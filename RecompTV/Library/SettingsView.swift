@@ -40,6 +40,11 @@ struct SettingsView: View {
                 }
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Library").font(.title3).fontWeight(.medium)
+                    Picker("Shelf view", selection: Binding(get: { library.shelfStyle }, set: { library.setShelfStyle($0) })) {
+                        ForEach(ShelfStyle.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 640)
                     HStack(spacing: 24) {
                         NavigationLink("Platforms") {
                             ChoosePlatformsView(library: library, detection: nil, serverName: nil, onContinue: nil)
