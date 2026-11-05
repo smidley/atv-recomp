@@ -20,6 +20,7 @@ struct PlatformScanView: View {
     @State private var importing = false
     @State private var offered: ScanCandidate?
     @State private var showingResults = false
+    @State private var inspecting: ImportedROM?
 
     var body: some View {
         let candidates = report?.scan.candidates ?? []
@@ -82,6 +83,9 @@ struct PlatformScanView: View {
             Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showingResults) { BatchResultsView(library: library) }
+        .fullScreenCover(item: $inspecting) { rom in
+            BoxInspectView(rom: rom, library: library).presentationBackground(.black.opacity(0.62))
+        }
         .onAppear { if mode == .library && report == nil && scanning == nil { scan() } }
         // Like the connection browser: leaving the screen or the app stops the import.
         .onDisappear {
@@ -141,7 +145,7 @@ struct PlatformScanView: View {
         }
     }
 
-    /// A game already in the library opens its page and carries the mint play triangle; any other
+    /// A game already in the library opens its box and carries the mint play triangle; any other
     /// offers Add this game.
     @ViewBuilder private func cover(_ candidate: ScanCandidate) -> some View {
         let owned = library.importedROMs.first(where: { $0.game == candidate.game })
@@ -157,7 +161,7 @@ struct PlatformScanView: View {
         }
         .padding(20)
         if let rom = owned {
-            NavigationLink { GameView(rom: rom, library: library) } label: { label }
+            Button { inspecting = rom } label: { label }
             .buttonStyle(.card)
             .disabled(library.isImporting)
             .accessibilityLabel("\(candidate.game.title), in your library")

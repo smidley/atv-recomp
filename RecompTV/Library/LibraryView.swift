@@ -756,6 +756,22 @@ struct SetupFixturePreview: View {
     private let source = LibrarySource(id: UUID(uuidString: "5E7C1F8A-3B2D-4C6E-9A1F-2D3E4F5A6B7C") ?? UUID(),
         name: "Fixture RomM", kind: .romm, address: "http://127.0.0.1:18080", allowHTTP: true)
 
+    /// A game whose box faces come from the fixture server (Task 2's ss_metadata), for the inspect steps.
+    static func inspectGame(_ source: LibrarySource) -> ImportedROM? {
+        // RomMAddress's base for the fixture source, so the artwork belongs to it.
+        let server = source.address
+        let resources = "/assets/romm/resources/roms/1/3/"
+        let record: [String: Any] = [
+            "name": "Fixture.z64", "revision": "Synthetic", "sha1": "ad69c91157f6705e8ab06c79fe08aad47bb57ba7",
+            "sha256": String(repeating: "f", count: 64), "size": 0, "sourceID": source.id.uuidString,
+            "artwork": ["romID": 3, "server": server, "title": "Synthetic Ocarina of Time fixture", "screenshots": [String](),
+                        "coverSmall": resources + "cover/small.png?ts=2026-10-28", "boxBack": resources + "box2d_back/box2d_back.png",
+                        "boxSpine": resources + "box2d_side/box2d_side.png", "media": resources + "physical/physical.png",
+                        "summary": "A fixture game for screenshots"]]
+        guard let data = try? JSONSerialization.data(withJSONObject: record) else { return nil }
+        return try? JSONDecoder().decode(ImportedROM.self, from: data)
+    }
+
     static var requestedStep: String? {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "--setup-fixture-step"), index + 1 < arguments.count else { return nil }
@@ -780,6 +796,13 @@ struct SetupFixturePreview: View {
                 case "home": LibraryHomeView(library: library)
                 case "settings": NavigationStack { SettingsView(library: library) }
                 case "box-faces": BoxFacesFixture()
+                // Turned to its back: a synthetic game with no art, so the drawn back shows. Opened: a game
+                // whose faces and cartridge photo come from the fixture server.
+                case "inspect", "inspect-open":
+                    if let rom = step == "inspect" ? library.shelf.games[.nintendo64]?.first : Self.inspectGame(source) {
+                        BoxInspectView(rom: rom, library: library, initialInputs: step == "inspect" ? [.right, .right] : [.select])
+                            .background { PageBackground() }
+                    } else { Text("The fixture game couldn't be made.") }
                 case "shelf-facing", "shelf-spines":
                     ScrollView {
                         BoxShelfView(games: library.shelf.games[.nintendo64] ?? [], style: step == "shelf-facing" ? .facing : .spines,

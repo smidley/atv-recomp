@@ -60,7 +60,8 @@ private struct ShelfKey: Equatable {
     let games: [String]
 }
 
-private struct SceneButtonStyle: ButtonStyle {
+/// Draws a 3D scene's button unchanged: the scene shows focus itself.
+struct SceneButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View { configuration.label }
 }
 
@@ -139,7 +140,7 @@ private struct SceneButtonStyle: ButtonStyle {
 
     /// Moves an entity relative to its parent, at once or along the app's one easing curve.
     private func move(_ entity: Entity, to transform: Transform, duration: TimeInterval) {
-        if duration == 0 { entity.transform = transform }
+        if duration == 0 { entity.stopAllAnimations(); entity.transform = transform }
         else { entity.move(to: transform, relativeTo: entity.parent, duration: duration, timingFunction: Self.curve) }
     }
 }
