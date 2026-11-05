@@ -25,6 +25,8 @@ final class LibraryModel {
     /// Guided setup's screens stay up until the user leaves them for the library, though setup
     /// is saved as complete as soon as a platform's games step is reached.
     private(set) var inSetup = false
+    /// How every shelf stands its boxes, chosen in Settings.
+    private(set) var shelfStyle = ShelfStyle.facing
     var error: String?
     @ObservationIgnored private var cache: ROMCache?
     @ObservationIgnored private var transfer: Task<Void, Never>?
@@ -33,16 +35,20 @@ final class LibraryModel {
     @ObservationIgnored private var batchIndex = 0
     @ObservationIgnored private let gamePreparation = GamePreparation()
     @ObservationIgnored private let artworkCache = try? ArtworkCache()
+    /// Each game's 3D box faces, loaded or drawn once and shared by every shelf.
+    @ObservationIgnored let boxArt = BoxArtLoader()
     @ObservationIgnored private let defaults: UserDefaults
     /// No setup record yet: a new install, or a library from before guided setup.
     @ObservationIgnored private var setupNeedsMigration = true
     private let settingsKey = "library.sources.v1"
     private static let favoritesKey = "library.favorites.v1"
     private static let setupKey = "library.setup.v1"
+    private static let shelfStyleKey = "library.shelf-style.v1"
 
     init(cache: ROMCache? = nil, defaults: UserDefaults = .standard) {
         self.defaults = defaults
         favorites = Set(defaults.stringArray(forKey: Self.favoritesKey) ?? [])
+        shelfStyle = defaults.string(forKey: Self.shelfStyleKey).flatMap(ShelfStyle.init(rawValue:)) ?? .facing
         if let data = defaults.data(forKey: Self.setupKey), let saved = try? JSONDecoder().decode(LibrarySetup.self, from: data) {
             setup = saved; setupNeedsMigration = false
         }
@@ -186,6 +192,11 @@ final class LibraryModel {
                 }
             } catch { /* Artwork is optional; offline play and ROM imports remain available. */ }
         }
+    }
+
+    func setShelfStyle(_ style: ShelfStyle) {
+        shelfStyle = style
+        defaults.set(style.rawValue, forKey: Self.shelfStyleKey)
     }
 
     func toggleFavorite(_ rom: ImportedROM) {
@@ -432,7 +443,9 @@ enum SyntheticLibrary {
         let second = ["Kart", "Quest", "Racer", "Legends", "Party", "Tennis", "Golf", "Odyssey", "Fighters", "Island"]
         let ocarina = "ad69c91157f6705e8ab06c79fe08aad47bb57ba7" // files under Nintendo 64
         let records = (0..<max(count, 0)).map { index -> [String: Any] in
-            let title = "\(first[index % first.count]) \(second[index / first.count % second.count]) \(index)"
+            let short = "\(first[index % first.count]) \(second[index / first.count % second.count]) \(index)"
+            // Every tenth title is long, so shelves show how a long title wraps and truncates.
+            let title = index % 10 == 9 ? short + ": The Extraordinary Adventure of a Long Title" : short
             return ["name": "\(title).z64", "revision": "Synthetic", "sha1": ocarina,
                     "sha256": String(format: "%064x", index + 1), "size": 0, "sourceID": UUID().uuidString,
                     "artwork": ["romID": index + 1, "server": "synthetic", "title": title, "screenshots": [String]()]]

@@ -57,7 +57,7 @@ struct RomMProvider: LibraryProvider {
             guard rom.id == id, Set(rom.files.map(\.id)).count == rom.files.count else {
                 throw LibraryError.message("RomM returned inconsistent file metadata. Refresh the catalog.")
             }
-            let artwork = artwork(id: id, title: rom.name ?? rom.files.first?.file_name ?? "Game", media: rom.media)
+            let artwork = Self.artwork(id: id, title: rom.name ?? rom.files.first?.file_name ?? "Game", media: rom.media, address: address)
             let entries = try rom.files.map { file in
                 try validateComponent(file.file_name)
                 guard file.id > 0, file.file_size_bytes >= 0 else {
@@ -76,7 +76,7 @@ struct RomMProvider: LibraryProvider {
     private func entry(for rom: RomMItem) -> LibraryEntry {
         LibraryEntry(id: "rom-\(rom.id)", name: rom.name ?? rom.fs_name,
                      detail: "Open to choose a ROM file", size: nil, target: .folder(.rom(rom.id)),
-                     artwork: artwork(id: rom.id, title: rom.name ?? rom.fs_name, media: rom.media))
+                     artwork: Self.artwork(id: rom.id, title: rom.name ?? rom.fs_name, media: rom.media, address: address))
     }
 
     func detectPlatforms() async throws -> PlatformDetection {
@@ -126,15 +126,26 @@ struct RomMProvider: LibraryProvider {
                             unsupportedCount: listed.map { max($0.reduce(0) { $0 + $1.rom_count } - matched.count, 0) })
     }
 
-    private func artwork(id: Int, title: String, media: RomMMedia) -> RomMArtwork {
+    static func artwork(id: Int, title: String, media: RomMMedia, address: RomMAddress) -> RomMArtwork {
         func safe(_ value: String?) -> String? {
             guard let value, !value.isEmpty, (try? address.artworkURL(value)) != nil else { return nil }
             return value
         }
+        // Box faces are stored relative to RomM's resources, which it serves under this prefix.
+        func resource(_ candidates: [String]) -> String? {
+            let prefix = "/assets/romm/resources/"
+            return candidates.lazy.compactMap { safe($0.isEmpty || $0.hasPrefix(prefix) ? $0 : prefix + $0) }.first
+        }
         var seen = Set<String>()
-        return RomMArtwork(romID: id, server: address.base.absoluteString, title: title,
-                           coverSmall: safe(media.small), coverLarge: safe(media.large),
-                           screenshots: media.screenshots.compactMap(safe).filter { seen.insert($0).inserted }.prefix(12).map { $0 })
+        var artwork = RomMArtwork(romID: id, server: address.base.absoluteString, title: title,
+                                  coverSmall: safe(media.small), coverLarge: safe(media.large),
+                                  screenshots: media.screenshots.compactMap(safe).filter { seen.insert($0).inserted }.prefix(12).map { $0 })
+        artwork.boxFront = resource(media.fronts)
+        artwork.boxBack = resource(media.backs)
+        artwork.boxSpine = resource(media.spines)
+        artwork.media = resource(media.physical)
+        artwork.summary = media.summary
+        return artwork
     }
 
     func imageData(at path: String) async throws -> Data {
@@ -167,7 +178,7 @@ struct RomMProvider: LibraryProvider {
                 files = try await decode(RomMDetail.self, path: ["roms", String(candidate.id)]).files
             }
             if files.contains(where: { $0.file_name == rom.name && $0.file_size_bytes == rom.size }) {
-                matches.append(artwork(id: candidate.id, title: candidate.name ?? candidate.fs_name, media: candidate.media))
+                matches.append(Self.artwork(id: candidate.id, title: candidate.name ?? candidate.fs_name, media: candidate.media, address: address))
                 if matches.count > 1 { return nil }
             }
         }
@@ -323,17 +334,39 @@ private struct RomMDetail: Decodable {
         media = try RomMMedia(from: decoder)
     }
 }
-private struct RomMMedia: Decodable {
+struct RomMMedia: Decodable {
     let small: String?
     let large: String?
     let screenshots: [String]
-    enum CodingKeys: CodingKey { case path_cover_small, path_cover_large, merged_screenshots }
+    /// Each box face's candidate paths, ScreenScraper's before LaunchBox's; the first safe one is used.
+    let fronts: [String], backs: [String], spines: [String], physical: [String]
+    let summary: String?
+    enum CodingKeys: CodingKey { case path_cover_small, path_cover_large, merged_screenshots, ss_metadata, launchbox_metadata, summary }
+    /// RomM's ss_metadata and launchbox_metadata share these names; LaunchBox has no physical_path.
+    private struct Faces: Decodable {
+        let box2d_path: String?, box2d_back_path: String?, box2d_side_path: String?, physical_path: String?
+        enum CodingKeys: CodingKey { case box2d_path, box2d_back_path, box2d_side_path, physical_path }
+        init(from decoder: any Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            box2d_path = try? values.decode(String.self, forKey: .box2d_path)
+            box2d_back_path = try? values.decode(String.self, forKey: .box2d_back_path)
+            box2d_side_path = try? values.decode(String.self, forKey: .box2d_side_path)
+            physical_path = try? values.decode(String.self, forKey: .physical_path)
+        }
+    }
     init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         // Bad or missing artwork metadata must not make a ROM impossible to browse.
         small = try? values.decode(String.self, forKey: .path_cover_small)
         large = try? values.decode(String.self, forKey: .path_cover_large)
         screenshots = (try? values.decode([String].self, forKey: .merged_screenshots)) ?? []
+        let providers = [try? values.decode(Faces.self, forKey: .ss_metadata),
+                         try? values.decode(Faces.self, forKey: .launchbox_metadata)].compactMap { $0 }
+        fronts = providers.compactMap(\.box2d_path)
+        backs = providers.compactMap(\.box2d_back_path)
+        spines = providers.compactMap(\.box2d_side_path)
+        physical = providers.compactMap(\.physical_path)
+        summary = try? values.decode(String.self, forKey: .summary)
     }
 }
 private struct RomMFile: Decodable {

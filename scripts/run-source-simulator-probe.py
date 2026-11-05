@@ -16,7 +16,7 @@ def run(*args, **kwargs):
 
 
 # Guided setup screens the app's fixture preview draws (--setup-fixture-step).
-SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings"]
+SETUP_STEPS = ["welcome", "connect", "detect", "platforms", "games", "results", "home", "settings", "box-faces", "shelf-facing", "shelf-spines", "inspect", "inspect-open", "platform", "shelf-slow"]
 
 
 def main():
@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--app", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--screens", help="comma-separated setup steps to screenshot, skipping the source probe")
+    parser.add_argument("--keep", action="store_true", help="keep the simulator afterwards and print its UDID, to read its files")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     runtimes = json.loads(run("xcrun", "simctl", "list", "runtimes", "--json"))["runtimes"]
@@ -78,15 +79,20 @@ def main():
             # A launch right after the previous one ends can start behind the home screen.
             subprocess.run(["xcrun", "simctl", "terminate", udid, bundle], check=False, capture_output=True)
             time.sleep(2)
-            # Three synthetic Ocarina records, so a scan shows a game that's already in the library.
-            env = dict(os.environ, SIMCTL_CHILD_NATIVECADE_SYNTHETIC_LIBRARY="3")
+            # Synthetic Ocarina records, three by default, so a scan shows a game that's already in the
+            # library; NATIVECADE_PROBE_SYNTHETIC=50 fills a shelf.
+            synthetic = os.environ.get("NATIVECADE_PROBE_SYNTHETIC", "3")
+            env = dict(os.environ, SIMCTL_CHILD_NATIVECADE_SYNTHETIC_LIBRARY=synthetic)
             run("xcrun", "simctl", "launch", udid, bundle, "--setup-fixture-step", step, env=env)
             time.sleep(8)
             run("xcrun", "simctl", "io", udid, "screenshot", str(args.output / f"setup-{step}.png"))
         print(f"Saved {len(steps)} guided setup screenshots in {args.output}.")
     finally:
-        subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False, capture_output=True)
-        subprocess.run(["xcrun", "simctl", "delete", udid], check=False, capture_output=True)
+        if args.keep:
+            print(f"Kept simulator {udid}; delete it with: xcrun simctl delete {udid}")
+        else:
+            subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False, capture_output=True)
+            subprocess.run(["xcrun", "simctl", "delete", udid], check=False, capture_output=True)
 
 
 if __name__ == "__main__":

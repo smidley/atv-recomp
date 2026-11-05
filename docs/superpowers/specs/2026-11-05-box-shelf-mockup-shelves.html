@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Box shelf views</title>
+<style>
+  :root { --bg-primary: #1d1d1f; --bg-secondary: #2d2d2f; --bg-tertiary: #3d3d3f; --border: #424245;
+    --text-primary: #f5f5f7; --text-secondary: #86868b; --accent: #0a84ff; --selected-border: #0a84ff; }
+  body { margin: 0; padding: 32px 24px 48px; background: var(--bg-primary); color: var(--text-primary);
+    font-family: -apple-system, system-ui, sans-serif; max-width: 1100px; margin-inline: auto; }
+  h2 { font-weight: 600; margin: 0 0 .4rem; }
+  .subtitle { color: var(--text-secondary); margin: 0 0 1.5rem; }
+  .cards { display: grid; gap: 1.5rem; }
+  .card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-secondary); }
+  .card.selected { border-color: var(--selected-border); }
+  .card-body { padding: 1rem; }
+  .card-body h3 { margin: 0 0 .25rem; }
+  .card-body p { margin: 0; color: var(--text-secondary); font-size: .85rem; }
+</style>
+<script>window.toggleSelect = el => { document.querySelectorAll('.card').forEach(c => c.classList.toggle('selected', c === el)); };</script>
+</head>
+<body>
+<h2>How should your games stand on the shelf?</h2>
+<p class="subtitle">Move the pointer over a box to move the focus, the way the remote would. The focused game's cartridge comes up out of its box. The covers are stand-ins: the app would use your RomM cover art.</p>
+
+<style>
+  .shelf-choices { grid-template-columns: 1fr; }
+  .shelf-choices .card { cursor: pointer; }
+  .shelf-choices .card-body h3 { margin-bottom: .2rem; }
+  .tv {
+    container-type: inline-size; position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
+    background: radial-gradient(90% 70% at 50% 28%, #1b2030 0%, #0b0d14 70%); color: #eef0f5;
+    font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
+    --w: 17cqw; --h: 12.4cqw; --d: 3.4cqw; --cw: 10.6cqw; --ch: 6.9cqw; --cd: 1.5cqw; --floor: 38cqw;
+  }
+  .hud { position: absolute; left: 5cqw; top: 3.5cqw; display: flex; flex-direction: column; gap: 1.4cqw; z-index: 2; }
+  .wordmark { color: #ff715b; font-weight: 600; font-size: 2.1cqw; font-family: ui-rounded, "SF Pro Rounded", system-ui; }
+  .platform { font-size: 1.9cqw; font-weight: 500; }
+  .platform span { color: #a3a9b8; margin-left: .6cqw; }
+  .caption { position: absolute; left: 5cqw; bottom: 3.6cqw; display: flex; align-items: center; gap: 1.8cqw; font-size: 1.9cqw; z-index: 2; }
+  .caption .t { font-weight: 500; }
+  .caption .plays { color: #a3a9b8; display: flex; align-items: center; gap: .7cqw; font-size: 1.5cqw; }
+  .caption .plays i { display: inline-block; width: 0; height: 0; border-left: 1.1cqw solid #81e3c4; border-top: .65cqw solid transparent; border-bottom: .65cqw solid transparent; }
+  .caption .play { background: #eef0f5; color: #0b0d14; border-radius: 99cqw; padding: .55cqw 1.9cqw; font-size: 1.5cqw; font-weight: 500; }
+
+  .stage { position: absolute; inset: 0; perspective: 110cqw; perspective-origin: 50% 26%; }
+  .world, .row { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .shelf-top { position: absolute; left: -20cqw; width: 140cqw; height: 18cqw; top: calc(var(--floor) - 9cqw); transform: rotateX(90deg); background: linear-gradient(to bottom, #1d1612, #3b2c22); }
+  .shelf-edge { position: absolute; left: -20cqw; width: 140cqw; height: 2.6cqw; top: var(--floor); transform: translateZ(9cqw); background: linear-gradient(#4b392c, #241b15); }
+
+  .item { position: absolute; left: 0; top: calc(var(--floor) - var(--h)); width: var(--w); height: var(--h); transform-style: preserve-3d; transition: transform .55s cubic-bezier(.22, 1, .36, 1); }
+  .row[data-mode="face"] .item { transform: translate3d(var(--x), 0, -2cqw) rotateY(0deg); }
+  .row[data-mode="face"] .item.is-focus { transform: translate3d(var(--x), -1.2cqw, 4.5cqw) rotateY(0deg); }
+  .row[data-mode="spine"] .item { transform: translate3d(var(--x), 0, -.5cqw) rotateY(90deg); }
+  .row[data-mode="spine"] .item.is-focus { transform: translate3d(var(--x), -1.2cqw, 6cqw) rotateY(18deg); }
+  .row[data-mode="spine"] .item.before { transform: translate3d(calc(var(--x) - 7cqw), 0, -.5cqw) rotateY(90deg); }
+  .row[data-mode="spine"] .item.after { transform: translate3d(calc(var(--x) + 7cqw), 0, -.5cqw) rotateY(90deg); }
+
+  .f { position: absolute; left: 0; top: 0; backface-visibility: hidden; }
+  .front { width: var(--w); height: var(--h); transform: translateZ(calc(var(--d) / 2)); overflow: hidden; border-radius: .25cqw;
+    background: linear-gradient(155deg, color-mix(in srgb, var(--c) 70%, white) 0%, var(--c) 42%, color-mix(in srgb, var(--c) 55%, black) 100%); }
+  .front .band { position: absolute; left: 0; top: 0; bottom: 0; width: 1.7cqw; background: #121318; color: #cfd3dc; font-size: .72cqw;
+    writing-mode: vertical-rl; transform: rotate(180deg); display: flex; align-items: center; justify-content: center; }
+  .front .art { position: absolute; left: 1.7cqw; right: 0; top: 0; bottom: 0;
+    background: radial-gradient(60% 70% at 70% 35%, rgba(255, 255, 255, .28), transparent 70%), repeating-linear-gradient(115deg, rgba(255, 255, 255, .05) 0 .6cqw, transparent .6cqw 1.6cqw); }
+  .front .name { position: absolute; left: 2.6cqw; right: .8cqw; bottom: .9cqw; font-weight: 700; font-size: 1.45cqw; line-height: 1.05; color: #fff; text-shadow: 0 .1cqw .4cqw rgba(0, 0, 0, .45); }
+  .back { width: var(--w); height: var(--h); transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); background: color-mix(in srgb, var(--c) 40%, #111); }
+  .spine, .side { width: var(--d); height: var(--h); left: calc((var(--w) - var(--d)) / 2); }
+  .spine { transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); background: #15171d; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+  .spine .stripe { align-self: stretch; flex: none; height: 2.2cqw; background: var(--c); }
+  .spine .vt { flex: 1; writing-mode: vertical-rl; overflow: hidden; color: #e9ecf2; font-size: .9cqw; line-height: 1.1; font-weight: 600; padding-top: .7cqw; }
+  .spine .n64 { flex: none; font-size: .7cqw; color: #a3a9b8; padding: .3cqw 0 .6cqw; }
+  .side { transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); background: color-mix(in srgb, var(--c) 45%, #0d0e12); }
+  .top { width: var(--w); height: var(--d); top: calc((var(--h) - var(--d)) / 2); transform: rotateX(90deg) translateZ(calc(var(--h) / 2)); background: color-mix(in srgb, var(--c) 30%, #2a2c33); }
+  .shadow { position: absolute; left: -.8cqw; width: calc(var(--w) + 1.6cqw); height: calc(var(--d) + 2.4cqw); top: calc(var(--h) - (var(--d) + 2.4cqw) / 2);
+    transform: rotateX(90deg) translateZ(.06cqw); background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); }
+
+  .cart { position: absolute; width: var(--cw); height: var(--ch); left: calc((var(--w) - var(--cw)) / 2); top: calc(var(--h) - var(--ch) - .5cqw);
+    transform-style: preserve-3d; transition: transform .6s cubic-bezier(.22, 1, .36, 1) .08s; }
+  .item.is-focus .cart { transform: translateY(calc(-1 * (var(--h) - .32 * var(--ch) - .5cqw))); }
+  .cf { position: absolute; left: 0; top: 0; backface-visibility: hidden; }
+  .cfront, .cback { width: var(--cw); height: var(--ch); }
+  .cfront { transform: translateZ(calc(var(--cd) / 2)); background: linear-gradient(#9a9ca2, #77797f); border-radius: .35cqw .35cqw .15cqw .15cqw; }
+  .cback { transform: rotateY(180deg) translateZ(calc(var(--cd) / 2)); background: #6c6e73; }
+  .cleft, .cright { width: var(--cd); height: var(--ch); left: calc((var(--cw) - var(--cd)) / 2); background: #5f6166; }
+  .cleft { transform: rotateY(-90deg) translateZ(calc(var(--cw) / 2)); }
+  .cright { transform: rotateY(90deg) translateZ(calc(var(--cw) / 2)); }
+  .ctop { width: var(--cw); height: var(--cd); top: calc((var(--ch) - var(--cd)) / 2); transform: rotateX(90deg) translateZ(calc(var(--ch) / 2)); background: #a4a6ab; }
+  .ridges { position: absolute; left: 18%; right: 18%; top: .5cqw; display: grid; gap: .25cqw; }
+  .ridges i { display: block; height: .2cqw; background: rgba(0, 0, 0, .28); border-radius: 1cqw; }
+  .label { position: absolute; left: .9cqw; right: .9cqw; top: 1.8cqw; bottom: .7cqw; border-radius: .2cqw; box-sizing: border-box; padding: .45cqw; display: flex; align-items: flex-end;
+    background: linear-gradient(155deg, color-mix(in srgb, var(--c) 70%, white), var(--c) 50%, color-mix(in srgb, var(--c) 60%, black)); }
+  .label span { color: #fff; font-weight: 700; font-size: .85cqw; line-height: 1.05; text-shadow: 0 .05cqw .2cqw rgba(0, 0, 0, .4); }
+</style>
+
+<div class="cards shelf-choices">
+  <div class="card" data-choice="facing" onclick="toggleSelect(this)">
+    <div class="tv">
+      <div class="hud"><div class="wordmark">Nativecade</div><div class="platform">Nintendo 64<span>›</span></div></div>
+      <div class="stage"><div class="world"><div class="shelf-top"></div><div class="shelf-edge"></div><div class="row" data-mode="face" data-focus="1"></div></div></div>
+      <div class="caption"><span class="t"></span><span class="plays"><i></i>Plays now</span><span class="play">Play</span></div>
+    </div>
+    <div class="card-body"><h3>A · Facing you</h3><p>Every box faces out, like a store shelf. The focused box comes forward.</p></div>
+  </div>
+  <div class="card" data-choice="spines" onclick="toggleSelect(this)">
+    <div class="tv">
+      <div class="hud"><div class="wordmark">Nativecade</div><div class="platform">Nintendo 64<span>›</span></div></div>
+      <div class="stage"><div class="world"><div class="shelf-top"></div><div class="shelf-edge"></div><div class="row" data-mode="spine" data-focus="4"></div></div></div>
+      <div class="caption"><span class="t"></span><span class="plays"><i></i>Plays now</span><span class="play">Play</span></div>
+    </div>
+    <div class="card-body"><h3>B · Spines out</h3><p>Boxes stand spine-out, like a collection. The focused box slides out and turns to you.</p></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const games = [
+    ["The Legend of Zelda: Ocarina of Time", "Ocarina of Time", "#2e6a45"],
+    ["Mario Kart 64", "Mario Kart 64", "#b0362c"],
+    ["Star Fox 64", "Star Fox 64", "#284f8c"],
+    ["Super Mario 64", "Super Mario 64", "#c8902a"],
+    ["Banjo-Kazooie", "Banjo-Kazooie", "#b8642a"],
+    ["Super Smash Bros.", "Super Smash Bros.", "#5d3b86"],
+    ["Star Wars: Shadows of the Empire", "Shadows of the Empire", "#3a3e4a"],
+    ["Star Wars Episode I: Racer", "Episode I: Racer", "#8a5a2b"],
+    ["Cruis'n USA", "Cruis'n USA", "#2a74a3"],
+    ["Cruis'n World", "Cruis'n World", "#23806a"],
+  ];
+  const box = ([full, short, color], x) => {
+    const item = document.createElement("div");
+    item.className = "item";
+    item.style.setProperty("--x", x + "cqw");
+    item.style.setProperty("--c", color);
+    item.dataset.title = full;
+    item.innerHTML = `
+      <div class="shadow"></div>
+      <div class="f front"><div class="band">Nintendo 64</div><div class="art"></div><div class="name">${short}</div></div>
+      <div class="f back"></div>
+      <div class="f spine"><div class="stripe"></div><div class="vt">${short}</div><div class="n64">N64</div></div>
+      <div class="f side"></div>
+      <div class="f top"></div>
+      <div class="cart">
+        <div class="cf cfront"><div class="ridges"><i></i><i></i><i></i></div><div class="label"><span>${short}</span></div></div>
+        <div class="cf cback"></div><div class="cf cleft"></div><div class="cf cright"></div><div class="cf ctop"></div>
+      </div>`;
+    return item;
+  };
+  document.querySelectorAll(".row").forEach(row => {
+    const face = row.dataset.mode === "face";
+    games.forEach((game, i) => row.appendChild(box(game, face ? 5 + i * 19.5 : 2 + i * 3.75)));
+    const items = [...row.children];
+    const caption = row.closest(".tv").querySelector(".caption .t");
+    const focus = item => {
+      const at = items.indexOf(item);
+      items.forEach((other, i) => {
+        other.classList.toggle("is-focus", i === at);
+        other.classList.toggle("before", !face && i < at);
+        other.classList.toggle("after", !face && i > at);
+      });
+      caption.textContent = item.dataset.title;
+    };
+    focus(items[Number(row.dataset.focus)]);
+    items.forEach(item => item.addEventListener("mouseenter", () => focus(item)));
+  });
+})();
+</script>
+
+</body>
+</html>

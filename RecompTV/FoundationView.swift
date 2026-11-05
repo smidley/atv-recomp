@@ -139,9 +139,12 @@ struct GameLogView: View {
     static func load() -> [String] {
         let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Nativecade/Logs/last-game.log")
-        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return ["No game has run since the app was installed."] }
+        // The shelves' frame times go last, after a blank line, whether or not a game has run.
+        let shelf = (try? String(contentsOf: ShelfFrameLog.url, encoding: .utf8))
+            .map { ["", $0.trimmingCharacters(in: .whitespacesAndNewlines)] } ?? []
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return ["No game has run since the app was installed."] + shelf }
         let lines = String(decoding: data, as: UTF8.self).split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         // The first lines name the game, build and Apple TV; the rest of a long log is cut to its end.
-        return lines.count <= 600 ? lines : Array(lines.prefix(3)) + ["…"] + lines.suffix(596)
+        return (lines.count <= 600 ? lines : Array(lines.prefix(3)) + ["…"] + lines.suffix(596)) + shelf
     }
 }

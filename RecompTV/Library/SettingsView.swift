@@ -11,54 +11,65 @@ struct SettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                Text("Settings").font(.title.bold())
-                Text("Connections").font(.title2.bold())
-                Text("Open a connection to browse it and import one particular file.").foregroundStyle(.secondary)
-                ForEach(library.sources) { source in
-                    HStack(spacing: 24) {
-                        NavigationLink {
-                            SourceBrowserView(source: source, library: library)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Label(source.name, systemImage: source.kind == .smb ? "externaldrive.connected.to.line.below" : "server.rack")
-                                Text(source.address).font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 48) {
+                Text("Settings").font(.title).fontWeight(.medium)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Connections").font(.title3).fontWeight(.medium)
+                    Text("Open a connection to browse it and import one particular file").foregroundStyle(.secondary)
+                    ForEach(library.sources) { source in
+                        HStack(spacing: 24) {
+                            NavigationLink {
+                                SourceBrowserView(source: source, library: library)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Label(source.name, systemImage: source.kind == .smb ? "externaldrive.connected.to.line.below" : "server.rack")
+                                    Text(source.address).font(.caption).foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Button("Edit") { editing = source }
+                                .accessibilityLabel("Edit \(source.name)")
+                            Button("Remove") { library.remove(source) }
+                                .accessibilityLabel("Remove \(source.name)")
                         }
-                        Button("Edit") { editing = source }
-                            .accessibilityLabel("Edit \(source.name)")
-                        Button("Remove") { library.remove(source) }
-                            .accessibilityLabel("Remove \(source.name)")
+                    }
+                    HStack(spacing: 24) {
+                        Button("Add RomM") { editing = LibrarySource(kind: .romm) }
+                        Button("Add SMB share") { editing = LibrarySource(kind: .smb) }
                     }
                 }
-                HStack(spacing: 24) {
-                    Button("Add RomM") { editing = LibrarySource(kind: .romm) }
-                    Button("Add SMB share") { editing = LibrarySource(kind: .smb) }
-                }
-                Text("Library").font(.title2.bold())
-                HStack(spacing: 24) {
-                    NavigationLink("Platforms") {
-                        ChoosePlatformsView(library: library, detection: nil, serverName: nil, onContinue: nil)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Library").font(.title3).fontWeight(.medium)
+                    Picker("Shelf view", selection: Binding(get: { library.shelfStyle }, set: { library.setShelfStyle($0) })) {
+                        ForEach(ShelfStyle.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
-                    if !library.importedROMs.isEmpty {
-                        Button("Clear ROM cache") { Task { await library.clearCache() } }
-                        Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
-                            Task { await library.refreshArtwork(force: true) }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 640)
+                    HStack(spacing: 24) {
+                        NavigationLink("Platforms") {
+                            ChoosePlatformsView(library: library, detection: nil, serverName: nil, onContinue: nil)
                         }
-                        .disabled(library.isRefreshingArtwork || library.isImporting)
+                        if !library.importedROMs.isEmpty {
+                            Button("Clear ROM cache") { Task { await library.clearCache() } }
+                            Button(library.isRefreshingArtwork ? "Refreshing artwork…" : "Refresh artwork") {
+                                Task { await library.refreshArtwork(force: true) }
+                            }
+                            .disabled(library.isRefreshingArtwork || library.isImporting)
+                        }
                     }
                 }
-                Text("About").font(.title2.bold())
-                HStack(spacing: 24) {
-                    Button("Third-party notices") { showingNotices = true }
-                    Button("Last game log") { gameLog = GameLogView.load() }
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("About").font(.title3).fontWeight(.medium)
+                    HStack(spacing: 24) {
+                        Button("Third-party notices") { showingNotices = true }
+                        Button("Last game log") { gameLog = GameLogView.load() }
+                    }
                 }
             }
             .padding(48)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background { CalmBackdrop() }
+        .background { PageBackground() }
         .fullScreenCover(isPresented: Binding(get: { gameLog != nil }, set: { if !$0 { gameLog = nil } })) {
             GameLogView(lines: gameLog ?? [])
         }
