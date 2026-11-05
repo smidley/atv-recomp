@@ -62,6 +62,7 @@ struct BoxInspectView: View {
         .task {
             await scene.load(rom, library: library)
             for input in initialInputs { press(input, animated: false) }
+            await scene.loadFaces(rom, library: library)
         }
         .onAppear { sceneFocused = true }
         .onDisappear { ShelfFrameLog.write() }
@@ -100,6 +101,7 @@ struct BoxInspectView: View {
     private var box: ModelEntity?
     private var materials = [any RealityKit.Material]()
     private var shown = BoxInspection()
+    private var facesPending = false
     private static let cartridgeRest = (ShelfMetrics.cartridge.y - ShelfMetrics.box.y) / 2 + 0.004
 
     init() {
@@ -110,16 +112,42 @@ struct BoxInspectView: View {
         root.addChild(BoxEntities.lights())
     }
 
+    /// The box enters at once: as last loaded, or drawn, which needs no network.
     func load(_ rom: ImportedROM, library: LibraryModel) async {
+        let loader = library.boxArt
+        let ready = loader.cached(for: rom)
+        guard let box = try? await BoxEntities.box(ready ?? loader.drawn(for: rom)) else { return }
+        enter(box)
+        facesPending = ready == nil && BoxFaces(rom.artwork).hasRemote
+    }
+
+    /// RomM's faces replace the drawn ones where the box stands now, turned or open.
+    func loadFaces(_ rom: ImportedROM, library: LibraryModel) async {
+        guard facesPending else { return }
         let art = await library.boxArt.art(for: rom, library: library)
-        guard let box = try? await BoxEntities.box(art) else { return }
+        guard !Task.isCancelled, let real = try? await BoxEntities.box(art) else { return }
+        real.transform = box?.transform ?? Transform()
+        box?.removeFromParent()
+        install(real)
+        show(shown, animated: false)
+    }
+
+    private func install(_ box: ModelEntity) {
         materials = box.model?.materials ?? []
-        // It enters from below center, growing into place.
-        box.transform = Transform(scale: [0.6, 0.6, 0.6], rotation: simd_quatf(), translation: [0, -0.2, 0])
         root.addChild(box)
         self.box = box
-        box.move(to: Transform(), relativeTo: root, duration: 0.6, timingFunction: ShelfScene.curve)
+    }
+
+    /// The box takes its turn and cartridge at once, then enters from below center, growing into place.
+    private func enter(_ box: ModelEntity) {
+        install(box)
         show(shown, animated: false)
+        let target = box.transform
+        box.transform = Transform(scale: [0.6, 0.6, 0.6], rotation: target.rotation, translation: [0, -0.2, 0])
+        box.move(to: target, relativeTo: root, duration: 0.6, timingFunction: ShelfScene.curve)
+        #if DEBUG
+        NSLog("[inspect] entrance starts at scale %.2f", box.transform.scale.x)
+        #endif
     }
 
     func show(_ inspection: BoxInspection, animated: Bool) {

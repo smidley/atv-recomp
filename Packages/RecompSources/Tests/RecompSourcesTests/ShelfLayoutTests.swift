@@ -37,3 +37,11 @@ import Testing
 @Test func wallRowsChunkGames() {
     #expect(ShelfLayout.rows(Array(0..<20), style: .facing).map(\.count) == [8, 8, 4])
 }
+
+// The camera sees past the row's start, and boxes slide for 0.55 s after the focus moves.
+@Test func keepsBoxesOnScreenThroughASlide() {
+    #expect(ShelfLayout(count: 10, style: .facing, focus: 5, viewportWidth: 1.3).visible.contains(1))
+}
+@Test func spinesNearTheLeftEdgeStayDrawn() {
+    #expect(ShelfLayout(count: 24, style: .spines, focus: 11, viewportWidth: 1.3).visible.contains(0))
+}

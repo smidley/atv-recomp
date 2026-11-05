@@ -7,6 +7,7 @@ import UIKit
 @MainActor
 struct LibraryView: View {
     @State private var library = LibraryModel()
+    @FocusState private var preparingFocused: Bool
 
     var body: some View {
         Group {
@@ -47,6 +48,12 @@ struct LibraryView: View {
                             .foregroundStyle(.secondary)
                     }.padding(64)
                 }
+                // Holds focus so Back does nothing: at the library's root it would leave the app mid-preparation.
+                .focusable()
+                .focusEffectDisabled()
+                .focused($preparingFocused)
+                .onAppear { preparingFocused = true }
+                .onExitCommand {}
             }
         }
     }
@@ -627,18 +634,22 @@ struct SetupFixturePreview: View {
 
     /// A game whose box faces come from the fixture server (Task 2's ss_metadata), for the inspect steps.
     static func inspectGame(_ source: LibrarySource) -> ImportedROM? {
+        fixtureGames(source, count: 1, resources: "/assets/romm/resources/roms/1/3/").first
+    }
+
+    /// Games whose faces the fixture server serves from `resources`; under /slow/ it answers only after 30 s.
+    static func fixtureGames(_ source: LibrarySource, count: Int, resources: String) -> [ImportedROM] {
         // RomMAddress's base for the fixture source, so the artwork belongs to it.
         let server = source.address
-        let resources = "/assets/romm/resources/roms/1/3/"
-        let record: [String: Any] = [
-            "name": "Fixture.z64", "revision": "Synthetic", "sha1": "ad69c91157f6705e8ab06c79fe08aad47bb57ba7",
-            "sha256": String(repeating: "f", count: 64), "size": 0, "sourceID": source.id.uuidString,
-            "artwork": ["romID": 3, "server": server, "title": "Synthetic Ocarina of Time fixture", "screenshots": [String](),
-                        "coverSmall": resources + "cover/small.png?ts=2026-10-28", "boxBack": resources + "box2d_back/box2d_back.png",
-                        "boxSpine": resources + "box2d_side/box2d_side.png", "media": resources + "physical/physical.png",
-                        "summary": "A fixture game for screenshots"]]
-        guard let data = try? JSONSerialization.data(withJSONObject: record) else { return nil }
-        return try? JSONDecoder().decode(ImportedROM.self, from: data)
+        let records: [[String: Any]] = (0..<count).map { index in [
+            "name": "Fixture \(index).z64", "revision": "Synthetic", "sha1": "ad69c91157f6705e8ab06c79fe08aad47bb57ba7",
+            "sha256": String(format: "%064x", 0xF000 + index), "size": 0, "sourceID": source.id.uuidString,
+            "artwork": ["romID": 3, "server": server, "title": count == 1 ? "Synthetic Ocarina of Time fixture" : "Slow fixture \(index)",
+                        "screenshots": [String](), "coverSmall": resources + "cover/small.png?ts=2026-10-28",
+                        "boxBack": resources + "box2d_back/box2d_back.png", "boxSpine": resources + "box2d_side/box2d_side.png",
+                        "media": resources + "physical/physical.png", "summary": "A fixture game for screenshots"]] }
+        guard let data = try? JSONSerialization.data(withJSONObject: records) else { return [] }
+        return (try? JSONDecoder().decode([ImportedROM].self, from: data)) ?? []
     }
 
     static var requestedStep: String? {
@@ -673,6 +684,14 @@ struct SetupFixturePreview: View {
                         BoxInspectView(rom: rom, library: library, initialInputs: step == "inspect" ? [.right, .right] : [.select])
                             .background { PageBackground() }
                     } else { Text("The fixture game couldn't be made.") }
+                // Every face on a server that isn't answering: the boxes must still appear, drawn.
+                case "shelf-slow":
+                    ScrollView {
+                        BoxShelfView(games: Self.fixtureGames(source, count: 4, resources: "/assets/romm/resources/slow/"),
+                                     style: .facing, library: library) { _ in }
+                            .padding(48)
+                    }
+                    .background { PageBackground() }
                 case "shelf-facing", "shelf-spines":
                     ScrollView {
                         BoxShelfView(games: library.shelf.games[.nintendo64] ?? [], style: step == "shelf-facing" ? .facing : .spines,

@@ -16,14 +16,37 @@ struct BoxArt {
     let tint: Color
 }
 
-/// Loads each game's box faces from RomM and draws the ones it doesn't have, once per game. A face
-/// that fails to load, offline or after its connection is removed, is drawn instead.
+/// Each game's box faces: drawn at once, without the network, then RomM's where it has them. A face
+/// that fails to load, offline or after its connection is removed, stays drawn.
 @MainActor final class BoxArtLoader {
     /// Each game's art with the artwork record it came from, so Refresh artwork's new faces replace it.
     private var cache = [String: (artwork: RomMArtwork?, art: BoxArt)]()
+    private var drawnCache = [String: (artwork: RomMArtwork?, art: BoxArt)]()
 
+    /// The art already loaded for the game's current artwork, if any.
+    func cached(for rom: ImportedROM) -> BoxArt? {
+        guard let cached = cache[rom.id], cached.artwork == rom.artwork else { return nil }
+        return cached.art
+    }
+
+    /// Every face drawn: no network, so a box shows at once, even while RomM isn't answering.
+    func drawn(for rom: ImportedROM) -> BoxArt {
+        if let cached = drawnCache[rom.id], cached.artwork == rom.artwork { return cached.art }
+        let title = rom.title, tint = Palette.raised
+        let art = BoxArt(
+            front: Self.render(TitleArt(title: title), width: 340, height: 248),
+            back: Self.render(DrawnBack(title: title, summary: rom.artwork?.summary, screenshots: [], tint: tint), width: 340, height: 248),
+            spine: Self.render(DrawnSpine(title: title, tint: tint), width: 68, height: 248),
+            cartridge: .label(Self.render(DrawnLabel(title: title, cover: nil, tint: tint), width: 212, height: 105)),
+            tint: tint)
+        drawnCache[rom.id] = (rom.artwork, art)
+        return art
+    }
+
+    /// RomM's faces, drawing the rest. A load cancelled because its box left the view isn't kept, so the
+    /// box tries again when it comes back.
     func art(for rom: ImportedROM, library: LibraryModel) async -> BoxArt {
-        if let cached = cache[rom.id], cached.artwork == rom.artwork { return cached.art }
+        if let cached = cached(for: rom) { return cached }
         let faces = BoxFaces(rom.artwork)
         func image(_ source: BoxFaceSource) async -> CGImage? {
             guard case .remote(let path) = source, let artwork = rom.artwork,
@@ -32,25 +55,42 @@ struct BoxArt {
         }
         let cover = await image(faces.front)
         let tint = cover.flatMap(Self.averageColor) ?? Palette.raised
-        var screenshots = [CGImage]()
-        for path in (rom.artwork?.screenshots ?? []).prefix(2) {
-            if let shot = await image(.remote(path)) { screenshots.append(shot) }
-        }
-        let title = rom.title
         let back = await image(faces.back)
+        // Screenshots only for a drawn back; a scan of the real back has its own.
+        var screenshots = [CGImage]()
+        if back == nil {
+            for path in (rom.artwork?.screenshots ?? []).prefix(2) {
+                if let shot = await image(.remote(path)) { screenshots.append(shot) }
+            }
+        }
         let spine = await image(faces.spine)
         let photo = await image(faces.label)
+        let title = rom.title
         let art = BoxArt(
             front: cover ?? Self.render(TitleArt(title: title), width: 340, height: 248),
             back: back ?? Self.render(DrawnBack(title: title, summary: rom.artwork?.summary, screenshots: screenshots, tint: tint),
                                       width: 340, height: 248),
             spine: spine ?? Self.render(DrawnSpine(title: title, tint: tint), width: 68, height: 248),
             // The drawn label is sized to the label printed on the cartridge's face, about 2 to 1.
-            cartridge: photo.map(CartridgeArt.photo)
+            cartridge: photo.map { .photo(Self.onCartridge($0)) }
                 ?? .label(Self.render(DrawnLabel(title: title, cover: cover, tint: tint), width: 212, height: 105)),
             tint: tint)
-        cache[rom.id] = (rom.artwork, art)
+        if !Task.isCancelled { cache[rom.id] = (rom.artwork, art) }
         return art
+    }
+
+    /// RomM's cartridge photo fitted onto the cartridge's grey face. The photos are usually cut out, and
+    /// their transparent background would otherwise render black.
+    private static func onCartridge(_ photo: CGImage) -> CGImage {
+        let size = CGSize(width: 424, height: 276)
+        let scale = min(size.width / CGFloat(photo.width), size.height / CGFloat(photo.height))
+        let fitted = CGSize(width: CGFloat(photo.width) * scale, height: CGFloat(photo.height) * scale)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            BoxEntities.cartridgeGrey.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            UIImage(cgImage: photo).draw(in: CGRect(x: (size.width - fitted.width) / 2, y: (size.height - fitted.height) / 2,
+                                                    width: fitted.width, height: fitted.height))
+        }.cgImage!
     }
 
     private static let context = CIContext(options: [.workingColorSpace: NSNull()])

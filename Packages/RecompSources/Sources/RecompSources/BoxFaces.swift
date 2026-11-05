@@ -13,6 +13,11 @@ public struct BoxFaces: Equatable, Sendable {
         self.front = front; self.back = back; self.spine = spine; self.label = label
     }
 
+    /// Whether any face comes from RomM; a game without one never waits on the network.
+    public var hasRemote: Bool {
+        [front, back, spine, label].contains { if case .remote = $0 { true } else { false } }
+    }
+
     public init(_ artwork: RomMArtwork?) {
         func source(_ path: String?) -> BoxFaceSource { path.map(BoxFaceSource.remote) ?? .drawn }
         self.init(front: source(artwork?.boxFront ?? artwork?.coverLarge ?? artwork?.coverSmall),

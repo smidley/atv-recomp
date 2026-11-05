@@ -46,3 +46,11 @@ private func media(_ json: String) throws -> RomMMedia { try JSONDecoder().decod
     #expect(faces.spine == .remote("/assets/romm/resources/side.png"))
     #expect(faces.back == .drawn && faces.label == .drawn)
 }
+
+// A box is drawn at once; only a game with RomM faces waits on the network for a second build.
+@Test func onlyGamesWithRomMArtWaitForFaces() {
+    #expect(!BoxFaces(nil).hasRemote)
+    let art = RomMArtwork(romID: 3, server: "https://example.test/", title: "Fixture", coverSmall: nil,
+                          coverLarge: "/assets/romm/resources/l.png", screenshots: [])
+    #expect(BoxFaces(art).hasRemote)
+}

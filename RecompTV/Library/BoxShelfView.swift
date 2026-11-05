@@ -23,7 +23,8 @@ struct BoxShelfView: View {
         let title = games.indices.contains(layout.focus) ? games[layout.focus].title : ""
         VStack(alignment: .leading, spacing: 12) {
             // A button, so the remote's Select reaches it; its style draws the scene unchanged.
-            Button { if games.indices.contains(layout.focus) { onPick(games[layout.focus]) } } label: {
+            // Actions read self.layout, the current focus: fast swipes send several moves before a redraw.
+            Button { if games.indices.contains(self.layout.focus) { onPick(games[self.layout.focus]) } } label: {
                 RealityView { content in
                     content.add(scene.root)
                     // The first half second is the scene loading, not the shelf moving.
@@ -37,8 +38,8 @@ struct BoxShelfView: View {
             .buttonStyle(SceneButtonStyle())
             .focused($focused)
             .onMoveCommand { direction in
-                if direction == .left { focus = layout.moved(.left).focus }
-                if direction == .right { focus = layout.moved(.right).focus }
+                if direction == .left { focus = self.layout.moved(.left).focus }
+                if direction == .right { focus = self.layout.moved(.right).focus }
             }
             // Kept in the layout while hidden, so shelves don't jump as focus moves between them.
             HStack(spacing: 16) {
@@ -57,8 +58,8 @@ struct BoxShelfView: View {
         .accessibilityLabel(title)
         .accessibilityValue("\(layout.focus + 1) of \(games.count)")
         .accessibilityAdjustableAction { direction in
-            if direction == .increment { focus = layout.moved(.right).focus }
-            if direction == .decrement { focus = layout.moved(.left).focus }
+            if direction == .increment { focus = self.layout.moved(.right).focus }
+            if direction == .decrement { focus = self.layout.moved(.left).focus }
         }
     }
 }
@@ -94,7 +95,7 @@ struct SceneButtonStyle: ButtonStyle {
 }
 
 /// The RealityKit side of one shelf: a camera, lights and a plank, and a row of boxes that slides as
-/// the focus moves. Only the boxes in view exist; each is built once its art is ready.
+/// the focus moves. Only the boxes in view exist; each is drawn at once and gets RomM's faces when they arrive.
 @MainActor final class ShelfScene {
     /// The shelf's width in view, in meters: a little less than the camera below sees across, about 1.4.
     static let viewportWidth: Float = 1.3
@@ -106,7 +107,8 @@ struct SceneButtonStyle: ButtonStyle {
     private var boxes = [String: Entity]()
     /// The artwork each box was built from; a box whose game's artwork changes is built again.
     private var builtFrom = [String: RomMArtwork?]()
-    private var loading = Set<String>()
+    /// Each box's art load, with the artwork it's for; one whose box leaves the view gives way to the rest.
+    private var loads = [String: (artwork: RomMArtwork?, task: Task<Void, Never>)]()
     private var layout: ShelfLayout?
     private var games = [ImportedROM]()
     /// Where the first box stands: far enough in that it stays whole when it turns to face the viewer.
@@ -137,26 +139,45 @@ struct SceneButtonStyle: ButtonStyle {
             box.removeFromParent()
             boxes[id] = nil
         }
+        for (id, load) in loads where !visible.contains(id) || load.artwork != current[id] {
+            load.task.cancel()
+            loads[id] = nil
+        }
         for index in layout.visible {
             let rom = games[index]
             if let box = boxes[rom.id] {
                 place(box, at: index, duration: first ? 0 : 0.55)
-            } else if !loading.contains(rom.id) {
-                loading.insert(rom.id)
-                Task {
-                    defer { loading.remove(rom.id) }
-                    let art = await library.boxArt.art(for: rom, library: library)
-                    // Placed where the shelf is now, which may have moved while the art loaded.
-                    guard let box = try? await BoxEntities.box(art), boxes[rom.id] == nil,
-                          let index = self.games.firstIndex(where: { $0.id == rom.id }),
-                          self.layout?.visible.contains(index) == true else { return }
-                    boxes[rom.id] = box
-                    builtFrom[rom.id] = rom.artwork
-                    row.addChild(box)
-                    place(box, at: index, duration: 0)
-                }
+            } else if loads[rom.id] == nil {
+                loads[rom.id] = (rom.artwork, Task {
+                    await load(rom, library: library)
+                    if loads[rom.id]?.artwork == rom.artwork, !Task.isCancelled { loads[rom.id] = nil }
+                })
             }
         }
+    }
+
+    /// A drawn box first, which needs no network, so the shelf never sits empty while RomM answers;
+    /// then RomM's faces replace it.
+    private func load(_ rom: ImportedROM, library: LibraryModel) async {
+        let loader = library.boxArt
+        if let ready = loader.cached(for: rom) { return await build(rom, art: ready) }
+        await build(rom, art: loader.drawn(for: rom))
+        guard BoxFaces(rom.artwork).hasRemote else { return }
+        let art = await loader.art(for: rom, library: library)
+        guard !Task.isCancelled else { return }
+        await build(rom, art: art)
+    }
+
+    /// Builds the box and puts it where the shelf is now, which may have moved while the art loaded.
+    private func build(_ rom: ImportedROM, art: BoxArt) async {
+        guard let box = try? await BoxEntities.box(art), !Task.isCancelled,
+              let index = games.firstIndex(where: { $0.id == rom.id }), games[index].artwork == rom.artwork,
+              layout?.visible.contains(index) == true else { return }
+        boxes[rom.id]?.removeFromParent()
+        boxes[rom.id] = box
+        builtFrom[rom.id] = rom.artwork
+        row.addChild(box)
+        place(box, at: index, duration: 0)
     }
 
     private func place(_ box: Entity, at index: Int, duration: TimeInterval) {

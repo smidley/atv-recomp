@@ -18,17 +18,25 @@ ROM = bytes([0x80, 0x37, 0x12, 0x40]) + bytes(i % 251 for i in range(4, 256 * 10
 TOKEN = "fixture-token"
 
 
-def fixture_image(width=600, height=400):
-    """A generated color chart, with no remote artwork or copyrighted game data."""
+def fixture_image(width=600, height=400, cutout=0):
+    """A generated color chart, with no remote artwork or copyrighted game data. A cutout margin makes
+    the edges transparent, like a cartridge photo cut out of its background."""
     def chunk(kind, data):
         return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
-    pixels = b"".join(b"\0" + b"".join(bytes((x * 255 // width, y * 255 // height, 110))
-                                      for x in range(width)) for y in range(height))
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    def pixel(x, y):
+        rgb = bytes((x * 255 // width, y * 255 // height, 110))
+        if not cutout:
+            return rgb
+        inside = cutout <= x < width - cutout and cutout <= y < height - cutout
+        return rgb + bytes((255 if inside else 0,))
+    pixels = b"".join(b"\0" + b"".join(pixel(x, y) for x in range(width)) for y in range(height))
+    kind = 6 if cutout else 2
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, kind, 0, 0, 0))
             + chunk(b"IDAT", zlib.compress(pixels)) + chunk(b"IEND", b""))
 
 
 ART = fixture_image()
+CUTOUT = fixture_image(cutout=60)
 # Like RomM's platform icons: one 256x256 PNG inside an .ico directory.
 ICON_PNG = fixture_image(256, 256)
 ICON = struct.pack("<HHHBBBBHHII", 0, 1, 1, 0, 0, 0, 0, 1, 32, len(ICON_PNG), 22) + ICON_PNG
@@ -96,6 +104,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.end_headers()
             if path.endswith("/login.png"):
                 return self.send(200, b"<html>Sign in</html>", "text/html")
+            # Like a server that's on the network but not answering.
+            if "/slow/" in path:
+                time.sleep(30)
+            if "/physical/" in path:
+                return self.send(200, CUTOUT, "image/png")
             return self.send(200, ART, "image/png")
         if path == "/assets/platforms/n64.ico":
             return self.send(200, ICON, "image/x-icon")

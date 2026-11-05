@@ -6,6 +6,9 @@ import UIKit
 /// The 3D pieces of a shelf: a game's box with its cartridge inside, the walnut plank and the lights.
 /// Sizes are in meters, from `ShelfMetrics`.
 @MainActor enum BoxEntities {
+    /// The cartridge's grey plastic.
+    static let cartridgeGrey = UIColor(red: 0.553, green: 0.561, blue: 0.580, alpha: 1)
+
     enum Face {
         case image(CGImage)
         case color(UIColor)
@@ -37,7 +40,7 @@ import UIKit
     static func cartridge(_ art: CartridgeArt) async throws -> Entity {
         let size = ShelfMetrics.cartridge
         let body = ModelEntity(mesh: .generateBox(width: size.x, height: size.y, depth: size.z, cornerRadius: 0.003),
-                               materials: [material(UIColor(red: 0.553, green: 0.561, blue: 0.580, alpha: 1), roughness: 0.45)])
+                               materials: [material(cartridgeGrey, roughness: 0.45)])
         let face: ModelEntity
         switch art {
         case .photo(let photo):

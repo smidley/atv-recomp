@@ -16,6 +16,9 @@ public enum ShelfMetrics {
     public static let spinePitch: Float = 0.0375
     /// How far the boxes beside a focused spine slide apart.
     public static let spineParting: Float = 0.07
+    /// How far left of the row's start the shelf camera still sees: about 0.17 m, plus a box still
+    /// sliding out of view for 0.55 s after the focus moves.
+    public static let viewMargin: Float = 0.2
 }
 
 /// Where one box stands on its shelf.
@@ -60,11 +63,11 @@ public struct ShelfLayout: Equatable, Sendable {
     /// How far the shelf has slid left, keeping the focused box near the left third of the view.
     public var scroll: Float { max(0, Float(focus) * pitch - 0.3 * viewportWidth) }
 
-    /// The boxes on screen, plus one on each side.
+    /// The boxes on screen, plus one on each side, and those the camera still sees left of the row's start.
     public var visible: Range<Int> {
         let shown = (0..<count).filter {
             let x = placement(of: $0).x - scroll
-            return x >= -pitch && x <= viewportWidth + pitch
+            return x >= -(pitch + ShelfMetrics.viewMargin) && x <= viewportWidth + pitch
         }
         guard let first = shown.first, let last = shown.last else { return 0..<0 }
         return first..<(last + 1)
