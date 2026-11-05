@@ -24,8 +24,15 @@ struct BoxShelfView: View {
         VStack(alignment: .leading, spacing: 12) {
             // A button, so the remote's Select reaches it; its style draws the scene unchanged.
             Button { if games.indices.contains(layout.focus) { onPick(games[layout.focus]) } } label: {
-                RealityView { content in content.add(scene.root) }
-                    .frame(height: 380)
+                RealityView { content in
+                    content.add(scene.root)
+                    // The first half second is the scene loading, not the shelf moving.
+                    var warmUp = 30
+                    scene.frameSubscription = content.subscribe(to: SceneEvents.Update.self) { event in
+                        if warmUp > 0 { warmUp -= 1 } else { ShelfFrameLog.record(event.deltaTime) }
+                    }
+                }
+                .frame(height: 380)
             }
             .buttonStyle(SceneButtonStyle())
             .focused($focused)
@@ -45,6 +52,7 @@ struct BoxShelfView: View {
         .task(id: ShelfKey(layout: layout, games: games.map(\.id))) {
             scene.show(layout, games: games, library: library)
         }
+        .onDisappear { ShelfFrameLog.write() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityValue("\(layout.focus + 1) of \(games.count)")
@@ -52,6 +60,25 @@ struct BoxShelfView: View {
             if direction == .increment { focus = layout.moved(.right).focus }
             if direction == .decrement { focus = layout.moved(.left).focus }
         }
+    }
+}
+
+/// Every shelf's frame times, summarized where Settings' Last game log shows them: the owner can't
+/// pair the Apple TV, so a photo of that log is how the shelves' speed on it is measured.
+@MainActor enum ShelfFrameLog {
+    static let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Nativecade/Logs/shelf-frames.log")
+    private static var frames = FrameTimes()
+
+    static func record(_ seconds: TimeInterval) {
+        frames.record(seconds)
+        if frames.count % 120 == 0 { write() }
+    }
+
+    static func write() {
+        guard let summary = frames.summary else { return }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? Data((summary + "\n").utf8).write(to: url, options: .atomic)
     }
 }
 
@@ -72,6 +99,8 @@ struct SceneButtonStyle: ButtonStyle {
     static let viewportWidth: Float = 1.3
     static let curve = AnimationTimingFunction.cubicBezier(controlPoint1: [0.22, 1], controlPoint2: [0.36, 1])
     let root = Entity()
+    /// Feeds ShelfFrameLog every frame the scene draws.
+    var frameSubscription: EventSubscription?
     private let row = Entity()
     private var boxes = [String: Entity]()
     private var loading = Set<String>()

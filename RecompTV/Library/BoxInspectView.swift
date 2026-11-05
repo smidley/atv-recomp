@@ -22,9 +22,16 @@ struct BoxInspectView: View {
         VStack(alignment: .leading, spacing: 24) {
             // A button, so the remote's Select reaches it; its style draws the scene unchanged.
             Button { press(.select) } label: {
-                RealityView { content in content.add(scene.root) }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 640)
+                RealityView { content in
+                    content.add(scene.root)
+                    // The first half second is the scene loading, not the shelf moving.
+                    var warmUp = 30
+                    scene.frameSubscription = content.subscribe(to: SceneEvents.Update.self) { event in
+                        if warmUp > 0 { warmUp -= 1 } else { ShelfFrameLog.record(event.deltaTime) }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 640)
             }
             .buttonStyle(SceneButtonStyle())
             .focused($sceneFocused)
@@ -57,6 +64,7 @@ struct BoxInspectView: View {
             for input in initialInputs { press(input, animated: false) }
         }
         .onAppear { sceneFocused = true }
+        .onDisappear { ShelfFrameLog.write() }
     }
 
     private func press(_ input: RemoteInput, animated: Bool = true) {
@@ -88,6 +96,7 @@ struct BoxInspectView: View {
 /// its cartridge forward.
 @MainActor final class InspectScene {
     let root = Entity()
+    var frameSubscription: EventSubscription?
     private var box: ModelEntity?
     private var materials = [any RealityKit.Material]()
     private var shown = BoxInspection()

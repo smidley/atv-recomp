@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--app", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--screens", help="comma-separated setup steps to screenshot, skipping the source probe")
+    parser.add_argument("--keep", action="store_true", help="keep the simulator afterwards and print its UDID, to read its files")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     runtimes = json.loads(run("xcrun", "simctl", "list", "runtimes", "--json"))["runtimes"]
@@ -87,8 +88,11 @@ def main():
             run("xcrun", "simctl", "io", udid, "screenshot", str(args.output / f"setup-{step}.png"))
         print(f"Saved {len(steps)} guided setup screenshots in {args.output}.")
     finally:
-        subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False, capture_output=True)
-        subprocess.run(["xcrun", "simctl", "delete", udid], check=False, capture_output=True)
+        if args.keep:
+            print(f"Kept simulator {udid}; delete it with: xcrun simctl delete {udid}")
+        else:
+            subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False, capture_output=True)
+            subprocess.run(["xcrun", "simctl", "delete", udid], check=False, capture_output=True)
 
 
 if __name__ == "__main__":
