@@ -779,6 +779,7 @@ struct SetupFixturePreview: View {
                 // The fixture connection makes this library one from before guided setup, so it's set up.
                 case "home": LibraryHomeView(library: library)
                 case "settings": NavigationStack { SettingsView(library: library) }
+                case "box-faces": BoxFacesFixture()
                 default: Text("Unknown setup step “\(step)”.")
                 }
             } else { ProgressView("Loading setup fixture…") }
