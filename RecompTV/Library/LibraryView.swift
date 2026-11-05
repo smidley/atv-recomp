@@ -578,7 +578,7 @@ private struct CoverFlowCover: View {
 
 /// Cover art for a game without artwork: its title on a quiet raised surface, so real box art
 /// stays the color on screen.
-private struct TitleArt: View {
+struct TitleArt: View {
     let title: String
 
     var body: some View {

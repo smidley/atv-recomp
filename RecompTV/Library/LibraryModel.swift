@@ -33,6 +33,8 @@ final class LibraryModel {
     @ObservationIgnored private var batchIndex = 0
     @ObservationIgnored private let gamePreparation = GamePreparation()
     @ObservationIgnored private let artworkCache = try? ArtworkCache()
+    /// Each game's 3D box faces, loaded or drawn once and shared by every shelf.
+    @ObservationIgnored let boxArt = BoxArtLoader()
     @ObservationIgnored private let defaults: UserDefaults
     /// No setup record yet: a new install, or a library from before guided setup.
     @ObservationIgnored private var setupNeedsMigration = true
@@ -432,7 +434,9 @@ enum SyntheticLibrary {
         let second = ["Kart", "Quest", "Racer", "Legends", "Party", "Tennis", "Golf", "Odyssey", "Fighters", "Island"]
         let ocarina = "ad69c91157f6705e8ab06c79fe08aad47bb57ba7" // files under Nintendo 64
         let records = (0..<max(count, 0)).map { index -> [String: Any] in
-            let title = "\(first[index % first.count]) \(second[index / first.count % second.count]) \(index)"
+            let short = "\(first[index % first.count]) \(second[index / first.count % second.count]) \(index)"
+            // Every tenth title is long, so shelves show how a long title wraps and truncates.
+            let title = index % 10 == 9 ? short + ": The Extraordinary Adventure of a Long Title" : short
             return ["name": "\(title).z64", "revision": "Synthetic", "sha1": ocarina,
                     "sha256": String(format: "%064x", index + 1), "size": 0, "sourceID": UUID().uuidString,
                     "artwork": ["romID": index + 1, "server": "synthetic", "title": title, "screenshots": [String]()]]
