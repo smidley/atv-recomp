@@ -196,6 +196,27 @@ fixture at its platform list (or, with `--artwork-fixture-detail`, at a game's f
 page) in Debug simulator builds only; the fixture is absent from device and
 Release builds.
 
+## Box art
+
+The library shows each game as a 3D box with its cartridge inside
+([design](superpowers/specs/2026-11-05-box-shelf-design.md)). The box's back and spine and the
+cartridge photo come from RomM's `ss_metadata` (ScreenScraper) and `launchbox_metadata` (LaunchBox):
+`box2d_path`, `box2d_back_path`, `box2d_side_path` and `physical_path`, paths beneath
+`/assets/romm/resources`, through the same checks as the covers. Whatever RomM doesn't have, Nativecade
+draws: the spine with the game's title, the back with its description and screenshots, and a cartridge
+label from the cover.
+
+RomM downloads only front covers, screenshots and manuals by default. For real backs, spines and
+cartridges, on the RomM server:
+
+1. In RomM's web app, Settings → Scan, turn on the back cover and box spine media types. LaunchBox
+   supplies them.
+2. For cartridge art, add a free ScreenScraper account to RomM's container settings as
+   `SCREENSCRAPER_USER` and `SCREENSCRAPER_PASSWORD`, then turn on the cartridge-or-disc media type on
+   the same page.
+3. Re-scan the platform, so RomM downloads the new art for games it already has. **Refresh artwork** in
+   Nativecade's Settings then picks it up.
+
 ## Automated verification
 
 On a Mac with Swift 6, run `bash scripts/test-network-sources.sh` for address,

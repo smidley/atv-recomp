@@ -19,10 +19,11 @@ struct BoxArt {
 /// Loads each game's box faces from RomM and draws the ones it doesn't have, once per game. A face
 /// that fails to load, offline or after its connection is removed, is drawn instead.
 @MainActor final class BoxArtLoader {
-    private var cache = [String: BoxArt]()
+    /// Each game's art with the artwork record it came from, so Refresh artwork's new faces replace it.
+    private var cache = [String: (artwork: RomMArtwork?, art: BoxArt)]()
 
     func art(for rom: ImportedROM, library: LibraryModel) async -> BoxArt {
-        if let cached = cache[rom.id] { return cached }
+        if let cached = cache[rom.id], cached.artwork == rom.artwork { return cached.art }
         let faces = BoxFaces(rom.artwork)
         func image(_ source: BoxFaceSource) async -> CGImage? {
             guard case .remote(let path) = source, let artwork = rom.artwork,
@@ -48,7 +49,7 @@ struct BoxArt {
             cartridge: photo.map(CartridgeArt.photo)
                 ?? .label(Self.render(DrawnLabel(title: title, cover: cover, tint: tint), width: 212, height: 105)),
             tint: tint)
-        cache[rom.id] = art
+        cache[rom.id] = (rom.artwork, art)
         return art
     }
 

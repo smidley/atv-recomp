@@ -49,7 +49,7 @@ struct BoxShelfView: View {
             .font(.callout)
             .opacity(focused ? 1 : 0)
         }
-        .task(id: ShelfKey(layout: layout, games: games.map(\.id))) {
+        .task(id: ShelfKey(layout: layout, games: games.map(\.id), artwork: games.map(\.artwork))) {
             scene.show(layout, games: games, library: library)
         }
         .onDisappear { ShelfFrameLog.write() }
@@ -85,6 +85,7 @@ struct BoxShelfView: View {
 private struct ShelfKey: Equatable {
     let layout: ShelfLayout
     let games: [String]
+    let artwork: [RomMArtwork?]
 }
 
 /// Draws a 3D scene's button unchanged: the scene shows focus itself.
@@ -103,6 +104,8 @@ struct SceneButtonStyle: ButtonStyle {
     var frameSubscription: EventSubscription?
     private let row = Entity()
     private var boxes = [String: Entity]()
+    /// The artwork each box was built from; a box whose game's artwork changes is built again.
+    private var builtFrom = [String: RomMArtwork?]()
     private var loading = Set<String>()
     private var layout: ShelfLayout?
     private var games = [ImportedROM]()
@@ -129,7 +132,8 @@ struct SceneButtonStyle: ButtonStyle {
         slide.translation.x = Self.start - layout.scroll
         move(row, to: slide, duration: first ? 0 : 0.55)
         let visible = Set(layout.visible.map { games[$0].id })
-        for (id, box) in boxes where !visible.contains(id) {
+        let current = Dictionary(games.map { ($0.id, $0.artwork) }, uniquingKeysWith: { first, _ in first })
+        for (id, box) in boxes where !visible.contains(id) || builtFrom[id] != current[id] {
             box.removeFromParent()
             boxes[id] = nil
         }
@@ -147,6 +151,7 @@ struct SceneButtonStyle: ButtonStyle {
                           let index = self.games.firstIndex(where: { $0.id == rom.id }),
                           self.layout?.visible.contains(index) == true else { return }
                     boxes[rom.id] = box
+                    builtFrom[rom.id] = rom.artwork
                     row.addChild(box)
                     place(box, at: index, duration: 0)
                 }
