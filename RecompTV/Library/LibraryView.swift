@@ -639,15 +639,34 @@ struct SetupFixturePreview: View {
 
     /// Games whose faces the fixture server serves from `resources`; under /slow/ it answers only after 30 s.
     static func fixtureGames(_ source: LibrarySource, count: Int, resources: String) -> [ImportedROM] {
-        // RomMAddress's base for the fixture source, so the artwork belongs to it.
-        let server = source.address
-        let records: [[String: Any]] = (0..<count).map { index in [
-            "name": "Fixture \(index).z64", "revision": "Synthetic", "sha1": "ad69c91157f6705e8ab06c79fe08aad47bb57ba7",
-            "sha256": String(format: "%064x", 0xF000 + index), "size": 0, "sourceID": source.id.uuidString,
-            "artwork": ["romID": 3, "server": server, "title": count == 1 ? "Synthetic Ocarina of Time fixture" : "Slow fixture \(index)",
-                        "screenshots": [String](), "coverSmall": resources + "cover/small.png?ts=2026-10-28",
-                        "boxBack": resources + "box2d_back/box2d_back.png", "boxSpine": resources + "box2d_side/box2d_side.png",
-                        "media": resources + "physical/physical.png", "summary": "A fixture game for screenshots"]] }
+        // One typed value at a time: Xcode 26's type checker gives up on this as a single literal.
+        let cover: String = resources + "cover/small.png?ts=2026-10-28"
+        let back: String = resources + "box2d_back/box2d_back.png"
+        let spine: String = resources + "box2d_side/box2d_side.png"
+        let media: String = resources + "physical/physical.png"
+        var records = [[String: Any]]()
+        for index in 0..<count {
+            var artwork = [String: Any]()
+            artwork["romID"] = 3
+            // RomMAddress's base for the fixture source, so the artwork belongs to it.
+            artwork["server"] = source.address
+            artwork["title"] = count == 1 ? "Synthetic Ocarina of Time fixture" : "Slow fixture \(index)"
+            artwork["screenshots"] = [String]()
+            artwork["coverSmall"] = cover
+            artwork["boxBack"] = back
+            artwork["boxSpine"] = spine
+            artwork["media"] = media
+            artwork["summary"] = "A fixture game for screenshots"
+            var record = [String: Any]()
+            record["name"] = "Fixture \(index).z64"
+            record["revision"] = "Synthetic"
+            record["sha1"] = "ad69c91157f6705e8ab06c79fe08aad47bb57ba7"
+            record["sha256"] = String(format: "%064x", 0xF000 + index)
+            record["size"] = 0
+            record["sourceID"] = source.id.uuidString
+            record["artwork"] = artwork
+            records.append(record)
+        }
         guard let data = try? JSONSerialization.data(withJSONObject: records) else { return [] }
         return (try? JSONDecoder().decode([ImportedROM].self, from: data)) ?? []
     }
