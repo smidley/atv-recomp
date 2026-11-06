@@ -446,6 +446,18 @@ when App Store Connect began processing it. Every framework's code is unchanged 
 app changed, and compared with the ten ROMs it shares no 32-byte runs. The archive contains no ROMs,
 extracted game archives or saves, and its signature verifies.
 
+Build **0.1.0 (21)** shows the library as 3D boxes on a shelf ([design](superpowers/specs/2026-11-05-box-shelf-design.md)).
+Every screen that shows games stands them as Nintendo 64 boxes on a walnut shelf, facing out or spines out as
+Settings chooses. Picking a game brings its box forward: swiping turns it, Select opens it so its cartridge
+comes out, and Select again plays. Box backs, spines and cartridge photos come from RomM when its scans include
+them ([how](NETWORK_SOURCES.md#box-art)); the rest is drawn at once, so a shelf never waits on the network.
+Settings > Last game log ends with the shelves' frame times, `[shelf-frames] worst … · 95th percentile …`, to
+photograph after browsing. The app now requires tvOS 26. On 2026-11-05 build 21 was archived from commit
+`059db56`, merged to main as `80b23c4`, with Xcode 27.2 (27B52) and uploaded at 15:37, when App Store Connect
+began processing it. Every framework's code is unchanged from build 20; only the app changed, and compared with
+the ten ROMs it shares no 32-byte runs. The archive contains no ROMs, extracted game archives or saves, and its
+signature verifies.
+
 Torch emits some duplicate asset names. `ZIP_CHECKCONS` rejects those valid
 archives with `ZIP_ER_EXISTS`; Nativecade instead opens them read-only, checks
 the 9.3.1 version record, and reads every entry to validate its CRC.

@@ -30,7 +30,8 @@ permissions:
 
 jobs:
   providers:
-    runs-on: macos-15
+    # macOS 26 runners carry Xcode 26, whose tvOS SDK has RealityKit; the box shelf needs tvOS 26.
+    runs-on: macos-26
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
